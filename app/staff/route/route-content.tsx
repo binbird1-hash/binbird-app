@@ -21,7 +21,6 @@ type Job = {
   notes?: string | null;
 };
 
-
 export default function RoutePageContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -74,23 +73,26 @@ export default function RoutePageContent() {
     );
   }, [isLoaded, start, activeJob]);
 
-  // Auto-fit bounds whenever directions OR markers change
+  // Auto-fit bounds when directions or markers change
   useEffect(() => {
     if (!mapRef) return;
 
     const bounds = new google.maps.LatLngBounds();
-
     if (directions) {
-      // Fit to route path
       directions.routes[0].overview_path.forEach((p) => bounds.extend(p));
     } else if (start && activeJob) {
-      // Fallback: just fit start + job
       bounds.extend(start);
       bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
 
     if (!bounds.isEmpty()) {
-      mapRef.fitBounds(bounds);
+      // 👇 Always apply your own padding so it won’t snap back
+      mapRef.fitBounds(bounds, {
+        top: 50,
+        right: 50,
+        bottom: 800, // enough space for bottom card
+        left: 50,
+      });
     }
   }, [mapRef, directions, start, activeJob]);
 
@@ -113,8 +115,9 @@ export default function RoutePageContent() {
   if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
 
   return (
-    <div className="max-w-xl mx-auto min-h-screen bg-black text-white">
-      <div className="h-[50vh] rounded-xl overflow-hidden">
+    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
+      {/* Map */}
+      <div className="relative h-[150vh]">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={start || { lat: activeJob.lat, lng: activeJob.lng }}
@@ -150,6 +153,7 @@ export default function RoutePageContent() {
               directions={directions}
               options={{
                 suppressMarkers: true,
+                preserveViewport: true,
                 polylineOptions: {
                   strokeColor: "#ff5757",
                   strokeOpacity: 0.9,
@@ -159,10 +163,13 @@ export default function RoutePageContent() {
             />
           )}
         </GoogleMap>
-      </div>
 
-      <div className="p-4">
-        <SmartJobCard job={activeJob} onCompleted={onCompleted} />
+        {/* Overlay job card */}
+        <div className="fixed inset-x-0 bottom-0 z-10">
+          <div className="bg-black w-full flex flex-col gap-3">
+            <SmartJobCard job={activeJob} onCompleted={onCompleted} />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -58,12 +58,12 @@ export default function SignInClient() {
         >
           {loading ? "Signing In…" : "Sign In"}
         </button>
-        <p className="text-sm text-center mt-4">
-          Don’t have an account?{" "}
+        <p className="mt-4 flex justify-center items-center text-sm !text-black">
+          <span>Don’t have an account?</span>
           <button
             type="button"
             onClick={() => router.push("/auth/sign-up")}
-            className="text-[#ff5757] hover:underline"
+            className="ml-2 text-[#ff5757] hover:underline"
           >
             Sign Up
           </button>

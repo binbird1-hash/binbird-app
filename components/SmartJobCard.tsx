@@ -108,20 +108,17 @@ export default function SmartJobCard({
   }
 
   return (
-    <article className="bg-black border border-gray-700 rounded-2xl p-4 text-white">
-      {/* Job type as big white text */}
-      <h2 className="text-2xl font-bold mb-1">
+    <article className="bg-black w-full p-6 flex flex-col gap-3 text-white">
+      <h2 className="text-2xl font-bold">
         {job.job_type === "put_out" ? "Put Bins Out At" : "Bring Bins In At"}
       </h2>
 
-      <p className="text-gray-300 mb-2">{job.address}</p>
+      <p className="text-gray-300">{job.address}</p>
       {job.notes && (
-        <p className="text-sm text-gray-400 mb-2">Notes: {job.notes}</p>
+        <p className="text-sm text-gray-400">Notes: {job.notes}</p>
       )}
 
-      <p className="mb-3 font-semibold">
-        Bins: {renderBins(job.bins)}
-      </p>
+      <p className="font-semibold">Bins: {renderBins(job.bins)}</p>
 
       <div className="flex flex-col gap-3">
         {/* Navigate */}
@@ -159,7 +156,7 @@ export default function SmartJobCard({
           <img
             src={preview}
             alt="preview"
-            className="w-16 h-16 object-cover rounded-lg border border-gray-600"
+            className="w-16 h-16 object-cover rounded-lg"
           />
         )}
 

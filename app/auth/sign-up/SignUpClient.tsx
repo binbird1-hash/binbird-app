@@ -66,7 +66,7 @@ export default function SignUpClient() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-[26px] font-bold text-center mb-6 text-[#ff5757]">
-        Create Your BinBird Account
+        Create Your Account
       </h1>
       <form onSubmit={handleSignUp} className="flex flex-col gap-4">
         {/* Full Name */}
@@ -180,15 +180,15 @@ export default function SignUpClient() {
           {loading ? "Creating Account…" : "Sign Up"}
         </button>
 
-        <p className="text-sm text-center mt-4">
-          Already have an account?{" "}
-          <button
+        <p className="mt-4 flex justify-center items-center text-sm !text-black">
+        <span>Already have an account?</span>
+        <button
             type="button"
             onClick={() => router.push("/auth/sign-in")}
-            className="text-[#ff5757] hover:underline"
-          >
+            className="ml-2 text-[#ff5757] hover:underline"
+        >
             Sign In
-          </button>
+        </button>
         </p>
       </form>
     </AuthLayout>

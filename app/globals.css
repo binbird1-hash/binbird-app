@@ -2,93 +2,153 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================
+   CSS Variables (Theme Tokens)
+   ============================== */
 :root {
-  --accent:#ff5757; --bg:#000; --card:#fff; --card-fg:#000; --border:#e5e7eb;
-  --radius:22px; --shadow:0 10px 24px rgba(0,0,0,.35); --gap:20px;
-  --red:#ff3b30; --yellow:#ffd60a; --green:#34c759; --chipW:auto;
+  --accent: #ff5757;
+  --bg: #000;
+  --card: #fff;
+  --card-fg: #000;
+  --border: #e5e7eb;
+  --radius: 22px;
+  --shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  --gap: 20px;
+
+  --red: #ff3b30;
+  --yellow: #ffd60a;
+  --green: #34c759;
+  --chipW: auto;
 }
-*{box-sizing:border-box;}
+
+/* ==============================
+   Global Reset / Base
+   ============================== */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  margin:0;
-  background:var(--bg);
-  color:#fff;
-  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  margin: 0;
+  background: var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  @apply text-black antialiased;
 }
-a { color:inherit; text-decoration:none; }
 
-/* Layout */
-.wrap { padding:16px 5%; max-width:1100px; margin:0 auto; }
-.section { display:none; }
-.section.active { display:block; }
-.empty { color:#aaa; padding:20px 8px; text-align:center; font-size:clamp(16px, 2vw, 22px); }
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-/* Tabs */
+/* ==============================
+   Layout Helpers
+   ============================== */
+.wrap {
+  padding: 16px 5%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section {
+  display: none;
+}
+.section.active {
+  display: block;
+}
+
+.empty {
+  color: #aaa;
+  padding: 20px 8px;
+  text-align: center;
+  font-size: clamp(16px, 2vw, 22px);
+}
+
+/* ==============================
+   Tabs
+   ============================== */
 .controls {
-  display:flex; justify-content:center; align-items:center;
-  padding:8px 16px; background:#000;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  flex-wrap:wrap;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 16px;
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
 }
 
-.tabs { 
-  display:flex; 
-  gap:12px; 
-  flex-wrap: nowrap;       /* stay in one row */
-  overflow-x: auto;        /* allow horizontal scroll on small screens */
-  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+.tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;                 /* stay in one row */
+  overflow-x: auto;                  /* scrollable on small screens */
+  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
 }
 
 .tab {
-  appearance:none; 
-  background:transparent; 
-  color:#fff;
-  border:1px solid rgba(255,255,255,.22);
-  padding:clamp(10px,2vw,15px) clamp(16px,3vw,22px);
-  border-radius:999px;
-  font-weight:700; 
-  cursor:pointer; 
-  font-size:clamp(16px, 2.5vw, 21px);
-  transition:all .2s ease;
-  
-  white-space: nowrap;       /* 👈 keep text on one line */
-  flex-shrink: 0;            /* 👈 don’t let buttons shrink so small they wrap text */
-}
-
-/* globals.css */
-body {
-  @apply text-white;
+  appearance: none;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: clamp(10px, 2vw, 15px) clamp(16px, 3vw, 22px);
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: clamp(16px, 2.5vw, 21px);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab.active {
-  background:var(--accent); color:#000; border-color:var(--accent);
-  box-shadow:0 0 8px rgba(255,87,87,.4);
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 87, 87, 0.4);
 }
 
-/* Job Card */
+/* ==============================
+   Job Card
+   ============================== */
 .job {
-  background:var(--card); color:var(--card-fg);
-  border:1px solid var(--border); border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:clamp(16px, 3vw, 24px);
-  display:flex; flex-direction:column; gap:16px; width:100%;
-  margin-bottom:20px;
+  background: var(--card);
+  color: var(--card-fg);             /* black text inside cards */
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: clamp(16px, 3vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 20px;
 }
-.job.completed { opacity:.6; }
+.job.completed {
+  opacity: 0.6;
+}
 
 .titleline {
-  text-align:center; font-size:clamp(20px, 4vw, 28px);
-  font-weight:900; text-transform:uppercase; color:var(--accent);
+  text-align: center;
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 .address {
-  font-size:clamp(18px, 3.5vw, 24px);
-  font-weight:800; line-height:1.35; text-align:center;
+  font-size: clamp(18px, 3.5vw, 24px);
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
 }
 .notes {
-  font-size:clamp(16px, 3vw, 20px);
-  color:#222; text-align:center; overflow-wrap:anywhere;
+  font-size: clamp(16px, 3vw, 20px);
+  color: #222;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
-/* Bin chips */
+/* ==============================
+   Bin Chips
+   ============================== */
 .bins {
   display: flex;
   gap: 12px;
@@ -97,58 +157,101 @@ body {
 }
 
 .binchip {
-  width: 92px;                    /* 👈 fixed width for all chips */
+  width: 92px;
   text-align: center;
   font-size: clamp(14px, 2.5vw, 18px);
   font-weight: 800;
-  padding: 8px 0;                /* 👈 vertical padding only */
+  padding: 8px 0;
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
 }
 
-.bin-red { background:var(--red); color:#fff; }
-.bin-yellow { background:var(--yellow); color:#111; }
-.bin-green { background:var(--green); color:#fff; }
+.bin-red {
+  background: var(--red);
+  color: #fff;
+}
+.bin-yellow {
+  background: var(--yellow);
+  color: #111;
+}
+.bin-green {
+  background: var(--green);
+  color: #fff;
+}
 
-/* File Upload */
-.file { display:flex; flex-direction:column; align-items:center; }
-input[type="file"] { display:none; }
+/* ==============================
+   File Upload
+   ============================== */
+.file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+input[type="file"] {
+  display: none;
+}
 .takephoto {
-  border:1px dashed #111; background:#fff; color:#111;
-  padding:clamp(12px, 2.5vw, 18px) clamp(16px, 4vw, 22px);
-  border-radius:16px; width:100%; max-width:420px;
-  cursor:pointer; font-weight:700;
-  text-align:center; font-size:clamp(16px, 3vw, 20px);
+  border: 1px dashed #111;
+  background: #fff;
+  color: #111;
+  padding: clamp(12px, 2.5vw, 18px) clamp(16px, 4vw, 22px);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  cursor: pointer;
+  font-weight: 700;
+  text-align: center;
+  font-size: clamp(16px, 3vw, 20px);
 }
 .takephoto.captured {
-  border:1px solid #0a7a3f; background:#eafff2; color:#0a7a3f;
+  border: 1px solid #0a7a3f;
+  background: #eafff2;
+  color: #0a7a3f;
 }
 .thumb {
-  display:block; margin-top:10px;
-  max-width:140px; max-height:140px;
-  border-radius:12px; border:1px solid #ddd;
+  display: block;
+  margin-top: 10px;
+  max-width: 140px;
+  max-height: 140px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
 }
 
-/* Buttons */
-.actions { display:flex; justify-content:center; }
-.btn {
-  border:none; background:#000; color:var(--accent);
-  width:100%; max-width:420px;
-  padding:clamp(12px, 3vw, 18px) clamp(16px, 4vw, 22px);
-  border-radius:16px; font-weight:800; cursor:pointer;
-  text-align:center; font-size:clamp(16px, 3vw, 20px);
+/* ==============================
+   Buttons
+   ============================== */
+.actions {
+  display: flex;
+  justify-content: center;
 }
-.btn:disabled { opacity:.6; cursor:not-allowed; }
+
+.btn {
+  border: none;
+  background: #000;
+  color: var(--accent);
+  width: 100%;
+  max-width: 420px;
+  padding: clamp(12px, 3vw, 18px) clamp(16px, 4vw, 22px);
+  border-radius: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  font-size: clamp(16px, 3vw, 20px);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;                        /* space between arrow + text */
-  margin: 16px;                    /* padding from screen edges */
+  gap: 6px;
+  margin: 16px;
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -160,29 +263,27 @@ input[type="file"] { display:none; }
   transition: all 0.2s ease;
   position: relative;
 }
-
 .back-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-
-/* Make filter buttons always fit in one row, evenly spaced */
+/* ==============================
+   Mobile (Small Screens)
+   ============================== */
 @media (max-width: 480px) {
   .wrap {
-    padding: 12px 8px;          /* less side padding */
+    padding: 12px 8px;
   }
   .tabs {
-    gap: 8px;                   /* smaller gap between buttons */
-    width: 100%;                /* full width row */
+    gap: 8px;
+    width: 100%;
   }
   .tab {
-    flex: 1;                    /* each button takes equal space */
-    text-align: center;         /* center text inside */
-    padding: 8px 0;             /* vertical padding only */
-    font-size: 14px;            /* slightly smaller text */
-    white-space: nowrap;        /* keep text on one line */
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 14px;
+    white-space: nowrap;
   }
 }
-
-
