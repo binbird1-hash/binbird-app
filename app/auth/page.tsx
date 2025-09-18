@@ -1,35 +1,42 @@
 // app/auth/page.tsx
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import AuthLayout from './layout'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import AuthLayout from "./layout";
+
+export const metadata = {
+  title: "Welcome to BinBird!",
+};
 
 export default function SignInPage() {
-  const router = useRouter()
-  const supabase = createClientComponentClient()
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSignIn(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
+      setError(error.message);
+      setLoading(false);
+      return;
     }
-    router.push('/staff/run')
+    router.push("/staff/run");
   }
 
   return (
-    <AuthLayout title="Welcome to BinBird!">
+    <AuthLayout>
+      <h1 className="text-2xl sm:text-[26px] font-bold text-center mb-6 text-[#ff5757]">
+        Welcome to BinBird!
+      </h1>
       <form onSubmit={handleSignIn} className="flex flex-col gap-4">
         {error && <p className="text-sm text-red-600">{error}</p>}
         <input
@@ -53,13 +60,13 @@ export default function SignInPage() {
           disabled={loading}
           className="w-full py-2 rounded-lg bg-[#ff5757] text-white font-semibold hover:opacity-90 transition"
         >
-          {loading ? 'Signing In…' : 'Sign In'}
+          {loading ? "Signing In…" : "Sign In"}
         </button>
         <p className="text-sm text-center mt-4">
-          Don’t have an account?{' '}
+          Don’t have an account?{" "}
           <button
             type="button"
-            onClick={() => router.push('/auth/sign-up')}
+            onClick={() => router.push("/auth/sign-up")}
             className="text-[#ff5757] hover:underline"
           >
             Sign Up
@@ -67,5 +74,5 @@ export default function SignInPage() {
         </p>
       </form>
     </AuthLayout>
-  )
+  );
 }
