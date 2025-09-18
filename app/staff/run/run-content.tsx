@@ -224,10 +224,10 @@ export default function RunPageContent() {
   return (
     <div className="max-w-xl mx-auto min-h-screen bg-black text-white">
       {/* Map with overlay controls */}
-      <div className="relative h-[70vh] rounded-xl overflow-hidden">
+      <div className="relative h-[70vh] rounded-none overflow-hidden">
         <GoogleMap
           key={resetCounter}
-          mapContainerStyle={{ width: "100%", height: "100%" }}
+          mapContainerStyle={{ width: "100%", height: "110%" }}
           onLoad={(map) => {
             mapRef.current = map;
             const bounds = new google.maps.LatLngBounds();
@@ -290,7 +290,7 @@ export default function RunPageContent() {
         </GoogleMap>
 
         {/* Overlay controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black min-h-[140px]">
           <h1 className="text-xl font-bold mb-2">Plan Run</h1>
 
           <div className="flex flex-col gap-3">
@@ -352,8 +352,11 @@ export default function RunPageContent() {
               End same as Start
             </label>
 
-            <div className="flex flex-col gap-2 mt-2">
+            <div className="relative flex flex-col gap-2 mt-2 pb-6"> {/* extra bottom space */}
               <button
+                className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
+                  isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
+                }`}
                 onClick={() => {
                   if (isPlanned) {
                     router.push(
@@ -365,9 +368,6 @@ export default function RunPageContent() {
                     buildRoute();
                   }
                 }}
-                className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
-                  isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
-                }`}
               >
                 {isPlanned ? "Start Route" : "Plan Route"}
               </button>
@@ -382,16 +382,16 @@ export default function RunPageContent() {
                     setEndAddress("");
                     setIsPlanned(false);
                     setResetCounter((c) => c + 1);
-
-                    // ✅ Re-fetch current location again after reset
                     fetchCurrentLocation();
                   }}
-                  className="self-center text-xs text-gray-400 hover:text-white"
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-400 hover:text-white"
                 >
                   Reset
                 </button>
               )}
             </div>
+
+
           </div>
         </div>
       </div>
