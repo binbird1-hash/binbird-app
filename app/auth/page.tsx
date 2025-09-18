@@ -3,28 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import AuthLayout from './layout'
 
-export default function AuthPage() {
+export default function SignInPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  async function signUp() {
-    setError(null)
-    setLoading(true)
-    const { error } = await supabase.auth.signUp({ email, password })
-    setLoading(false)
-    if (error) return setError(error.message)
-    alert('Signed up! If email confirmation is enabled, check your inbox. Then ask admin to activate your account.')
-  }
-
-  async function signIn(e?: React.FormEvent) {
-    if (e) e.preventDefault()
+  async function handleSignIn(e: React.FormEvent) {
+    e.preventDefault()
     setError(null)
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -33,79 +24,47 @@ export default function AuthPage() {
       setLoading(false)
       return
     }
-    // Keep button in "loading" until redirect is done
     router.push('/staff/run')
   }
 
   return (
-    <form
-      onSubmit={signIn}
-      className="w-full flex flex-col gap-5"
-    >
-      {/* Error */}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {/* Email */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+    <AuthLayout title="Welcome to BinBird!">
+      <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <input
           type="email"
-          placeholder="you@example.com"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-[#ff5757]"
+          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757]"
           required
         />
-      </div>
-
-      {/* Password */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
-        <div className="flex w-full items-stretch rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-[#ff5757]">
-          <input
-            type={showPw ? 'text' : 'password'}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-l-lg px-3 py-2 text-gray-900 outline-none"
-            required
-          />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757]"
+          required
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 rounded-lg bg-[#ff5757] text-white font-semibold hover:opacity-90 transition"
+        >
+          {loading ? 'Signing In…' : 'Sign In'}
+        </button>
+        <p className="text-sm text-center mt-4">
+          Don’t have an account?{' '}
           <button
             type="button"
-            onClick={() => setShowPw((v) => !v)}
-            className="rounded-r-lg border-l px-3 text-sm text-gray-600 hover:text-gray-900"
-            aria-label="Toggle password visibility"
+            onClick={() => router.push('/auth/sign-up')}
+            className="text-[#ff5757] hover:underline"
           >
-            {showPw ? 'Hide' : 'Show'}
+            Sign Up
           </button>
-        </div>
-      </div>
-
-      {/* Sign in */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
-      >
-        {loading ? 'Signing in…' : 'Sign In'}
-      </button>
-
-      {/* Sign up */}
-      <p className="text-center text-sm text-gray-600">
-        Don’t have an account?{' '}
-        <button
-          type="button"
-          onClick={signUp}
-          disabled={loading}
-          className="font-semibold text-[#ff5757] hover:underline disabled:opacity-60"
-        >
-          Sign Up
-        </button>
-      </p>
-    </form>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }
