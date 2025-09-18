@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   GoogleMap,
@@ -49,6 +49,9 @@ export default function RunPageContent() {
   // 🔁 Key to force-remount the GoogleMap (clears all overlays reliably)
   const [resetCounter, setResetCounter] = useState(0);
 
+  // ✅ Keep map reference for fitBounds
+  const mapRef = useRef<google.maps.Map | null>(null);
+
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: LIBRARIES,
@@ -78,26 +81,31 @@ export default function RunPageContent() {
     })();
   }, [supabase]);
 
-  // Autofill start = current location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setStart(coords);
+  // ✅ Function to get current location and autofill
+  async function fetchCurrentLocation() {
+    if (!navigator.geolocation) return;
 
-        try {
-          const resp = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-          );
-          const data = await resp.json();
-          if (data.results && data.results[0]?.formatted_address) {
-            setStartAddress(data.results[0].formatted_address); // ✅ autofill input
-          }
-        } catch (err) {
-          console.error("Reverse geocoding failed:", err);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setStart(coords);
+
+      try {
+        const resp = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+        );
+        const data = await resp.json();
+        if (data.results && data.results[0]?.formatted_address) {
+          setStartAddress(data.results[0].formatted_address);
         }
-      });
-    }
+      } catch (err) {
+        console.error("Reverse geocoding failed:", err);
+      }
+    });
+  }
+
+  // Autofill start = current location on mount
+  useEffect(() => {
+    fetchCurrentLocation();
   }, []);
 
   // Autocomplete change handlers
@@ -185,16 +193,27 @@ export default function RunPageContent() {
     setOrdered(reordered);
 
     setIsPlanned(true);
+
+    // ✅ Auto-fit map after planning route
+    if (mapRef.current) {
+      const bounds = new google.maps.LatLngBounds();
+      if (start) bounds.extend(start);
+      if (end) bounds.extend(end);
+      reordered.forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
+      if (!bounds.isEmpty()) {
+        mapRef.current.fitBounds(bounds, {
+            top: 50,
+            right: 50,
+            bottom: 250,  // adjust this value until pins look visually centered
+            left: 50,
+          });
+        
+      }
+    }
   }
 
   if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
   if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
-
-  // Map bounds
-  const bounds = new google.maps.LatLngBounds();
-  jobs.forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
-  if (start) bounds.extend(start);
-  if (end) bounds.extend(end);
 
   // Victoria bounds
   const victoriaBounds = new google.maps.LatLngBounds(
@@ -203,13 +222,33 @@ export default function RunPageContent() {
   );
 
   return (
-    <div className="max-w-xl mx-auto min-h-screen bg-black text-white p-4 flex flex-col gap-4">
-      {/* Map */}
-      <div className="h-[50vh] rounded-xl overflow-hidden">
+    <div className="max-w-xl mx-auto min-h-screen bg-black text-white">
+      {/* Map with overlay controls */}
+      <div className="relative h-[70vh] rounded-xl overflow-hidden">
         <GoogleMap
-          key={resetCounter} // 🔁 force full remount on reset
-          mapContainerStyle={{ width: "99%", height: "99%" }}
-          onLoad={(map) => map.fitBounds(bounds)}
+          key={resetCounter}
+          mapContainerStyle={{ width: "100%", height: "100%" }}
+          onLoad={(map) => {
+            mapRef.current = map;
+            const bounds = new google.maps.LatLngBounds();
+            if (jobs.length > 0) {
+              jobs.forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
+            }
+            if (start) bounds.extend(start);
+            if (end) bounds.extend(end);
+
+            if (!bounds.isEmpty()) {
+              map.fitBounds(bounds, {
+                top: 50,
+                right: 50,
+                bottom: 250,  // adjust this value until pins look visually centered
+                left: 50,
+              });
+            } else {
+              map.setCenter({ lat: -37.8136, lng: 144.9631 }); // Melbourne fallback
+              map.setZoom(12);
+            }
+          }}
           options={{
             styles: darkMapStyle,
             disableDefaultUI: true,
@@ -249,111 +288,112 @@ export default function RunPageContent() {
             />
           )}
         </GoogleMap>
-      </div>
 
-      {/* Controls */}
-      <h1 className="text-2xl font-bold">Plan Run</h1>
-      <div className="flex flex-col gap-3">
-      <Autocomplete
-        onLoad={(auto) => setStartAuto(auto)}
-        onPlaceChanged={onStartChanged}
-        options={{
-          fields: ["geometry", "formatted_address"],
-          componentRestrictions: { country: "au" },
-          bounds: victoriaBounds,
-        }}
-      >
-        <input
-          type="text"
-          value={startAddress}
-          onChange={(e) => setStartAddress(e.target.value)}
-          placeholder="Start Location"
-          className="w-full px-3 py-2 rounded-lg text-black disabled:bg-gray-200 disabled:cursor-not-allowed"
-          disabled={isPlanned}   // 🔒 lock when planned
-        />
-      </Autocomplete>
+        {/* Overlay controls */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black">
+          <h1 className="text-xl font-bold mb-2">Plan Run</h1>
 
-      <Autocomplete
-        onLoad={(auto) => setEndAuto(auto)}
-        onPlaceChanged={onEndChanged}
-        options={{
-          fields: ["geometry", "formatted_address"],
-          componentRestrictions: { country: "au" },
-          bounds: victoriaBounds,
-        }}
-      >
-        <input
-          type="text"
-          value={endAddress}
-          onChange={(e) => setEndAddress(e.target.value)}
-          placeholder="Where would you like to end your route?"
-          className="w-full px-3 py-2 rounded-lg text-black disabled:bg-gray-200 disabled:cursor-not-allowed"
-          disabled={sameAsStart || isPlanned}   // 🔒 lock when planned
-        />
-      </Autocomplete>
+          <div className="flex flex-col gap-3">
+            <Autocomplete
+              onLoad={(auto) => setStartAuto(auto)}
+              onPlaceChanged={onStartChanged}
+              options={{
+                fields: ["geometry", "formatted_address"],
+                componentRestrictions: { country: "au" },
+                bounds: victoriaBounds,
+              }}
+            >
+              <input
+                type="text"
+                value={startAddress}
+                onChange={(e) => setStartAddress(e.target.value)}
+                placeholder="Start Location"
+                className="w-full px-3 py-2 rounded-lg text-black disabled:bg-gray-200 disabled:cursor-not-allowed"
+                disabled={isPlanned}
+              />
+            </Autocomplete>
 
-      <label className="flex items-center gap-2 text-sm text-gray-300">
-        <input
-          type="checkbox"
-          checked={sameAsStart}
-          onChange={(e) => {
-            const checked = e.target.checked;
-            setSameAsStart(checked);
-            if (checked && start) {
-              setEnd(start);
-              setEndAddress(startAddress);
-            } else {
-              setEnd(null);
-              setEndAddress("");
-            }
-          }}
-          disabled={isPlanned}   // 🔒 lock checkbox when planned
-        />
-        End same as Start
-      </label>
+            <Autocomplete
+              onLoad={(auto) => setEndAuto(auto)}
+              onPlaceChanged={onEndChanged}
+              options={{
+                fields: ["geometry", "formatted_address"],
+                componentRestrictions: { country: "au" },
+                bounds: victoriaBounds,
+              }}
+            >
+              <input
+                type="text"
+                value={endAddress}
+                onChange={(e) => setEndAddress(e.target.value)}
+                placeholder="End Location"
+                className="w-full px-3 py-2 rounded-lg text-black disabled:bg-gray-200 disabled:cursor-not-allowed"
+                disabled={sameAsStart || isPlanned}
+              />
+            </Autocomplete>
 
-      </div>
+            <label className="flex items-center gap-2 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={sameAsStart}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSameAsStart(checked);
+                  if (checked && start) {
+                    setEnd(start);
+                    setEndAddress(startAddress);
+                  } else {
+                    setEnd(null);
+                    setEndAddress("");
+                  }
+                }}
+                disabled={isPlanned}
+              />
+              End same as Start
+            </label>
 
-      {/* Dynamic Button */}
-      <div className="flex flex-col gap-2 mt-2">
-        <button
-          onClick={() => {
-            if (isPlanned) {
-              router.push(
-                `/staff/route?jobs=${encodeURIComponent(JSON.stringify(ordered))}&start=${encodeURIComponent(
-                  JSON.stringify(start)
-                )}&end=${encodeURIComponent(JSON.stringify(end))}`
-              );
-            } else {
-              buildRoute();
-            }
-          }}
-          className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
-            isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
-          }`}
-        >
-          {isPlanned ? "Start Route" : "Plan Route"}
-        </button>
+            <div className="flex flex-col gap-2 mt-2">
+              <button
+                onClick={() => {
+                  if (isPlanned) {
+                    router.push(
+                      `/staff/route?jobs=${encodeURIComponent(JSON.stringify(ordered))}&start=${encodeURIComponent(
+                        JSON.stringify(start)
+                      )}&end=${encodeURIComponent(JSON.stringify(end))}`
+                    );
+                  } else {
+                    buildRoute();
+                  }
+                }}
+                className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
+                  isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
+                }`}
+              >
+                {isPlanned ? "Start Route" : "Plan Route"}
+              </button>
 
-        {isPlanned && (
-          <button
-            onClick={() => {
-              // ✅ Full reset (state + map remount clears old polyline)
-              setRoutePath([]);
-              setOrdered([]);
-              setSameAsStart(false);
-              setStart(null);
-              setEnd(null);
-              setStartAddress("");
-              setEndAddress("");
-              setIsPlanned(false);
-              setResetCounter((c) => c + 1); // 🔁 trigger GoogleMap remount
-            }}
-            className="self-center text-xs text-gray-400 hover:text-white"
-          >
-            Reset
-          </button>
-        )}
+              {isPlanned && (
+                <button
+                  onClick={() => {
+                    setRoutePath([]);
+                    setOrdered([]);
+                    setSameAsStart(false);
+                    setEnd(null);
+                    setEndAddress("");
+                    setIsPlanned(false);
+                    setResetCounter((c) => c + 1);
+
+                    // ✅ Re-fetch current location again after reset
+                    fetchCurrentLocation();
+                  }}
+                  className="self-center text-xs text-gray-400 hover:text-white"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
