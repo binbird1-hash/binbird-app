@@ -111,7 +111,7 @@ export default function SmartJobCard({
     <article className="bg-black border border-gray-700 rounded-2xl p-4 text-white">
       {/* Job type as big white text */}
       <h2 className="text-2xl font-bold mb-1">
-        {job.job_type === "put_out" ? "Put Out" : "Bring In"}
+        {job.job_type === "put_out" ? "Put Bins Out At" : "Bring Bins In At"}
       </h2>
 
       <p className="text-gray-300 mb-2">{job.address}</p>
