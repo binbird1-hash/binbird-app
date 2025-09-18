@@ -122,7 +122,7 @@ export default function RoutePageContent() {
           options={{
             styles: darkMapStyle,
             disableDefaultUI: true,
-            zoomControl: true,
+            zoomControl: false,
             streetViewControl: false,
             mapTypeControl: false,
             fullscreenControl: false,
