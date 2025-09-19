@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useMapSettings } from "@/components/Context/MapSettingsContext";
+import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
@@ -22,24 +22,20 @@ type Job = {
 const LIBRARIES: ("places")[] = ["places"];
 
 export default function RunPage() {
-  const { mapStylePref, navPref } = useMapSettings();
-
   return (
-    <div className="relative min-h-screen bg-black text-white">
-      <SettingsDrawer />
-      <RunPageContent mapStylePref={mapStylePref} navPref={navPref} />
-    </div>
+    <MapSettingsProvider>
+      <div className="relative min-h-screen bg-black text-white">
+        <SettingsDrawer />
+        <RunPageContent />
+      </div>
+    </MapSettingsProvider>
   );
 }
 
-interface RunPageContentProps {
-  mapStylePref: "Dark" | "Light" | "Satellite";
-  navPref: "google" | "waze" | "apple";
-}
-
-function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
+function RunPageContent() {
   const supabase = createClientComponentClient();
   const router = useRouter();
+  const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -59,7 +55,7 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
 
   const [isPlanned, setIsPlanned] = useState(false);
   const [resetCounter, setResetCounter] = useState(0);
-  const [userMoved, setUserMoved] = useState(false); // track manual pan
+  const [userMoved, setUserMoved] = useState(false);
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
@@ -68,20 +64,35 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
     libraries: LIBRARIES,
   });
 
+  // Load user settings from Supabase
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from("user_profile")
+        .select("map_style_pref, nav_pref")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error && profile) {
+        if (profile.map_style_pref) setMapStylePref(profile.map_style_pref);
+        if (profile.nav_pref) setNavPref(profile.nav_pref);
+      }
+    })();
+  }, []);
+
   // Fit bounds helper
   const fitBoundsToMap = useCallback(() => {
     if (!mapRef.current) return;
-
     const bounds = new google.maps.LatLngBounds();
     if (start) bounds.extend(start);
     if (end) bounds.extend(end);
     (routePath.length ? ordered : jobs).forEach((j) =>
       bounds.extend({ lat: j.lat, lng: j.lng })
     );
-
-    if (!bounds.isEmpty() && !userMoved) {
-      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
-    }
+    if (!bounds.isEmpty() && !userMoved) mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
   }, [start, end, jobs, ordered, routePath, userMoved]);
 
   // Track manual panning
@@ -91,9 +102,9 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
     return () => listener.remove();
   }, []);
 
-  // Reset manual pan flag when relevant changes occur
+  // Reset manual pan when relevant changes occur
   useEffect(() => {
-    setUserMoved(false); // allow auto-fit again
+    setUserMoved(false);
     fitBoundsToMap();
   }, [start, end, jobs, ordered, routePath, resetCounter, fitBoundsToMap]);
 
@@ -176,11 +187,10 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
   // Build route
   const buildRoute = async () => {
     if (!start || !end || jobs.length === 0) return alert("Need start, end, and jobs");
-
     setRoutePath([]);
     setOrdered([]);
     setIsPlanned(false);
-    setUserMoved(false); // reset pan flag before fitting
+    setUserMoved(false);
     fitBoundsToMap();
 
     const waypoints = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
@@ -222,11 +232,7 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            {/* Full-width red line behind the black box */}
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
-
-
-            {/* Header stays inside the black overlay */}
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
             <Autocomplete
@@ -259,7 +265,6 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
               />
             </Autocomplete>
 
-            {/* Checkbox + Reset inline */}
             <div className="flex items-center justify-between text-sm text-gray-300 mt-2">
               <label className="flex items-center gap-2">
                 <input
@@ -295,7 +300,6 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
               )}
             </div>
 
-            {/* Start / Plan Route button */}
             <div className="mt-4">
               <button
                 className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
@@ -318,8 +322,6 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   );

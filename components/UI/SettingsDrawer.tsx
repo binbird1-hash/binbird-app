@@ -1,17 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function SettingsDrawer() {
+  const supabase = createClientComponentClient();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
   const [isOpen, setIsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
 
-  const saveNav = () => setActivePanel(null);
-  const saveStyle = () => setActivePanel(null);
+  // Load user preferences from Supabase on mount, create row if it doesn't exist
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from("user_profile")
+        .select("map_style_pref, nav_pref")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error && error.code === "PGRST116") {
+        // Row doesn't exist, create default
+        await supabase.from("user_profile").insert({
+          user_id: user.id,
+          map_style_pref: "Dark",
+          nav_pref: "google",
+        });
+        setMapStylePref("Dark");
+        setNavPref("google");
+      } else if (profile) {
+        if (profile.map_style_pref) setMapStylePref(profile.map_style_pref);
+        if (profile.nav_pref) setNavPref(profile.nav_pref);
+      }
+    })();
+  }, []);
+
+  // Save preferences to Supabase
+  const saveSettings = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("user_profile")
+      .upsert(
+        { user_id: user.id, map_style_pref: mapStylePref, nav_pref: navPref },
+        { onConflict: "user_id" }
+      );
+
+    if (!error) {
+      setActivePanel(null);
+    }
+  };
 
   return (
     <>
@@ -54,9 +98,7 @@ export default function SettingsDrawer() {
             </button>
 
             <div className="pt-16 px-6">
-              <h2 className="text-2xl font-bold mb-6">
-                Settings
-              </h2>
+              <h2 className="text-2xl font-bold mb-6">Settings</h2>
 
               {/* Navigation & Map Style Buttons */}
               <div className="flex flex-col gap-4">
@@ -96,9 +138,7 @@ export default function SettingsDrawer() {
                             className={`px-4 py-2 rounded-lg w-full text-left font-semibold cursor-pointer ${
                               navPref === opt ? "bg-white text-black" : "bg-black text-white"
                             }`}
-                            style={{
-                              border: navPref === opt ? "none" : "1px solid white",
-                            }}
+                            style={{ border: "1px solid white" }}
                           >
                             {opt === "google"
                               ? "Google Maps"
@@ -117,9 +157,7 @@ export default function SettingsDrawer() {
                             className={`px-4 py-2 rounded-lg w-full text-left font-semibold cursor-pointer ${
                               mapStylePref === style ? "bg-white text-black" : "bg-black text-white"
                             }`}
-                            style={{
-                              border: mapStylePref === style ? "none" : "1px solid white",
-                            }}
+                            style={{ border: "1px solid white" }}
                           >
                             {style}
                           </li>
@@ -130,7 +168,7 @@ export default function SettingsDrawer() {
 
                   {/* Save Button */}
                   <button
-                    onClick={activePanel === "nav" ? saveNav : saveStyle}
+                    onClick={saveSettings}
                     className="px-4 py-2 bg-[#ff5757] rounded-lg font-semibold"
                   >
                     Save

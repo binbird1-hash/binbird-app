@@ -6,6 +6,7 @@ import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-goo
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 type Job = {
   id: string;
@@ -18,9 +19,10 @@ type Job = {
 };
 
 function RoutePageContent() {
+  const supabase = createClientComponentClient();
   const params = useSearchParams();
   const router = useRouter();
-  const { mapStylePref, navPref } = useMapSettings();
+  const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
   const [start, setStart] = useState<{ lat: number; lng: number } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -31,6 +33,25 @@ function RoutePageContent() {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
   });
+
+  // Load user settings from Supabase
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from("user_profile")
+        .select("map_style_pref, nav_pref")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error && profile) {
+        if (profile.map_style_pref) setMapStylePref(profile.map_style_pref);
+        if (profile.nav_pref) setNavPref(profile.nav_pref);
+      }
+    })();
+  }, []);
 
   // Parse jobs + start
   useEffect(() => {
@@ -181,19 +202,14 @@ function RoutePageContent() {
 
         <div className="fixed inset-x-0 bottom-0 z-10">
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            {/* Red top border, 1px thick */}
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
-            {/* Header */}
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
-
-            {/* Buttons */}
             <button
               onClick={() => window.open(navigateUrl, "_blank")}
               className="w-full bg-[#ff5757] px-4 py-2 rounded-lg font-semibold hover:opacity-90 relative z-10"
             >
               Navigate
             </button>
-
             <button
               onClick={handleArrivedAtLocation}
               className="w-full bg-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-700 relative z-10"
@@ -202,8 +218,6 @@ function RoutePageContent() {
             </button>
           </div>
         </div>
-
-
       </div>
     </div>
   );
