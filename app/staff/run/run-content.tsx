@@ -59,6 +59,7 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
 
   const [isPlanned, setIsPlanned] = useState(false);
   const [resetCounter, setResetCounter] = useState(0);
+  const [userMoved, setUserMoved] = useState(false); // track manual pan
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
@@ -70,14 +71,31 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
   // Fit bounds helper
   const fitBoundsToMap = useCallback(() => {
     if (!mapRef.current) return;
+
     const bounds = new google.maps.LatLngBounds();
     if (start) bounds.extend(start);
     if (end) bounds.extend(end);
-    (routePath.length ? ordered : jobs).forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
-    if (!bounds.isEmpty()) {
+    (routePath.length ? ordered : jobs).forEach((j) =>
+      bounds.extend({ lat: j.lat, lng: j.lng })
+    );
+
+    if (!bounds.isEmpty() && !userMoved) {
       mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
     }
-  }, [start, end, jobs, ordered, routePath]);
+  }, [start, end, jobs, ordered, routePath, userMoved]);
+
+  // Track manual panning
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const listener = mapRef.current.addListener("dragstart", () => setUserMoved(true));
+    return () => listener.remove();
+  }, []);
+
+  // Reset manual pan flag when relevant changes occur
+  useEffect(() => {
+    setUserMoved(false); // allow auto-fit again
+    fitBoundsToMap();
+  }, [start, end, jobs, ordered, routePath, resetCounter, fitBoundsToMap]);
 
   // Load today's jobs
   useEffect(() => {
@@ -132,8 +150,6 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
     }
   }, [sameAsStart, start, startAddress]);
 
-  useEffect(() => { fitBoundsToMap(); }, [start, end, jobs, ordered, routePath, resetCounter, fitBoundsToMap]);
-
   // Autocomplete callbacks
   const onStartChanged = () => {
     if (!startAuto) return;
@@ -164,7 +180,9 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
     setRoutePath([]);
     setOrdered([]);
     setIsPlanned(false);
-    fitBoundsToMap()
+    setUserMoved(false); // reset pan flag before fitting
+    fitBoundsToMap();
+
     const waypoints = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
     const resp = await fetch("/api/optimize", {
       method: "POST",
@@ -258,16 +276,18 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
                     setEndAddress("");
                     setIsPlanned(false);
                     setResetCounter((c) => c + 1);
+                    setUserMoved(false); // reset pan flag
                     if (navigator.geolocation) {
                       navigator.geolocation.getCurrentPosition((pos) =>
                         setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
                       );
                     }
                   }}
-                  className="text-xs text-gray-400 hover:text-white"
+                  className="text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition"
                 >
                   Reset
                 </button>
+
               )}
             </div>
 
