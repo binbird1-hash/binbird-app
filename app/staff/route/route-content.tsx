@@ -9,7 +9,6 @@ import {
   DirectionsRenderer,
   useLoadScript,
 } from "@react-google-maps/api";
-import SmartJobCard from "@/components/SmartJobCard";
 
 type Job = {
   id: string;
@@ -28,7 +27,8 @@ export default function RoutePageContent() {
   const [start, setStart] = useState<{ lat: number; lng: number } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [directions, setDirections] =
+    useState<google.maps.DirectionsResult | null>(null);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
 
   const { isLoaded } = useLoadScript({
@@ -48,18 +48,42 @@ export default function RoutePageContent() {
     }
   }, [params]);
 
+  // Pick up nextIdx when returning from proof page
+  useEffect(() => {
+    const rawNextIdx = params.get("nextIdx");
+    if (rawNextIdx) {
+      const parsed = parseInt(rawNextIdx, 10);
+      if (!isNaN(parsed)) {
+        setActiveIdx(parsed);
+      }
+    }
+  }, [params]);
+
   const activeJob = jobs[activeIdx];
 
-  // Request route whenever start or activeJob changes
+  // Request route step-by-step
   useEffect(() => {
     if (!isLoaded) return;
-    if (!activeJob || !start) return;
+    if (!jobs.length) return;
+    if (!activeJob) return;
 
     const service = new google.maps.DirectionsService();
+
+    // Origin = last completed job OR original start
+    const origin =
+      activeIdx > 0
+        ? { lat: jobs[activeIdx - 1].lat, lng: jobs[activeIdx - 1].lng }
+        : start!;
+
+    const destination = {
+      lat: activeJob.lat,
+      lng: activeJob.lng,
+    };
+
     service.route(
       {
-        origin: start,
-        destination: { lat: activeJob.lat, lng: activeJob.lng },
+        origin,
+        destination,
         travelMode: google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
@@ -71,7 +95,7 @@ export default function RoutePageContent() {
         }
       }
     );
-  }, [isLoaded, start, activeJob]);
+  }, [isLoaded, jobs, activeIdx, start, activeJob]);
 
   // Auto-fit bounds when directions or markers change
   useEffect(() => {
@@ -86,33 +110,72 @@ export default function RoutePageContent() {
     }
 
     if (!bounds.isEmpty()) {
-      // 👇 Always apply your own padding so it won’t snap back
       mapRef.fitBounds(bounds, {
         top: 50,
         right: 50,
-        bottom: 800, // enough space for bottom card
+        bottom: 500,
         left: 50,
       });
     }
   }, [mapRef, directions, start, activeJob]);
 
-  function onCompleted() {
-    if (!activeJob) return;
+  // Distance calculation (Haversine formula)
+  function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371e3; // Earth radius in meters
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1);
+    const Δλ = toRad(lon2 - lon1);
 
-    const next = activeIdx + 1;
-    setStart({ lat: activeJob.lat, lng: activeJob.lng });
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) *
+        Math.cos(φ2) *
+        Math.sin(Δλ / 2) *
+        Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    if (next < jobs.length) {
-      setActiveIdx(next);
-      setDirections(null);
-    } else {
-      alert("All jobs done 🎉");
-      router.push("/staff/run");
-    }
+    return R * c; // in meters
   }
 
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
-  if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
+  function handleArrivedAtLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
+        const dist = haversine(userLat, userLng, activeJob.lat, activeJob.lng);
+
+        if (dist <= 25) {
+          router.push(
+            `/staff/proof?jobs=${encodeURIComponent(
+              JSON.stringify(jobs)
+            )}&idx=${activeIdx}&total=${jobs.length}`
+          );
+        } else {
+          alert(
+            `You are too far from the job location. (${Math.round(dist)}m away)`
+          );
+        }
+      },
+      (err) => {
+        console.error("Geolocation error", err);
+        alert("Unable to get your current location.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  if (!isLoaded)
+    return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (!activeJob)
+    return <div className="p-6 text-white bg-black">No jobs found.</div>;
 
   return (
     <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
@@ -133,15 +196,25 @@ export default function RoutePageContent() {
           }}
           onLoad={(map) => setMapRef(map)}
         >
-          {/* Start marker */}
-          {start && (
+          {/* Completed job OR original start (green) */}
+          {activeIdx > 0 ? (
             <Marker
-              position={start}
+              position={{
+                lat: jobs[activeIdx - 1].lat,
+                lng: jobs[activeIdx - 1].lng,
+              }}
               icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png"
             />
+          ) : (
+            start && (
+              <Marker
+                position={start}
+                icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+              />
+            )
           )}
 
-          {/* Active job marker */}
+          {/* Active job (blue) */}
           <Marker
             position={{ lat: activeJob.lat, lng: activeJob.lng }}
             icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png"
@@ -164,10 +237,29 @@ export default function RoutePageContent() {
           )}
         </GoogleMap>
 
-        {/* Overlay job card */}
+        {/* Overlay */}
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3">
-            <SmartJobCard job={activeJob} onCompleted={onCompleted} />
+          <div className="bg-black w-full flex flex-col gap-3 p-6">
+            <h2 className="text-lg font-bold">{activeJob.address}</h2>
+
+            <button
+              onClick={() => {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                  `${activeJob.lat},${activeJob.lng}`
+                )}`;
+                window.open(url, "_blank");
+              }}
+              className="w-full bg-[#ff5757] px-4 py-2 rounded-lg font-semibold hover:opacity-90"
+            >
+              Navigate
+            </button>
+
+            <button
+              onClick={handleArrivedAtLocation}
+              className="w-full bg-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-700"
+            >
+              Arrived At Location
+            </button>
           </div>
         </div>
       </div>
