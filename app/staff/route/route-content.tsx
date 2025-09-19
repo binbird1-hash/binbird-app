@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import {
   GoogleMap,
   Marker,

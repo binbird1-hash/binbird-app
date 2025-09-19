@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-
+import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import {
   GoogleMap,
   Marker,
@@ -12,8 +12,8 @@ import {
 } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
-import { darkMapStyle } from "@/lib/mapStyle";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
+import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 
 type Job = {
   id: string;
@@ -25,9 +25,32 @@ type Job = {
   notes?: string | null;
 };
 
+type MapStyleOption = "Dark" | "Light" | "Satellite";
+type NavOption = "google" | "waze" | "apple";
+
 const LIBRARIES: ("places")[] = ["places"];
 
-export default function RunPageContent() {
+export default function RunPage() {
+  const [mapStylePref, setMapStylePref] = useState<MapStyleOption>("Dark");
+  const [navPref, setNavPref] = useState<NavOption>("google"); // optional for future navigation links
+
+  return (
+    <div className="relative min-h-screen bg-black text-white">
+      <SettingsDrawer
+        onMapStyleChange={(style) => setMapStylePref(style)}
+        onNavChange={(nav) => setNavPref(nav)}
+      />
+      <RunPageContent mapStylePref={mapStylePref} navPref={navPref} />
+    </div>
+  );
+}
+
+interface RunPageContentProps {
+  mapStylePref: MapStyleOption;
+  navPref: NavOption;
+}
+
+function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
   const supabase = createClientComponentClient();
   const router = useRouter();
 
@@ -43,10 +66,16 @@ export default function RunPageContent() {
   const [startAddress, setStartAddress] = useState("");
   const [endAddress, setEndAddress] = useState("");
 
-  const [startAuto, setStartAuto] =
-    useState<google.maps.places.Autocomplete | null>(null);
-  const [endAuto, setEndAuto] =
-    useState<google.maps.places.Autocomplete | null>(null);
+  const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
+  const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
+
+  // Rough bounding box around Melbourne
+  const MELBOURNE_BOUNDS = {
+    north: -37.5,   // top
+    south: -38.3,   // bottom
+    east: 145.5,    // right
+    west: 144.4,    // left
+  };
 
   const [isPlanned, setIsPlanned] = useState(false);
   const [resetCounter, setResetCounter] = useState(0);
@@ -58,13 +87,11 @@ export default function RunPageContent() {
     libraries: LIBRARIES,
   });
 
-  // Load jobs
+  // Load jobs from Supabase
   useEffect(() => {
     (async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
         const todayName =
@@ -85,7 +112,7 @@ export default function RunPageContent() {
   }, [supabase]);
 
   // Autofill current location
-  async function fetchCurrentLocation() {
+  useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -102,18 +129,14 @@ export default function RunPageContent() {
         console.error("Reverse geocoding failed:", err);
       }
     });
-  }
-  useEffect(() => {
-    fetchCurrentLocation();
   }, []);
 
+  // Start/End Autocomplete handlers
   function onStartChanged() {
     if (startAuto) {
       const place = startAuto.getPlace();
       const loc = place.geometry?.location;
-      if (loc) {
-        setStart({ lat: loc.lat(), lng: loc.lng() });
-      }
+      if (loc) setStart({ lat: loc.lat(), lng: loc.lng() });
       if (place.formatted_address) {
         setStartAddress(place.formatted_address);
         if (sameAsStart && loc) {
@@ -123,17 +146,12 @@ export default function RunPageContent() {
       }
     }
   }
-
   function onEndChanged() {
     if (endAuto) {
       const place = endAuto.getPlace();
       const loc = place.geometry?.location;
-      if (loc) {
-        setEnd({ lat: loc.lat(), lng: loc.lng() });
-      }
-      if (place.formatted_address) {
-        setEndAddress(place.formatted_address);
-      }
+      if (loc) setEnd({ lat: loc.lat(), lng: loc.lng() });
+      if (place.formatted_address) setEndAddress(place.formatted_address);
     }
   }
 
@@ -141,17 +159,26 @@ export default function RunPageContent() {
     if (sameAsStart && start && startAddress) {
       setEnd(start);
       setEndAddress(startAddress);
+    } else if (!sameAsStart) {
+      // Clear end location when unchecked
+      setEnd(null);
+      setEndAddress("");
     }
+    fitBoundsToMap();
   }, [sameAsStart, start, startAddress]);
 
-  // 🔑 Auto-fit when jobs/start/end are ready
-  useEffect(() => {
+
+
+  // Reusable function to fit map bounds
+  function fitBoundsToMap() {
     if (!mapRef.current) return;
     const bounds = new google.maps.LatLngBounds();
 
     if (start) bounds.extend(start);
     if (end) bounds.extend(end);
-    jobs.forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
+    (routePath.length ? ordered : jobs).forEach((j) =>
+      bounds.extend({ lat: j.lat, lng: j.lng })
+    );
 
     if (!bounds.isEmpty()) {
       mapRef.current.fitBounds(bounds, {
@@ -161,8 +188,15 @@ export default function RunPageContent() {
         left: 50,
       });
     }
-  }, [jobs, start, end]);
+  }
 
+
+  // Auto-fit whenever relevant data changes
+  useEffect(() => {
+    fitBoundsToMap();
+  }, [jobs, start, end, routePath, ordered, isPlanned, resetCounter]);
+
+  
   async function buildRoute() {
     if (!start || !end || jobs.length === 0) {
       alert("Need start, end, and jobs");
@@ -187,9 +221,7 @@ export default function RunPageContent() {
       return;
     }
 
-    const decoded = polyline
-      .decode(opt.polyline)
-      .map((c) => ({ lat: c[0], lng: c[1] }));
+    const decoded = polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] }));
     setRoutePath(decoded);
 
     const order: number[] = opt.order || [];
@@ -198,33 +230,21 @@ export default function RunPageContent() {
 
     setIsPlanned(true);
 
-    // Also refit to the optimized route
-    if (mapRef.current) {
-      const bounds = new google.maps.LatLngBounds();
-      if (start) bounds.extend(start);
-      if (end) bounds.extend(end);
-      reordered.forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
-      if (!bounds.isEmpty()) {
-        mapRef.current.fitBounds(bounds, {
-          top: 50,
-          right: 50,
-          bottom: 700,
-          left: 50,
-        });
-      }
-    }
+    fitBoundsToMap(); // refit map after planning
   }
 
-  if (loading)
-    return <div className="p-6 text-white bg-black">Loading jobs…</div>;
-  if (!isLoaded)
-    return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
+  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+
+  const styleMap =
+    mapStylePref === "Dark"
+      ? darkMapStyle
+      : mapStylePref === "Light"
+      ? lightMapStyle
+      : satelliteMapStyle;
 
   return (
     <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <SettingsDrawer />
-
-      {/* Map area */}
       <div className="relative h-[150vh]">
         <GoogleMap
           key={resetCounter}
@@ -233,7 +253,7 @@ export default function RunPageContent() {
             mapRef.current = map;
           }}
           options={{
-            styles: darkMapStyle,
+            styles: styleMap,
             disableDefaultUI: true,
             zoomControl: false,
             streetViewControl: false,
@@ -242,18 +262,8 @@ export default function RunPageContent() {
             keyboardShortcuts: false,
           }}
         >
-          {start && (
-            <Marker
-              position={start}
-              icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-            />
-          )}
-          {end && (
-            <Marker
-              position={end}
-              icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-            />
-          )}
+          {start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />}
+          {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
           {!routePath.length &&
             jobs.map((j) => (
               <Marker
@@ -273,11 +283,7 @@ export default function RunPageContent() {
           {routePath.length > 0 && (
             <Polyline
               path={routePath}
-              options={{
-                strokeColor: "#ff5757",
-                strokeOpacity: 0.9,
-                strokeWeight: 5,
-              }}
+              options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }}
             />
           )}
         </GoogleMap>
@@ -288,9 +294,15 @@ export default function RunPageContent() {
             <div className="p-6 flex flex-col gap-3">
               <h1 className="text-xl font-bold text-white">Plan Run</h1>
 
+              {/* Start Autocomplete */}
               <Autocomplete
                 onLoad={(auto) => setStartAuto(auto)}
                 onPlaceChanged={onStartChanged}
+                options={{
+                  bounds: MELBOURNE_BOUNDS,
+                  strictBounds: true,
+                  fields: ["geometry", "formatted_address"],
+                }}
               >
                 <input
                   type="text"
@@ -302,9 +314,15 @@ export default function RunPageContent() {
                 />
               </Autocomplete>
 
+              {/* End Autocomplete */}
               <Autocomplete
                 onLoad={(auto) => setEndAuto(auto)}
                 onPlaceChanged={onEndChanged}
+                options={{
+                  bounds: MELBOURNE_BOUNDS,
+                  strictBounds: true,
+                  fields: ["geometry", "formatted_address"],
+                }}
               >
                 <input
                   type="text"
@@ -316,6 +334,7 @@ export default function RunPageContent() {
                 />
               </Autocomplete>
 
+              {/* Same as Start checkbox */}
               <label className="flex items-center gap-2 text-sm text-gray-300">
                 <input
                   type="checkbox"
@@ -326,19 +345,16 @@ export default function RunPageContent() {
                 End same as Start
               </label>
 
+
               <div className="flex flex-col gap-2 mt-2 pb-2">
                 <button
                   className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
-                    isPlanned
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-[#ff5757] hover:opacity-90"
+                    isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
                   }`}
                   onClick={() => {
                     if (isPlanned) {
                       router.push(
-                        `/staff/route?jobs=${encodeURIComponent(
-                          JSON.stringify(ordered)
-                        )}&start=${encodeURIComponent(
+                        `/staff/route?jobs=${encodeURIComponent(JSON.stringify(ordered))}&start=${encodeURIComponent(
                           JSON.stringify(start)
                         )}&end=${encodeURIComponent(JSON.stringify(end))}`
                       );
@@ -350,7 +366,6 @@ export default function RunPageContent() {
                   {isPlanned ? "Start Route" : "Plan Route"}
                 </button>
 
-                {/* Reserve space for Reset */}
                 <div className="min-h-[24px] flex items-center justify-center">
                   {isPlanned && (
                     <button
@@ -362,12 +377,20 @@ export default function RunPageContent() {
                         setEndAddress("");
                         setIsPlanned(false);
                         setResetCounter((c) => c + 1);
-                        fetchCurrentLocation();
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition((pos) =>
+                            setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+                          );
+                        }
+                        setTimeout(() => {
+                          fitBoundsToMap();
+                        }, 0);
                       }}
                       className="text-xs text-gray-400 hover:text-white"
                     >
                       Reset
                     </button>
+                    
                   )}
                 </div>
               </div>

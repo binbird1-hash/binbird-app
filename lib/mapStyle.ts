@@ -48,7 +48,7 @@ export const satelliteMapStyle: google.maps.MapTypeStyle[] = [
   {
     featureType: "administrative.locality",
     elementType: "labels.text.fill",
-    stylers: [{ visibility: "on" }, { color: "#ffffff" }],
+    stylers: [{ visibility: "on" }, { color: "#000000" }],
   },
   { featureType: "administrative.province", stylers: [{ visibility: "off" }] },
   { featureType: "administrative.country", stylers: [{ visibility: "off" }] },

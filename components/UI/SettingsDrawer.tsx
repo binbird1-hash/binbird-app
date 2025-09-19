@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMapSettings } from "@/components/Context/MapSettingsContext";
+
 
 type NavOption = "google" | "waze" | "apple";
 type MapStyleOption = "Dark" | "Light" | "Satellite";
