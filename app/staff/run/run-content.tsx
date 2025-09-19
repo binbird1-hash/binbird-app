@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
 import {
   GoogleMap,
   Marker,
@@ -12,6 +13,7 @@ import {
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import { darkMapStyle } from "@/lib/mapStyle";
+import SettingsDrawer from "@/components/UI/SettingsDrawer";
 
 type Job = {
   id: string;
@@ -41,11 +43,12 @@ export default function RunPageContent() {
   const [startAddress, setStartAddress] = useState("");
   const [endAddress, setEndAddress] = useState("");
 
-  const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
-  const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
+  const [startAuto, setStartAuto] =
+    useState<google.maps.places.Autocomplete | null>(null);
+  const [endAuto, setEndAuto] =
+    useState<google.maps.places.Autocomplete | null>(null);
 
   const [isPlanned, setIsPlanned] = useState(false);
-
   const [resetCounter, setResetCounter] = useState(0);
 
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -59,7 +62,9 @@ export default function RunPageContent() {
   useEffect(() => {
     (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
 
         const todayName =
@@ -182,7 +187,9 @@ export default function RunPageContent() {
       return;
     }
 
-    const decoded = polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] }));
+    const decoded = polyline
+      .decode(opt.polyline)
+      .map((c) => ({ lat: c[0], lng: c[1] }));
     setRoutePath(decoded);
 
     const order: number[] = opt.order || [];
@@ -208,11 +215,15 @@ export default function RunPageContent() {
     }
   }
 
-  if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (loading)
+    return <div className="p-6 text-white bg-black">Loading jobs…</div>;
+  if (!isLoaded)
+    return <div className="p-6 text-white bg-black">Loading map…</div>;
 
   return (
     <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
+      <SettingsDrawer />
+
       {/* Map area */}
       <div className="relative h-[150vh]">
         <GoogleMap
@@ -277,7 +288,10 @@ export default function RunPageContent() {
             <div className="p-6 flex flex-col gap-3">
               <h1 className="text-xl font-bold text-white">Plan Run</h1>
 
-              <Autocomplete onLoad={(auto) => setStartAuto(auto)} onPlaceChanged={onStartChanged}>
+              <Autocomplete
+                onLoad={(auto) => setStartAuto(auto)}
+                onPlaceChanged={onStartChanged}
+              >
                 <input
                   type="text"
                   value={startAddress}
@@ -288,7 +302,10 @@ export default function RunPageContent() {
                 />
               </Autocomplete>
 
-              <Autocomplete onLoad={(auto) => setEndAuto(auto)} onPlaceChanged={onEndChanged}>
+              <Autocomplete
+                onLoad={(auto) => setEndAuto(auto)}
+                onPlaceChanged={onEndChanged}
+              >
                 <input
                   type="text"
                   value={endAddress}
