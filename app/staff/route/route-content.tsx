@@ -180,24 +180,30 @@ function RoutePageContent() {
         </GoogleMap>
 
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6">
-            <h2 className="text-lg font-bold">{activeJob.address}</h2>
+          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
+            {/* Red top border, 1px thick */}
+            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
+            {/* Header */}
+            <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
 
+            {/* Buttons */}
             <button
               onClick={() => window.open(navigateUrl, "_blank")}
-              className="w-full bg-[#ff5757] px-4 py-2 rounded-lg font-semibold hover:opacity-90"
+              className="w-full bg-[#ff5757] px-4 py-2 rounded-lg font-semibold hover:opacity-90 relative z-10"
             >
               Navigate
             </button>
 
             <button
               onClick={handleArrivedAtLocation}
-              className="w-full bg-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-700"
+              className="w-full bg-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-700 relative z-10"
             >
               Arrived At Location
             </button>
           </div>
         </div>
+
+
       </div>
     </div>
   );

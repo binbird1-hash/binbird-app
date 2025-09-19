@@ -221,8 +221,13 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
 
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6">
-            <h1 className="text-xl font-bold text-white border-b-2 border-[#ff5757] pb-2">Plan Run</h1>
+          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
+            {/* Full-width red line behind the black box */}
+            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
+
+
+            {/* Header stays inside the black overlay */}
+            <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
             <Autocomplete
               onLoad={setStartAuto}
@@ -276,7 +281,7 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
                     setEndAddress("");
                     setIsPlanned(false);
                     setResetCounter((c) => c + 1);
-                    setUserMoved(false); // reset pan flag
+                    setUserMoved(false);
                     if (navigator.geolocation) {
                       navigator.geolocation.getCurrentPosition((pos) =>
                         setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
@@ -287,11 +292,10 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
                 >
                   Reset
                 </button>
-
               )}
             </div>
 
-            {/* Start / Plan Route full-width button */}
+            {/* Start / Plan Route button */}
             <div className="mt-4">
               <button
                 className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
@@ -314,6 +318,7 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
             </div>
           </div>
         </div>
+
 
       </div>
     </div>

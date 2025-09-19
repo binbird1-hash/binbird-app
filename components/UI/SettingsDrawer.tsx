@@ -10,13 +10,8 @@ export default function SettingsDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
 
-  const saveNav = () => {
-    setActivePanel(null);
-  };
-
-  const saveStyle = () => {
-    setActivePanel(null);
-  };
+  const saveNav = () => setActivePanel(null);
+  const saveStyle = () => setActivePanel(null);
 
   return (
     <>
@@ -59,7 +54,9 @@ export default function SettingsDrawer() {
             </button>
 
             <div className="pt-16 px-6">
-              <h2 className="text-2xl font-bold mb-6">Settings</h2>
+              <h2 className="text-2xl font-bold mb-6">
+                Settings
+              </h2>
 
               {/* Navigation & Map Style Buttons */}
               <div className="flex flex-col gap-4">
@@ -86,7 +83,8 @@ export default function SettingsDrawer() {
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
                   transition={{ type: "tween", duration: 0.3 }}
-                  className="fixed bottom-0 left-0 w-full max-h-[50%] bg-black border-t border-[#ff5757] p-6 z-50 flex flex-col"
+                  className="fixed bottom-0 left-0 w-full max-h-[50%] bg-black p-6 z-50 flex flex-col"
+                  style={{ borderTop: "2px solid #ff5757" }}
                 >
                   <div className="overflow-y-auto flex-1 mb-4">
                     {activePanel === "nav" ? (
@@ -96,10 +94,11 @@ export default function SettingsDrawer() {
                             key={opt}
                             onClick={() => setNavPref(opt)}
                             className={`px-4 py-2 rounded-lg w-full text-left font-semibold cursor-pointer ${
-                              navPref === opt
-                                ? "bg-white text-black"
-                                : "bg-black text-white border border-white"
+                              navPref === opt ? "bg-white text-black" : "bg-black text-white"
                             }`}
+                            style={{
+                              border: navPref === opt ? "none" : "1px solid white",
+                            }}
                           >
                             {opt === "google"
                               ? "Google Maps"
@@ -116,10 +115,11 @@ export default function SettingsDrawer() {
                             key={style}
                             onClick={() => setMapStylePref(style)}
                             className={`px-4 py-2 rounded-lg w-full text-left font-semibold cursor-pointer ${
-                              mapStylePref === style
-                                ? "bg-white text-black"
-                                : "bg-black text-white border border-white"
+                              mapStylePref === style ? "bg-white text-black" : "bg-black text-white"
                             }`}
+                            style={{
+                              border: mapStylePref === style ? "none" : "1px solid white",
+                            }}
                           >
                             {style}
                           </li>
