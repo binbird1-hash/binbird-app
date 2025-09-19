@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
-import {
-  GoogleMap,
-  Marker,
-  DirectionsRenderer,
-  useLoadScript,
-} from "@react-google-maps/api";
+import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
+import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 
 type Job = {
   id: string;
@@ -22,17 +17,10 @@ type Job = {
   notes?: string | null;
 };
 
-type NavOption = "google" | "waze" | "apple";
-type MapStyleOption = "Dark" | "Light" | "Satellite";
-
-interface RoutePageContentProps {
-  navPref: NavOption;
-  mapStylePref: MapStyleOption;
-}
-
-function RoutePageContent({ navPref, mapStylePref }: RoutePageContentProps) {
+function RoutePageContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const { mapStylePref, navPref } = useMapSettings();
 
   const [start, setStart] = useState<{ lat: number; lng: number } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -99,7 +87,7 @@ function RoutePageContent({ navPref, mapStylePref }: RoutePageContentProps) {
       bounds.extend(start);
       bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
-    if (!bounds.isEmpty()) mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 500, left: 50 });
+    if (!bounds.isEmpty()) mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
   }, [mapRef, directions, start, activeJob]);
 
   // Distance calculation
@@ -216,16 +204,12 @@ function RoutePageContent({ navPref, mapStylePref }: RoutePageContentProps) {
 }
 
 export default function RoutePage() {
-  const [navPref, setNavPref] = useState<NavOption>("google");
-  const [mapStylePref, setMapStylePref] = useState<MapStyleOption>("Dark");
-
   return (
-    <div className="relative min-h-screen bg-black text-white">
-      <SettingsDrawer
-        onNavChange={(nav) => setNavPref(nav)}
-        onMapStyleChange={(style) => setMapStylePref(style)}
-      />
-      <RoutePageContent navPref={navPref} mapStylePref={mapStylePref} />
-    </div>
+    <MapSettingsProvider>
+      <div className="relative min-h-screen bg-black text-white">
+        <SettingsDrawer />
+        <RoutePageContent />
+      </div>
+    </MapSettingsProvider>
   );
 }

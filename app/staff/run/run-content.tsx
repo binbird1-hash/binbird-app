@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
-import {
-  GoogleMap,
-  Marker,
-  Polyline,
-  useLoadScript,
-  Autocomplete,
-} from "@react-google-maps/api";
+import { useMapSettings } from "@/components/Context/MapSettingsContext";
+import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -25,34 +19,28 @@ type Job = {
   notes?: string | null;
 };
 
-type MapStyleOption = "Dark" | "Light" | "Satellite";
-type NavOption = "google" | "waze" | "apple";
-
 const LIBRARIES: ("places")[] = ["places"];
 
 export default function RunPage() {
-  const [mapStylePref, setMapStylePref] = useState<MapStyleOption>("Dark");
-  const [navPref, setNavPref] = useState<NavOption>("google"); // optional for future navigation links
+  const { mapStylePref, navPref } = useMapSettings();
 
   return (
     <div className="relative min-h-screen bg-black text-white">
-      <SettingsDrawer
-        onMapStyleChange={(style) => setMapStylePref(style)}
-        onNavChange={(nav) => setNavPref(nav)}
-      />
+      <SettingsDrawer />
       <RunPageContent mapStylePref={mapStylePref} navPref={navPref} />
     </div>
   );
 }
 
 interface RunPageContentProps {
-  mapStylePref: MapStyleOption;
-  navPref: NavOption;
+  mapStylePref: "Dark" | "Light" | "Satellite";
+  navPref: "google" | "waze" | "apple";
 }
 
 function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
   const supabase = createClientComponentClient();
   const router = useRouter();
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [ordered, setOrdered] = useState<Job[]>([]);
@@ -69,25 +57,29 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
   const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
   const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
 
-  // Rough bounding box around Melbourne
-  const MELBOURNE_BOUNDS = {
-    north: -37.5,   // top
-    south: -38.3,   // bottom
-    east: 145.5,    // right
-    west: 144.4,    // left
-  };
-
   const [isPlanned, setIsPlanned] = useState(false);
   const [resetCounter, setResetCounter] = useState(0);
 
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: LIBRARIES,
   });
 
-  // Load jobs from Supabase
+  // Fit bounds helper
+  const fitBoundsToMap = useCallback(() => {
+    if (!mapRef.current) return;
+    const bounds = new google.maps.LatLngBounds();
+    if (start) bounds.extend(start);
+    if (end) bounds.extend(end);
+    (routePath.length ? ordered : jobs).forEach((j) => bounds.extend({ lat: j.lat, lng: j.lng }));
+    if (!bounds.isEmpty()) {
+      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
+    }
+  }, [start, end, jobs, ordered, routePath]);
+
+  // Load today's jobs
   useEffect(() => {
     (async () => {
       try {
@@ -122,126 +114,75 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
           `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
         );
         const data = await resp.json();
-        if (data.results && data.results[0]?.formatted_address) {
-          setStartAddress(data.results[0].formatted_address);
-        }
+        if (data.results?.[0]?.formatted_address) setStartAddress(data.results[0].formatted_address);
       } catch (err) {
         console.error("Reverse geocoding failed:", err);
       }
     });
   }, []);
 
-  // Start/End Autocomplete handlers
-  function onStartChanged() {
-    if (startAuto) {
-      const place = startAuto.getPlace();
-      const loc = place.geometry?.location;
-      if (loc) setStart({ lat: loc.lat(), lng: loc.lng() });
-      if (place.formatted_address) {
-        setStartAddress(place.formatted_address);
-        if (sameAsStart && loc) {
-          setEndAddress(place.formatted_address);
-          setEnd({ lat: loc.lat(), lng: loc.lng() });
-        }
-      }
-    }
-  }
-  function onEndChanged() {
-    if (endAuto) {
-      const place = endAuto.getPlace();
-      const loc = place.geometry?.location;
-      if (loc) setEnd({ lat: loc.lat(), lng: loc.lng() });
-      if (place.formatted_address) setEndAddress(place.formatted_address);
-    }
-  }
-
+  // Handle "End same as Start"
   useEffect(() => {
-    if (sameAsStart && start && startAddress) {
-      setEnd(start);
+    if (sameAsStart && start) {
+      setEnd({ lat: start.lat, lng: start.lng });
       setEndAddress(startAddress);
     } else if (!sameAsStart) {
-      // Clear end location when unchecked
       setEnd(null);
       setEndAddress("");
     }
-    fitBoundsToMap();
   }, [sameAsStart, start, startAddress]);
 
+  useEffect(() => { fitBoundsToMap(); }, [start, end, jobs, ordered, routePath, resetCounter, fitBoundsToMap]);
 
-
-  // Reusable function to fit map bounds
-  function fitBoundsToMap() {
-    if (!mapRef.current) return;
-    const bounds = new google.maps.LatLngBounds();
-
-    if (start) bounds.extend(start);
-    if (end) bounds.extend(end);
-    (routePath.length ? ordered : jobs).forEach((j) =>
-      bounds.extend({ lat: j.lat, lng: j.lng })
-    );
-
-    if (!bounds.isEmpty()) {
-      mapRef.current.fitBounds(bounds, {
-        top: 50,
-        right: 50,
-        bottom: 700,
-        left: 50,
-      });
+  // Autocomplete callbacks
+  const onStartChanged = () => {
+    if (!startAuto) return;
+    const place = startAuto.getPlace();
+    const loc = place.geometry?.location;
+    if (loc) setStart({ lat: loc.lat(), lng: loc.lng() });
+    if (place.formatted_address) {
+      setStartAddress(place.formatted_address);
+      if (sameAsStart && loc) {
+        setEnd({ lat: loc.lat(), lng: loc.lng() });
+        setEndAddress(place.formatted_address);
+      }
     }
-  }
+  };
 
+  const onEndChanged = () => {
+    if (!endAuto) return;
+    const place = endAuto.getPlace();
+    const loc = place.geometry?.location;
+    if (loc) setEnd({ lat: loc.lat(), lng: loc.lng() });
+    if (place.formatted_address) setEndAddress(place.formatted_address);
+  };
 
-  // Auto-fit whenever relevant data changes
-  useEffect(() => {
-    fitBoundsToMap();
-  }, [jobs, start, end, routePath, ordered, isPlanned, resetCounter]);
-
-  
-  async function buildRoute() {
-    if (!start || !end || jobs.length === 0) {
-      alert("Need start, end, and jobs");
-      return;
-    }
+  // Build route
+  const buildRoute = async () => {
+    if (!start || !end || jobs.length === 0) return alert("Need start, end, and jobs");
 
     setRoutePath([]);
     setOrdered([]);
     setIsPlanned(false);
-
-    const middle = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
-
+    fitBoundsToMap()
+    const waypoints = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
     const resp = await fetch("/api/optimize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ start, end, waypoints: middle }),
+      body: JSON.stringify({ start, end, waypoints }),
     });
     const opt = await resp.json();
+    if (!resp.ok || !opt?.polyline) return alert("Could not build route.");
 
-    if (!resp.ok || !opt?.polyline) {
-      alert("Could not build route.");
-      return;
-    }
-
-    const decoded = polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] }));
-    setRoutePath(decoded);
-
-    const order: number[] = opt.order || [];
-    const reordered = order.map((i) => jobs[i]);
-    setOrdered(reordered);
-
+    setRoutePath(polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] })));
+    setOrdered((opt.order || []).map((i: number) => jobs[i]));
     setIsPlanned(true);
-
-    fitBoundsToMap(); // refit map after planning
-  }
+  };
 
   if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
   if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
 
-  const styleMap =
-    mapStylePref === "Dark"
-      ? darkMapStyle
-      : mapStylePref === "Light"
-      ? lightMapStyle
-      : satelliteMapStyle;
+  const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
     <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
@@ -249,93 +190,55 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
         <GoogleMap
           key={resetCounter}
           mapContainerStyle={{ width: "100%", height: "100%" }}
-          onLoad={(map) => {
-            mapRef.current = map;
-          }}
-          options={{
-            styles: styleMap,
-            disableDefaultUI: true,
-            zoomControl: false,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-            keyboardShortcuts: false,
-          }}
+          onLoad={(map) => { mapRef.current = map; fitBoundsToMap(); }}
+          options={{ styles: styleMap, disableDefaultUI: true, zoomControl: false }}
         >
           {start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />}
+          {!routePath.length
+            ? jobs.map((j) => <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />)
+            : ordered.map((j) => <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />)}
           {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
-          {!routePath.length &&
-            jobs.map((j) => (
-              <Marker
-                key={j.id}
-                position={{ lat: j.lat, lng: j.lng }}
-                icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png"
-              />
-            ))}
-          {routePath.length > 0 &&
-            ordered.map((j) => (
-              <Marker
-                key={j.id}
-                position={{ lat: j.lat, lng: j.lng }}
-                icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png"
-              />
-            ))}
-          {routePath.length > 0 && (
-            <Polyline
-              path={routePath}
-              options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }}
-            />
-          )}
+          {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
         </GoogleMap>
 
-        {/* Overlay */}
+        {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3">
-            <div className="p-6 flex flex-col gap-3">
-              <h1 className="text-xl font-bold text-white">Plan Run</h1>
+          <div className="bg-black w-full flex flex-col gap-3 p-6">
+            <h1 className="text-xl font-bold text-white border-b-2 border-[#ff5757] pb-2">Plan Run</h1>
 
-              {/* Start Autocomplete */}
-              <Autocomplete
-                onLoad={(auto) => setStartAuto(auto)}
-                onPlaceChanged={onStartChanged}
-                options={{
-                  bounds: MELBOURNE_BOUNDS,
-                  strictBounds: true,
-                  fields: ["geometry", "formatted_address"],
-                }}
-              >
-                <input
-                  type="text"
-                  value={startAddress}
-                  onChange={(e) => setStartAddress(e.target.value)}
-                  placeholder="Start Location"
-                  className="w-full px-3 py-2 rounded-lg text-black"
-                  disabled={isPlanned}
-                />
-              </Autocomplete>
+            <Autocomplete
+              onLoad={setStartAuto}
+              onPlaceChanged={onStartChanged}
+              options={{ bounds: MELBOURNE_BOUNDS, strictBounds: true, fields: ["geometry", "formatted_address"] }}
+            >
+              <input
+                type="text"
+                value={startAddress}
+                onChange={(e) => setStartAddress(e.target.value)}
+                placeholder="Start Location"
+                className="w-full px-3 py-2 rounded-lg text-black"
+                disabled={isPlanned}
+              />
+            </Autocomplete>
 
-              {/* End Autocomplete */}
-              <Autocomplete
-                onLoad={(auto) => setEndAuto(auto)}
-                onPlaceChanged={onEndChanged}
-                options={{
-                  bounds: MELBOURNE_BOUNDS,
-                  strictBounds: true,
-                  fields: ["geometry", "formatted_address"],
-                }}
-              >
-                <input
-                  type="text"
-                  value={endAddress}
-                  onChange={(e) => setEndAddress(e.target.value)}
-                  placeholder="End Location"
-                  className="w-full px-3 py-2 rounded-lg text-black"
-                  disabled={sameAsStart || isPlanned}
-                />
-              </Autocomplete>
+            <Autocomplete
+              onLoad={setEndAuto}
+              onPlaceChanged={onEndChanged}
+              options={{ bounds: MELBOURNE_BOUNDS, strictBounds: true, fields: ["geometry", "formatted_address"] }}
+            >
+              <input
+                type="text"
+                value={endAddress}
+                onChange={(e) => setEndAddress(e.target.value)}
+                placeholder="End Location"
+                className="w-full px-3 py-2 rounded-lg text-black"
+                disabled={sameAsStart || isPlanned}
+              />
+            </Autocomplete>
 
-              {/* Same as Start checkbox */}
-              <label className="flex items-center gap-2 text-sm text-gray-300">
+            {/* Checkbox + Reset inline */}
+            <div className="flex items-center justify-between text-sm text-gray-300 mt-2">
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={sameAsStart}
@@ -345,58 +248,53 @@ function RunPageContent({ mapStylePref, navPref }: RunPageContentProps) {
                 End same as Start
               </label>
 
-
-              <div className="flex flex-col gap-2 mt-2 pb-2">
+              {isPlanned && (
                 <button
-                  className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
-                    isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
-                  }`}
                   onClick={() => {
-                    if (isPlanned) {
-                      router.push(
-                        `/staff/route?jobs=${encodeURIComponent(JSON.stringify(ordered))}&start=${encodeURIComponent(
-                          JSON.stringify(start)
-                        )}&end=${encodeURIComponent(JSON.stringify(end))}`
+                    setRoutePath([]);
+                    setOrdered([]);
+                    setSameAsStart(false);
+                    setEnd(null);
+                    setEndAddress("");
+                    setIsPlanned(false);
+                    setResetCounter((c) => c + 1);
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition((pos) =>
+                        setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
                       );
-                    } else {
-                      buildRoute();
                     }
                   }}
+                  className="text-xs text-gray-400 hover:text-white"
                 >
-                  {isPlanned ? "Start Route" : "Plan Route"}
+                  Reset
                 </button>
+              )}
+            </div>
 
-                <div className="min-h-[24px] flex items-center justify-center">
-                  {isPlanned && (
-                    <button
-                      onClick={() => {
-                        setRoutePath([]);
-                        setOrdered([]);
-                        setSameAsStart(false);
-                        setEnd(null);
-                        setEndAddress("");
-                        setIsPlanned(false);
-                        setResetCounter((c) => c + 1);
-                        if (navigator.geolocation) {
-                          navigator.geolocation.getCurrentPosition((pos) =>
-                            setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-                          );
-                        }
-                        setTimeout(() => {
-                          fitBoundsToMap();
-                        }, 0);
-                      }}
-                      className="text-xs text-gray-400 hover:text-white"
-                    >
-                      Reset
-                    </button>
-                    
-                  )}
-                </div>
-              </div>
+            {/* Start / Plan Route full-width button */}
+            <div className="mt-4">
+              <button
+                className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
+                  isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
+                }`}
+                onClick={() => {
+                  if (isPlanned) {
+                    router.push(
+                      `/staff/route?jobs=${encodeURIComponent(JSON.stringify(ordered))}&start=${encodeURIComponent(
+                        JSON.stringify(start)
+                      )}&end=${encodeURIComponent(JSON.stringify(end))}`
+                    );
+                  } else {
+                    buildRoute();
+                  }
+                }}
+              >
+                {isPlanned ? "Start Route" : "Plan Route"}
+              </button>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
