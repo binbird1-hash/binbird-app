@@ -24,6 +24,7 @@ export default function ProofPageContent() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [showInstructions, setShowInstructions] = useState(true); // 🔥 open by default
 
   // Parse jobs, idx, total
   useEffect(() => {
@@ -91,17 +92,55 @@ export default function ProofPageContent() {
 
         <p className="text-lg font-semibold">{job.address}</p>
 
-        {/* Example photo */}
-        <div>
-          <p className="text-sm text-gray-400 mb-2">Example photo:</p>
-          <img
-            src="/example-bin.jpg"
-            alt="Example bin placement"
-            className="w-full rounded-lg"
-          />
+        {/* Instructions dropdown */}
+        <div className="border border-gray-800 rounded-lg overflow-hidden">
+          <button
+            onClick={() => setShowInstructions((p) => !p)}
+            className="w-full flex justify-between items-center px-4 py-3 font-semibold bg-white text-gray-900 hover:bg-gray-100 transition"
+          >
+            <span>Instructions</span>
+            <span>{showInstructions ? "▲" : "▼"}</span>
+          </button>
+
+          {showInstructions && (
+            <div className="p-4 space-y-4 bg-white text-gray-900">
+              {/* Photos side by side */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 mb-2">Bins Out:</p>
+                  <img
+                    src="/bins-out.jpg"
+                    alt="Bins Out Example"
+                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 mb-2">Bins In:</p>
+                  <img
+                    src="/bins-in.jpg"
+                    alt="Bins In Example"
+                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                  />
+                </div>
+              </div>
+
+
+              {/* Text instructions */}
+              <div>
+                <p className="text-sm text-gray-500 mb-2">
+                  Placement Instructions:
+                </p>
+                <p>
+                  Place bins neatly at the edge of the driveway with lids closed.
+                  Ensure bins do not block pedestrian walkways or driveways.  
+                  (This text will be customized per job later.)
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
-                {job.notes && (
+        {job.notes && (
           <div>
             <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
             <p className="text-white font-medium">{job.notes}</p>
