@@ -17,9 +17,9 @@ type Job = {
   last_completed_on?: string | null;
 };
 
-function slugifyClientSegment(value: string | null): string {
+function slugifySegment(value: string | null, fallback: string): string {
   const trimmed = value?.trim();
-  if (!trimmed) return "unknown-client";
+  if (!trimmed) return fallback;
 
   const normalized = trimmed
     .toLowerCase()
@@ -28,8 +28,14 @@ function slugifyClientSegment(value: string | null): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  return normalized || "unknown-client";
+  return normalized || fallback;
 }
+
+const slugifyClientSegment = (value: string | null): string =>
+  slugifySegment(value, "unknown-client");
+
+const slugifyAddressSegment = (value: string | null): string =>
+  slugifySegment(value, "unknown-address");
 
 async function prepareFileAsJpeg(
   originalFile: File,
@@ -266,9 +272,10 @@ export default function ProofPageContent() {
       const monthYear = [month, year].filter(Boolean).join(", ");
       const week = Math.min(Math.max(Math.ceil(now.getDate() / 7), 1), 5);
       const clientSegment = slugifyClientSegment(job.client_name);
+      const addressSegment = slugifyAddressSegment(job.address);
       const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = `${clientSegment}/${monthYear}/Week ${week}/${finalFileName}`;
+      const path = `${clientSegment}/${addressSegment}/${monthYear}/Week ${week}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
