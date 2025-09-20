@@ -15,6 +15,83 @@ type Job = {
   client_name: string | null;
 };
 
+function slugifyClientSegment(value: string | null): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return "unknown-client";
+
+  const normalized = trimmed
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || "unknown-client";
+}
+
+async function prepareFileAsJpeg(
+  originalFile: File,
+  desiredName: string
+): Promise<File> {
+  const isAlreadyJpeg =
+    originalFile.type === "image/jpeg" ||
+    originalFile.type === "image/jpg" ||
+    /\.jpe?g$/i.test(originalFile.name);
+
+  if (isAlreadyJpeg) {
+    if (originalFile.name === desiredName && originalFile.type === "image/jpeg") {
+      return originalFile;
+    }
+    return new File([originalFile], desiredName, { type: "image/jpeg" });
+  }
+
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () =>
+      reject(reader.error ?? new Error("Unable to read the selected image file."));
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(originalFile);
+  });
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to process the selected image file."));
+    image.src = dataUrl;
+  });
+
+  if (typeof img.decode === "function") {
+    try {
+      await img.decode();
+    } catch {
+      // ignore decode errors; drawImage fallback still works.
+    }
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Unable to convert image to JPEG.");
+  }
+  ctx.drawImage(img, 0, 0);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => {
+        if (b) resolve(b);
+        else reject(new Error("Failed to convert image to JPEG."));
+      },
+      "image/jpeg",
+      0.92
+    );
+  });
+
+  return new File([blob], desiredName, { type: "image/jpeg" });
+}
+
 export default function ProofPageContent() {
   const supabase = createClientComponentClient();
   const params = useSearchParams();
@@ -177,28 +254,28 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10);
-      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${user.id}/${job.id}-${safeTimestamp}.${ext}`;
+      const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(now);
+      const monthYear = `${monthName}, ${now.getFullYear()}`;
+      const week = Math.min(Math.max(Math.ceil(now.getDate() / 7), 1), 5);
+      const clientSegment = slugifyClientSegment(job.client_name);
+      const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const uploadFile = await prepareFileAsJpeg(file, finalFileName);
+      const path = `${clientSegment}/${monthYear}/Week ${week}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
-        .upload(path, file, { upsert: false });
+        .upload(path, uploadFile, { upsert: false });
       if (uploadErr) throw uploadErr;
 
-      const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
       const staffNote = note.trim();
-      const notesParts = [] as string[];
-      if (propertyNote) notesParts.push(propertyNote);
-      if (staffNote) notesParts.push(`Staff note: ${staffNote}`);
-      const combinedNotes = notesParts.length ? notesParts.join("\n") : null;
+      const noteValue = staffNote.length ? staffNote : null;
 
       const { error: logErr } = await supabase.from("logs").insert({
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
         bins: job.bins ?? null,
-        notes: combinedNotes,
+        notes: noteValue,
         photo_path: path,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
