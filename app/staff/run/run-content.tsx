@@ -56,6 +56,7 @@ function RunPageContent() {
   const [isPlanned, setIsPlanned] = useState(false);
   const [resetCounter, setResetCounter] = useState(0);
   const [userMoved, setUserMoved] = useState(false);
+  const [forceFit, setForceFit] = useState(false); // <-- NEW
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
@@ -92,8 +93,12 @@ function RunPageContent() {
     (routePath.length ? ordered : jobs).forEach((j) =>
       bounds.extend({ lat: j.lat, lng: j.lng })
     );
-    if (!bounds.isEmpty() && !userMoved) mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
-  }, [start, end, jobs, ordered, routePath, userMoved]);
+
+    if (!bounds.isEmpty() && (!userMoved || forceFit)) {
+      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
+      setForceFit(false); // reset after forcing
+    }
+  }, [start, end, jobs, ordered, routePath, userMoved, forceFit]);
 
   // Track manual panning
   useEffect(() => {
@@ -138,6 +143,7 @@ function RunPageContent() {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       setStart(coords);
+      setForceFit(true); // <-- ensure autofit
       try {
         const resp = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
@@ -155,9 +161,11 @@ function RunPageContent() {
     if (sameAsStart && start) {
       setEnd({ lat: start.lat, lng: start.lng });
       setEndAddress(startAddress);
+      setForceFit(true); // <-- ensure autofit
     } else if (!sameAsStart) {
       setEnd(null);
       setEndAddress("");
+      setForceFit(true); // <-- ensure autofit
     }
   }, [sameAsStart, start, startAddress]);
 
@@ -166,12 +174,16 @@ function RunPageContent() {
     if (!startAuto) return;
     const place = startAuto.getPlace();
     const loc = place.geometry?.location;
-    if (loc) setStart({ lat: loc.lat(), lng: loc.lng() });
+    if (loc) {
+      setStart({ lat: loc.lat(), lng: loc.lng() });
+      setForceFit(true); // <-- ensure autofit
+    }
     if (place.formatted_address) {
       setStartAddress(place.formatted_address);
       if (sameAsStart && loc) {
         setEnd({ lat: loc.lat(), lng: loc.lng() });
         setEndAddress(place.formatted_address);
+        setForceFit(true); // <-- ensure autofit
       }
     }
   };
@@ -180,7 +192,10 @@ function RunPageContent() {
     if (!endAuto) return;
     const place = endAuto.getPlace();
     const loc = place.geometry?.location;
-    if (loc) setEnd({ lat: loc.lat(), lng: loc.lng() });
+    if (loc) {
+      setEnd({ lat: loc.lat(), lng: loc.lng() });
+      setForceFit(true); // <-- ensure autofit
+    }
     if (place.formatted_address) setEndAddress(place.formatted_address);
   };
 
@@ -191,6 +206,7 @@ function RunPageContent() {
     setOrdered([]);
     setIsPlanned(false);
     setUserMoved(false);
+    setForceFit(true); // <-- ensure autofit
     fitBoundsToMap();
 
     const waypoints = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
@@ -205,6 +221,7 @@ function RunPageContent() {
     setRoutePath(polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] })));
     setOrdered((opt.order || []).map((i: number) => jobs[i]));
     setIsPlanned(true);
+    setForceFit(true); // <-- ensure autofit
   };
 
   if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
@@ -287,6 +304,7 @@ function RunPageContent() {
                     setIsPlanned(false);
                     setResetCounter((c) => c + 1);
                     setUserMoved(false);
+                    setForceFit(true); // <-- ensure autofit after reset
                     if (navigator.geolocation) {
                       navigator.geolocation.getCurrentPosition((pos) =>
                         setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
