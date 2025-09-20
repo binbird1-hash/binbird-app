@@ -267,19 +267,15 @@ export default function ProofPageContent() {
         .upload(path, uploadFile, { upsert: false });
       if (uploadErr) throw uploadErr;
 
-      const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
       const staffNote = note.trim();
-      const notesParts = [] as string[];
-      if (propertyNote) notesParts.push(propertyNote);
-      if (staffNote) notesParts.push(`Staff note: ${staffNote}`);
-      const combinedNotes = notesParts.length ? notesParts.join("\n") : null;
+      const noteValue = staffNote.length ? staffNote : null;
 
       const { error: logErr } = await supabase.from("logs").insert({
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
         bins: job.bins ?? null,
-        notes: combinedNotes,
+        notes: noteValue,
         photo_path: path,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
