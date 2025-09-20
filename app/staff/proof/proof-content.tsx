@@ -125,15 +125,6 @@ export default function ProofPageContent() {
 
   if (!job) return <div className="p-6 text-white">No job found.</div>;
 
-  const gpsSummary =
-    job && gpsData.lat !== null && gpsData.lng !== null
-      ? `${gpsData.lat.toFixed(5)}, ${gpsData.lng.toFixed(5)}${
-          gpsData.acc !== null ? ` (±${Math.round(gpsData.acc)}m)` : ""
-        }`
-      : null;
-
-  const gpsLastUpdated = gpsData.time ? new Date(gpsData.time).toLocaleTimeString() : null;
-
   function renderBins(bins: string | null | undefined) {
     if (!bins) return <span className="text-gray-400">—</span>;
     return bins.split(",").map((b) => {
@@ -247,9 +238,6 @@ export default function ProofPageContent() {
         </h1>
 
         <p className="text-lg font-semibold">{job.address}</p>
-        {job.client_name && (
-          <p className="text-sm text-gray-300">Client: {job.client_name}</p>
-        )}
 
         {/* Instructions dropdown */}
         <div className="border border-gray-800 rounded-lg overflow-hidden">
@@ -358,14 +346,11 @@ export default function ProofPageContent() {
         />
       </div>
 
-      <div className="text-sm text-gray-400 space-y-1">
-        <p>
-          GPS:
-          {gpsSummary ? ` ${gpsSummary}` : " Waiting for location…"}
-          {gpsLastUpdated ? ` (updated ${gpsLastUpdated})` : ""}
-        </p>
-        {gpsError && <p className="text-red-400">{gpsError}</p>}
-      </div>
+      {gpsError && (
+        <div className="text-sm text-red-400">
+          <p>{gpsError}</p>
+        </div>
+      )}
     </div>
 
       {/* Mark Done pinned bottom */}
