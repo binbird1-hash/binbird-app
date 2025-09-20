@@ -1,7 +1,8 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 type Job = {
   id: string;
@@ -11,9 +12,11 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
+  client_name: string | null;
 };
 
 export default function ProofPageContent() {
+  const supabase = createClientComponentClient();
   const params = useSearchParams();
   const router = useRouter();
 
@@ -25,6 +28,17 @@ export default function ProofPageContent() {
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [showInstructions, setShowInstructions] = useState(true); // 🔥 open by default
+  const [submitting, setSubmitting] = useState(false);
+
+  const [gpsData, setGpsData] = useState<{
+    lat: number | null;
+    lng: number | null;
+    acc: number | null;
+    time: string | null;
+  }>({ lat: null, lng: null, acc: null, time: null });
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Parse jobs, idx, total
   useEffect(() => {
@@ -33,17 +47,92 @@ export default function ProofPageContent() {
       const rawIdx = params.get("idx");
       const rawTotal = params.get("total");
 
-      if (rawJobs) setJobs(JSON.parse(rawJobs));
-      if (rawIdx) setIdx(parseInt(rawIdx, 10));
-      if (rawTotal) setTotal(parseInt(rawTotal, 10));
+      if (rawJobs) {
+        const parsed = JSON.parse(rawJobs);
+        if (Array.isArray(parsed)) {
+          const normalized = parsed.map((j: any): Job => {
+            const lat = typeof j?.lat === "number" ? j.lat : Number(j?.lat ?? 0);
+            const lng = typeof j?.lng === "number" ? j.lng : Number(j?.lng ?? 0);
+            return {
+              id: String(j?.id ?? ""),
+              address: String(j?.address ?? ""),
+              job_type: j?.job_type === "bring_in" ? "bring_in" : "put_out",
+              bins: j?.bins ?? null,
+              notes: j?.notes ?? null,
+              lat: Number.isFinite(lat) ? lat : 0,
+              lng: Number.isFinite(lng) ? lng : 0,
+              client_name:
+                j?.client_name !== undefined && j?.client_name !== null
+                  ? String(j.client_name)
+                  : null,
+            };
+          });
+          setJobs(normalized);
+        }
+      }
+      if (rawIdx) {
+        const parsedIdx = parseInt(rawIdx, 10);
+        if (!Number.isNaN(parsedIdx)) setIdx(parsedIdx);
+      }
+      if (rawTotal) {
+        const parsedTotal = parseInt(rawTotal, 10);
+        if (!Number.isNaN(parsedTotal)) setTotal(parsedTotal);
+      }
     } catch (err) {
       console.error("Parse failed:", err);
     }
   }, [params]);
 
+  useEffect(() => {
+    if (!("geolocation" in navigator)) {
+      setGpsError("Geolocation is not supported by this device.");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setGpsData({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          acc: position.coords.accuracy,
+          time: new Date(position.timestamp).toISOString(),
+        });
+        setGpsError(null);
+      },
+      (error) => {
+        console.warn("Geolocation error", error);
+        if (error.code === error.PERMISSION_DENIED) {
+          setGpsError("Location permission denied. Proofs will save without GPS data.");
+        } else {
+          setGpsError("Unable to determine location. Proofs will save without GPS data.");
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+
+    return () => {
+      if (typeof watchId === "number") navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const job = jobs[idx]; // current job
 
   if (!job) return <div className="p-6 text-white">No job found.</div>;
+
+  const gpsSummary =
+    job && gpsData.lat !== null && gpsData.lng !== null
+      ? `${gpsData.lat.toFixed(5)}, ${gpsData.lng.toFixed(5)}${
+          gpsData.acc !== null ? ` (±${Math.round(gpsData.acc)}m)` : ""
+        }`
+      : null;
+
+  const gpsLastUpdated = gpsData.time ? new Date(gpsData.time).toLocaleTimeString() : null;
 
   function renderBins(bins: string | null | undefined) {
     if (!bins) return <span className="text-gray-400">—</span>;
@@ -64,7 +153,7 @@ export default function ProofPageContent() {
     });
   }
 
-  function handleMarkDone() {
+  function goToNextJob() {
     const nextIdx = idx + 1;
 
     if (total > 0 && nextIdx >= total) {
@@ -76,6 +165,73 @@ export default function ProofPageContent() {
           JSON.stringify(jobs)
         )}&nextIdx=${nextIdx}`
       );
+    }
+  }
+
+  async function handleMarkDone() {
+    if (!file) {
+      alert("Please take a photo before marking the job done.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) throw new Error("You must be signed in to submit proof.");
+
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/${job.id}-${safeTimestamp}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("proofs")
+        .upload(path, file, { upsert: false });
+      if (uploadErr) throw uploadErr;
+
+      const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
+      const staffNote = note.trim();
+      const notesParts = [] as string[];
+      if (propertyNote) notesParts.push(propertyNote);
+      if (staffNote) notesParts.push(`Staff note: ${staffNote}`);
+      const combinedNotes = notesParts.length ? notesParts.join("\n") : null;
+
+      const { error: logErr } = await supabase.from("logs").insert({
+        client_name: job.client_name ?? null,
+        address: job.address,
+        task_type: job.job_type,
+        bins: job.bins ?? null,
+        notes: combinedNotes,
+        photo_path: path,
+        done_on: dateStr,
+        gps_lat: gpsData.lat ?? null,
+        gps_lng: gpsData.lng ?? null,
+        gps_acc: gpsData.acc ?? null,
+        gps_time: gpsData.time ?? null,
+        user_id: user.id,
+      });
+      if (logErr) throw logErr;
+
+      setNote("");
+      setFile(null);
+      setPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      goToNextJob();
+    } catch (err: any) {
+      console.error("Error saving proof", err);
+      alert(err?.message || "Unable to save proof. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -91,6 +247,9 @@ export default function ProofPageContent() {
         </h1>
 
         <p className="text-lg font-semibold">{job.address}</p>
+        {job.client_name && (
+          <p className="text-sm text-gray-300">Client: {job.client_name}</p>
+        )}
 
         {/* Instructions dropdown */}
         <div className="border border-gray-800 rounded-lg overflow-hidden">
@@ -161,12 +320,14 @@ export default function ProofPageContent() {
             capture="environment"
             id="photo-upload"
             className="hidden"
+            ref={fileInputRef}
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) {
-                setFile(f);
-                setPreview(URL.createObjectURL(f));
-              }
+              const f = e.target.files?.[0] ?? null;
+              setFile(f);
+              setPreview((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return f ? URL.createObjectURL(f) : null;
+              });
             }}
           />
           <label
@@ -186,26 +347,35 @@ export default function ProofPageContent() {
           )}
         </div>
 
-        {/* Leave note */}
-        <div>
-          <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
-          <textarea
-            value={note}
+      {/* Leave note */}
+      <div>
+        <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
+        <textarea
+          value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Add any details..."
-            className="w-full p-3 rounded-lg bg-white text-black min-h-[100px]"
-          />
-        </div>
+          className="w-full p-3 rounded-lg bg-white text-black min-h-[100px]"
+        />
       </div>
+
+      <div className="text-sm text-gray-400 space-y-1">
+        <p>
+          GPS:
+          {gpsSummary ? ` ${gpsSummary}` : " Waiting for location…"}
+          {gpsLastUpdated ? ` (updated ${gpsLastUpdated})` : ""}
+        </p>
+        {gpsError && <p className="text-red-400">{gpsError}</p>}
+      </div>
+    </div>
 
       {/* Mark Done pinned bottom */}
       <div className="absolute bottom-0 inset-x-0 p-4">
         <button
           onClick={handleMarkDone}
-          disabled={!file}
+          disabled={!file || submitting}
           className="w-full bg-[#ff5757] text-black px-4 py-3 rounded-lg font-bold disabled:opacity-50"
         >
-          Mark Done
+          {submitting ? "Saving…" : "Mark Done"}
         </button>
       </div>
     </div>
