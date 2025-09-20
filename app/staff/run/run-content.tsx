@@ -17,6 +17,7 @@ type Job = {
   job_type: "put_out" | "bring_in";
   bins?: string | null;
   notes?: string | null;
+  client_name: string | null;
 };
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -130,7 +131,13 @@ function RunPageContent() {
           .eq("assigned_to", user.id)
           .eq("day_of_week", todayName);
 
-        if (!error && data) setJobs(data as Job[]);
+        if (!error && data) {
+          const normalized = (data as any[]).map((j) => ({
+            ...j,
+            client_name: j?.client_name ?? null,
+          }));
+          setJobs(normalized as Job[]);
+        }
       } finally {
         setLoading(false);
       }

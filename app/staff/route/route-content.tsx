@@ -16,6 +16,7 @@ type Job = {
   job_type: "put_out" | "bring_in";
   bins?: string | null;
   notes?: string | null;
+  client_name: string | null;
 };
 
 function RoutePageContent() {
@@ -58,7 +59,29 @@ function RoutePageContent() {
     const rawJobs = params.get("jobs");
     const rawStart = params.get("start");
     try {
-      if (rawJobs) setJobs(JSON.parse(rawJobs));
+      if (rawJobs) {
+        const parsedJobs = JSON.parse(rawJobs);
+        if (Array.isArray(parsedJobs)) {
+          const normalizedJobs = parsedJobs.map((j: any): Job => {
+            const lat = typeof j?.lat === "number" ? j.lat : Number(j?.lat ?? 0);
+            const lng = typeof j?.lng === "number" ? j.lng : Number(j?.lng ?? 0);
+            return {
+              id: String(j?.id ?? ""),
+              address: String(j?.address ?? ""),
+              lat: Number.isFinite(lat) ? lat : 0,
+              lng: Number.isFinite(lng) ? lng : 0,
+              job_type: j?.job_type === "bring_in" ? "bring_in" : "put_out",
+              bins: j?.bins ?? null,
+              notes: j?.notes ?? null,
+              client_name:
+                j?.client_name !== undefined && j?.client_name !== null
+                  ? String(j.client_name)
+                  : null,
+            };
+          });
+          setJobs(normalizedJobs);
+        }
+      }
       if (rawStart) setStart(JSON.parse(rawStart));
     } catch (err) {
       console.error("Parse failed:", err);

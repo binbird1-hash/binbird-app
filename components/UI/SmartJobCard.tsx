@@ -10,6 +10,7 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
+  client_name: string | null;
 };
 
 export default function SmartJobCard({
@@ -45,22 +46,45 @@ export default function SmartJobCard({
 
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10);
+      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
 
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `${dateStr}-${job.job_type}.${ext}`;
+      const path = `${user.id}/${job.id}-${safeTimestamp}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
         .upload(path, file, { upsert: false });
       if (uploadErr) throw uploadErr;
 
+      let position: GeolocationPosition | null = null;
+      if (navigator.geolocation) {
+        position = await new Promise<GeolocationPosition | null>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve(pos),
+            (err) => {
+              console.error("Geolocation error", err);
+              resolve(null);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+          );
+        });
+      }
+
+      const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
+      const combinedNotes = propertyNote ? propertyNote : null;
+
       const { error: logErr } = await supabase.from("logs").insert({
+        client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
-        bins: job.bins,
-        notes: job.notes,
+        bins: job.bins ?? null,
+        notes: combinedNotes,
         photo_path: path,
         done_on: dateStr,
+        gps_lat: position?.coords.latitude ?? null,
+        gps_lng: position?.coords.longitude ?? null,
+        gps_acc: position?.coords.accuracy ?? null,
+        gps_time: position ? new Date(position.timestamp).toISOString() : null,
         user_id: user.id,
       });
       if (logErr) throw logErr;
