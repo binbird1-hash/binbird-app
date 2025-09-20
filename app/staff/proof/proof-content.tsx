@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { getLocalISODate } from "@/lib/date";
 
 type Job = {
   id: string;
@@ -13,7 +14,85 @@ type Job = {
   lat: number;
   lng: number;
   client_name: string | null;
+  last_completed_on?: string | null;
 };
+
+function slugifyClientSegment(value: string | null): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return "unknown-client";
+
+  const normalized = trimmed
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || "unknown-client";
+}
+
+async function prepareFileAsJpeg(
+  originalFile: File,
+  desiredName: string
+): Promise<File> {
+  const isAlreadyJpeg =
+    originalFile.type === "image/jpeg" ||
+    originalFile.type === "image/jpg" ||
+    /\.jpe?g$/i.test(originalFile.name);
+
+  if (isAlreadyJpeg) {
+    if (originalFile.name === desiredName && originalFile.type === "image/jpeg") {
+      return originalFile;
+    }
+    return new File([originalFile], desiredName, { type: "image/jpeg" });
+  }
+
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () =>
+      reject(reader.error ?? new Error("Unable to read the selected image file."));
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(originalFile);
+  });
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to process the selected image file."));
+    image.src = dataUrl;
+  });
+
+  if (typeof img.decode === "function") {
+    try {
+      await img.decode();
+    } catch {
+      // ignore decode errors; drawImage fallback still works.
+    }
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Unable to convert image to JPEG.");
+  }
+  ctx.drawImage(img, 0, 0);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => {
+        if (b) resolve(b);
+        else reject(new Error("Failed to convert image to JPEG."));
+      },
+      "image/jpeg",
+      0.92
+    );
+  });
+
+  return new File([blob], desiredName, { type: "image/jpeg" });
+}
 
 export default function ProofPageContent() {
   const supabase = createClientComponentClient();
@@ -22,7 +101,6 @@ export default function ProofPageContent() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [idx, setIdx] = useState<number>(0);
-  const [total, setTotal] = useState<number>(0);
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -40,13 +118,11 @@ export default function ProofPageContent() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Parse jobs, idx, total
+  // Parse jobs and idx
   useEffect(() => {
     try {
       const rawJobs = params.get("jobs");
       const rawIdx = params.get("idx");
-      const rawTotal = params.get("total");
-
       if (rawJobs) {
         const parsed = JSON.parse(rawJobs);
         if (Array.isArray(parsed)) {
@@ -65,6 +141,10 @@ export default function ProofPageContent() {
                 j?.client_name !== undefined && j?.client_name !== null
                   ? String(j.client_name)
                   : null,
+              last_completed_on:
+                j?.last_completed_on !== undefined && j?.last_completed_on !== null
+                  ? String(j.last_completed_on)
+                  : null,
             };
           });
           setJobs(normalized);
@@ -73,10 +153,6 @@ export default function ProofPageContent() {
       if (rawIdx) {
         const parsedIdx = parseInt(rawIdx, 10);
         if (!Number.isNaN(parsedIdx)) setIdx(parsedIdx);
-      }
-      if (rawTotal) {
-        const parsedTotal = parseInt(rawTotal, 10);
-        if (!Number.isNaN(parsedTotal)) setTotal(parsedTotal);
       }
     } catch (err) {
       console.error("Parse failed:", err);
@@ -121,7 +197,8 @@ export default function ProofPageContent() {
     };
   }, [preview]);
 
-  const job = jobs[idx]; // current job
+  const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
+  const job = jobs[currentIdx]; // current job
 
   if (!job) return <div className="p-6 text-white">No job found.</div>;
 
@@ -144,19 +221,22 @@ export default function ProofPageContent() {
     });
   }
 
-  function goToNextJob() {
-    const nextIdx = idx + 1;
-
-    if (total > 0 && nextIdx >= total) {
+  function goToNextJob(remainingJobs: Job[]) {
+    if (!remainingJobs.length) {
+      setIdx(0);
       alert("🎉 All jobs completed!");
       router.push("/staff/run");
-    } else {
-      router.push(
-        `/staff/route?jobs=${encodeURIComponent(
-          JSON.stringify(jobs)
-        )}&nextIdx=${nextIdx}`
-      );
+      return;
     }
+
+    const nextIdx = Math.min(currentIdx, Math.max(remainingJobs.length - 1, 0));
+    setIdx(nextIdx);
+
+    router.push(
+      `/staff/route?jobs=${encodeURIComponent(
+        JSON.stringify(remainingJobs)
+      )}&nextIdx=${nextIdx}&total=${remainingJobs.length}`
+    );
   }
 
   async function handleMarkDone() {
@@ -176,29 +256,35 @@ export default function ProofPageContent() {
       if (!user) throw new Error("You must be signed in to submit proof.");
 
       const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10);
-      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${user.id}/${job.id}-${safeTimestamp}.${ext}`;
+      const dateStr = getLocalISODate(now);
+      const monthYearParts = new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        year: "numeric",
+      }).formatToParts(now);
+      const month = monthYearParts.find((part) => part.type === "month")?.value ?? "";
+      const year = monthYearParts.find((part) => part.type === "year")?.value ?? "";
+      const monthYear = [month, year].filter(Boolean).join(", ");
+      const week = Math.min(Math.max(Math.ceil(now.getDate() / 7), 1), 5);
+      const clientSegment = slugifyClientSegment(job.client_name);
+      const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const uploadFile = await prepareFileAsJpeg(file, finalFileName);
+      const path = `${clientSegment}/${monthYear}/Week ${week}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
-        .upload(path, file, { upsert: false });
+        .upload(path, uploadFile, { upsert: false });
       if (uploadErr) throw uploadErr;
 
-      const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
       const staffNote = note.trim();
-      const notesParts = [] as string[];
-      if (propertyNote) notesParts.push(propertyNote);
-      if (staffNote) notesParts.push(`Staff note: ${staffNote}`);
-      const combinedNotes = notesParts.length ? notesParts.join("\n") : null;
+      const noteValue = staffNote.length ? staffNote : null;
 
       const { error: logErr } = await supabase.from("logs").insert({
+        job_id: job.id,
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
         bins: job.bins ?? null,
-        notes: combinedNotes,
+        notes: noteValue,
         photo_path: path,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
@@ -209,6 +295,12 @@ export default function ProofPageContent() {
       });
       if (logErr) throw logErr;
 
+      const { error: updateErr } = await supabase
+        .from("jobs")
+        .update({ last_completed_on: dateStr })
+        .eq("id", job.id);
+      if (updateErr) throw updateErr;
+
       setNote("");
       setFile(null);
       setPreview((prev) => {
@@ -217,7 +309,9 @@ export default function ProofPageContent() {
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      goToNextJob();
+      const remainingJobs = jobs.filter((j) => j.id !== job.id);
+      setJobs(remainingJobs);
+      goToNextJob(remainingJobs);
     } catch (err: any) {
       console.error("Error saving proof", err);
       alert(err?.message || "Unable to save proof. Please try again.");
