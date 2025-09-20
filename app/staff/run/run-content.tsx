@@ -8,6 +8,7 @@ import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
+import { getLocalISODate } from "@/lib/date";
 
 type Job = {
   id: string;
@@ -18,6 +19,7 @@ type Job = {
   bins?: string | null;
   notes?: string | null;
   client_name: string | null;
+  last_completed_on?: string | null;
 };
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -121,22 +123,34 @@ function RunPageContent() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        const now = new Date();
         const todayName =
           process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE ||
-          new Date().toLocaleDateString("en-US", { weekday: "long" });
+          now.toLocaleDateString("en-US", { weekday: "long" });
+        const todayDate = getLocalISODate(now);
 
         const { data, error } = await supabase
           .from("jobs")
           .select("*")
           .eq("assigned_to", user.id)
-          .eq("day_of_week", todayName);
+          .eq("day_of_week", todayName)
+          .or(`last_completed_on.is.null,last_completed_on.neq.${todayDate}`);
 
         if (!error && data) {
           const normalized = (data as any[]).map((j) => ({
             ...j,
             client_name: j?.client_name ?? null,
+            last_completed_on:
+              j?.last_completed_on !== undefined && j?.last_completed_on !== null
+                ? String(j.last_completed_on)
+                : null,
           }));
-          setJobs(normalized as Job[]);
+
+          const availableJobs = normalized.filter(
+            (job) => !job.last_completed_on || job.last_completed_on !== todayDate
+          );
+
+          setJobs(availableJobs as Job[]);
         }
       } finally {
         setLoading(false);
