@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { toDateOnlyString } from "@/lib/date";
 
 type Job = {
   id: string;
@@ -10,6 +11,7 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
+  last_completed_on?: string | null;
 };
 
 export default function SmartJobCard({
@@ -44,7 +46,7 @@ export default function SmartJobCard({
       if (!user) throw new Error("Not signed in");
 
       const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10);
+      const dateStr = toDateOnlyString(now);
 
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${dateStr}-${job.job_type}.${ext}`;
@@ -64,6 +66,12 @@ export default function SmartJobCard({
         user_id: user.id,
       });
       if (logErr) throw logErr;
+
+      const { error: jobUpdateErr } = await supabase
+        .from("jobs")
+        .update({ last_completed_on: dateStr })
+        .eq("id", job.id);
+      if (jobUpdateErr) throw jobUpdateErr;
 
       onCompleted();
     } catch (e: any) {

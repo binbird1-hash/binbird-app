@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { getStartOfWeekString } from "@/lib/date";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
@@ -17,6 +18,7 @@ type Job = {
   job_type: "put_out" | "bring_in";
   bins?: string | null;
   notes?: string | null;
+  last_completed_on?: string | null;
 };
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -124,11 +126,14 @@ function RunPageContent() {
           process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE ||
           new Date().toLocaleDateString("en-US", { weekday: "long" });
 
+        const startOfWeekStr = getStartOfWeekString();
+
         const { data, error } = await supabase
           .from("jobs")
           .select("*")
           .eq("assigned_to", user.id)
-          .eq("day_of_week", todayName);
+          .eq("day_of_week", todayName)
+          .or(`last_completed_on.is.null,last_completed_on.lt.${startOfWeekStr}`);
 
         if (!error && data) setJobs(data as Job[]);
       } finally {

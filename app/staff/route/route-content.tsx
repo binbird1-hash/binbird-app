@@ -16,6 +16,7 @@ type Job = {
   job_type: "put_out" | "bring_in";
   bins?: string | null;
   notes?: string | null;
+  last_completed_on?: string | null;
 };
 
 function RoutePageContent() {

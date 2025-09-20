@@ -11,6 +11,7 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
+  last_completed_on?: string | null;
 };
 
 export default function ProofPageContent() {
