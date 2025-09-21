@@ -17,6 +17,7 @@ type Job = {
   bins?: string | null;
   notes?: string | null;
   client_name: string | null;
+  photo_path: string | null;
 };
 
 function RoutePageContent() {
@@ -76,6 +77,10 @@ function RoutePageContent() {
               client_name:
                 j?.client_name !== undefined && j?.client_name !== null
                   ? String(j.client_name)
+                  : null,
+              photo_path:
+                typeof j?.photo_path === "string" && j.photo_path.trim().length
+                  ? j.photo_path
                   : null,
             };
           });

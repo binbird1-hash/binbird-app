@@ -13,7 +13,7 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
-  photo_path: string | null; // ✅ now using this directly
+  photo_path: string | null;
   client_name: string | null;
   last_completed_on?: string | null;
 };
@@ -135,7 +135,10 @@ export default function ProofPageContent() {
             lng: Number(j?.lng ?? 0),
             client_name: j?.client_name ?? null,
             last_completed_on: j?.last_completed_on ?? null,
-            photo_path: j?.photo_path ?? null, // ✅
+            photo_path:
+              typeof j?.photo_path === "string" && j.photo_path.trim().length
+                ? j.photo_path
+                : null,
           }));
           setJobs(normalized);
         }
@@ -190,7 +193,6 @@ export default function ProofPageContent() {
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx]; // current job
 
-  // ✅ New: just grab signed URL for job.photo_path
   useEffect(() => {
     let isCancelled = false;
 
@@ -207,8 +209,6 @@ export default function ProofPageContent() {
 
       try {
         const bucket = supabase.storage.from("proofs");
-        console.log("Looking for path:", currentJob.photo_path);
-
         const { data, error } = await bucket.createSignedUrl(
           currentJob.photo_path,
           60 * 60
@@ -310,9 +310,11 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
+      const fileLabel = job.job_type === "bring_in" ? "bring-in" : "put-out";
+      const finalFileName = `${fileLabel}-${safeTimestamp}.jpg`;
       const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = job.photo_path ?? `${job.id}/${finalFileName}`;
+      const path = `${job.id}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
@@ -341,7 +343,7 @@ export default function ProofPageContent() {
 
       const { error: updateErr } = await supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr, photo_path: path })
+        .update({ last_completed_on: dateStr })
         .eq("id", job.id);
       if (updateErr) throw updateErr;
 
