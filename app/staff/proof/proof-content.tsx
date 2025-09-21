@@ -1,4 +1,4 @@
-"use client";
+f"use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -276,6 +276,9 @@ export default function ProofPageContent() {
         const [putOutUrl, bringInUrl] = await Promise.all([
           getSignedUrl("Put Out.jpg"),
           getSignedUrl("Bring In.jpg"),
+          console.log("Signed URL for Put Out:", putOutUrl);
+          console.log("Signed URL for Bring In:", bringInUrl);
+
         ]);
 
         if (!isCancelled) {
