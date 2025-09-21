@@ -111,7 +111,7 @@ export default function ProofPageContent() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [showInstructions, setShowInstructions] = useState(true); // 🔥 open by default
+  const [showInstructions, setShowInstructions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [gpsData, setGpsData] = useState<{
@@ -229,14 +229,12 @@ export default function ProofPageContent() {
 
   function goToNextJob(remainingJobs: Job[]) {
     if (!remainingJobs.length) {
-      setIdx(0);
       alert("🎉 All jobs completed!");
       router.push("/staff/run");
       return;
     }
 
     const nextIdx = Math.min(currentIdx, Math.max(remainingJobs.length - 1, 0));
-    setIdx(nextIdx);
 
     router.push(
       `/staff/route?jobs=${encodeURIComponent(
@@ -317,7 +315,6 @@ export default function ProofPageContent() {
       if (fileInputRef.current) fileInputRef.current.value = "";
 
       const remainingJobs = jobs.filter((j) => j.id !== job.id);
-      setJobs(remainingJobs);
       goToNextJob(remainingJobs);
     } catch (err: any) {
       console.error("Error saving proof", err);
@@ -330,11 +327,7 @@ export default function ProofPageContent() {
   return (
     <div className="flex flex-col min-h-screen bg-black text-white relative">
       <div className="flex-1 p-6 pb-32 space-y-4">
-        <h1
-          className={`text-2xl font-bold ${
-            job.job_type === "bring_in" ? "text-red-500" : "text-white"
-          }`}
-        >
+        <h1 className="text-2xl font-bold text-[#ff5757]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
 
@@ -357,7 +350,7 @@ export default function ProofPageContent() {
                 <div className="flex-1">
                   <p className="text-sm text-gray-500 mb-2">Bins Out:</p>
                   <img
-                    src="/bins-out.jpg"
+                    src="https://via.placeholder.com/600x800?text=Put+Bins+Out"
                     alt="Bins Out Example"
                     className="w-full aspect-[3/4] object-cover rounded-lg"
                   />
@@ -365,7 +358,7 @@ export default function ProofPageContent() {
                 <div className="flex-1">
                   <p className="text-sm text-gray-500 mb-2">Bins In:</p>
                   <img
-                    src="/bins-in.jpg"
+                    src="https://via.placeholder.com/600x800?text=Bring+Bins+In"
                     alt="Bins In Example"
                     className="w-full aspect-[3/4] object-cover rounded-lg"
                   />
