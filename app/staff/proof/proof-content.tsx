@@ -13,7 +13,7 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
-  photo_path: string | null; // ✅ now using this directly
+  photo_path: string | null;
   client_name: string | null;
   last_completed_on?: string | null;
 };
@@ -135,7 +135,10 @@ export default function ProofPageContent() {
             lng: Number(j?.lng ?? 0),
             client_name: j?.client_name ?? null,
             last_completed_on: j?.last_completed_on ?? null,
-            photo_path: j?.photo_path ?? null, // ✅
+            photo_path:
+              typeof j?.photo_path === "string" && j.photo_path.trim().length
+                ? j.photo_path
+                : null,
           }));
           setJobs(normalized);
         }
@@ -190,7 +193,6 @@ export default function ProofPageContent() {
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx]; // current job
 
-  // ✅ New: just grab signed URL for job.photo_path
   useEffect(() => {
     let isCancelled = false;
 
@@ -203,42 +205,94 @@ export default function ProofPageContent() {
         return;
       }
 
+      const trimmedPath = currentJob.photo_path.trim();
+      if (!trimmedPath) {
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: null, bringIn: null });
+          setReferenceLookupComplete(true);
+        }
+        return;
+      }
+
+      const sanitizedPath = trimmedPath
+        .replace(/^\/+/, "")
+        .replace(/\/+$/, "");
+
+      if (!sanitizedPath) {
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: null, bringIn: null });
+          setReferenceLookupComplete(true);
+        }
+        return;
+      }
+
       setReferenceLookupComplete(false);
+
+      const hasFileExtension = /\.[^/]+$/.test(sanitizedPath);
+      let baseDirectory: string | null = null;
+
+      if (!hasFileExtension) {
+        baseDirectory = sanitizedPath;
+      } else {
+        const lastSlashIndex = sanitizedPath.lastIndexOf("/");
+        if (lastSlashIndex > -1) {
+          const potentialBase = sanitizedPath.slice(0, lastSlashIndex);
+          if (potentialBase) {
+            baseDirectory = potentialBase;
+          }
+        }
+      }
+
+      let putOutPath: string | null = null;
+      let bringInPath: string | null = null;
+
+      if (baseDirectory) {
+        putOutPath = `${baseDirectory}/Put Out.jpg`;
+        bringInPath = `${baseDirectory}/Bring In.jpg`;
+      }
+
+      if (!putOutPath && hasFileExtension && sanitizedPath) {
+        putOutPath = sanitizedPath;
+      }
+
+      if (!bringInPath && hasFileExtension && sanitizedPath) {
+        bringInPath = sanitizedPath;
+      }
 
       try {
         const bucket = supabase.storage.from("proofs");
-        console.log("Looking for path:", currentJob.photo_path);
 
-        const { data, error } = await bucket.createSignedUrl(
-          currentJob.photo_path,
-          60 * 60
-        );
+        const loadSignedUrl = async (path: string | null) => {
+          if (!path) return null;
+          try {
+            const { data, error } = await bucket.createSignedUrl(path, 60 * 60);
+            if (error) {
+              console.warn(`Unable to load reference image at ${path}:`, error);
+              return null;
+            }
+            return data?.signedUrl ?? null;
+          } catch (err) {
+            console.warn(
+              `Unexpected error loading reference image at ${path}:`,
+              err
+            );
+            return null;
+          }
+        };
 
-        if (error) {
-          console.warn(
-            `Unable to load reference image at ${currentJob.photo_path}:`,
-            error
-          );
-          if (!isCancelled) {
-            setReferenceUrls({ putOut: null, bringIn: null });
-          }
-        } else {
-          if (!isCancelled) {
-            setReferenceUrls({
-              putOut:
-                currentJob.job_type === "put_out"
-                  ? data?.signedUrl ?? PUT_OUT_PLACEHOLDER_URL
-                  : null,
-              bringIn:
-                currentJob.job_type === "bring_in"
-                  ? data?.signedUrl ?? BRING_IN_PLACEHOLDER_URL
-                  : null,
-            });
-          }
+        const fallbackPath = hasFileExtension ? sanitizedPath : null;
+
+        const [putOutUrl, bringInUrl] = await Promise.all([
+          loadSignedUrl(putOutPath ?? fallbackPath),
+          loadSignedUrl(bringInPath ?? fallbackPath),
+        ]);
+
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: putOutUrl, bringIn: bringInUrl });
         }
       } catch (err) {
-        console.warn("Unexpected error loading reference image:", err);
         if (!isCancelled) {
+          console.warn("Failed to load reference images:", err);
           setReferenceUrls({ putOut: null, bringIn: null });
         }
       } finally {
@@ -310,9 +364,11 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
+      const fileLabel = job.job_type === "bring_in" ? "bring-in" : "put-out";
+      const finalFileName = `${fileLabel}-${safeTimestamp}.jpg`;
       const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = job.photo_path ?? `${job.id}/${finalFileName}`;
+      const path = `${job.id}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
@@ -341,7 +397,7 @@ export default function ProofPageContent() {
 
       const { error: updateErr } = await supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr, photo_path: path })
+        .update({ last_completed_on: dateStr })
         .eq("id", job.id);
       if (updateErr) throw updateErr;
 
