@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
 
@@ -36,6 +36,28 @@ const slugifyClientSegment = (value: string | null): string =>
 
 const slugifyAddressSegment = (value: string | null): string =>
   slugifySegment(value, "unknown-address");
+
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const PUT_OUT_PLACEHOLDER_URL =
+  "https://via.placeholder.com/600x800?text=Put+Bins+Out";
+const BRING_IN_PLACEHOLDER_URL =
+  "https://via.placeholder.com/600x800?text=Bring+Bins+In";
+
+function buildStoragePrefix(job: Job, date: Date): string {
+  const monthYearParts = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).formatToParts(date);
+  const month = monthYearParts.find((part) => part.type === "month")?.value ?? "";
+  const year = monthYearParts.find((part) => part.type === "year")?.value ?? "";
+  const monthYear = [month, year].filter(Boolean).join(", ");
+  const week = Math.min(Math.max(Math.ceil(date.getDate() / 7), 1), 5);
+  const clientSegment = slugifyClientSegment(job.client_name);
+  const addressSegment = slugifyAddressSegment(job.address);
+
+  return `${clientSegment}/${addressSegment}/${monthYear}/Week ${week}/`;
+}
 
 async function prepareFileAsJpeg(
   originalFile: File,
@@ -101,7 +123,7 @@ async function prepareFileAsJpeg(
 }
 
 export default function ProofPageContent() {
-  const supabase = createClientComponentClient();
+  const supabase = useMemo(() => createClientComponentClient(), []);
   const params = useSearchParams();
   const router = useRouter();
 
@@ -113,6 +135,11 @@ export default function ProofPageContent() {
   const [note, setNote] = useState("");
   const [showInstructions, setShowInstructions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [referenceUrls, setReferenceUrls] = useState<{
+    putOut: string | null;
+    bringIn: string | null;
+  }>({ putOut: null, bringIn: null });
+  const [referenceLookupComplete, setReferenceLookupComplete] = useState(false);
 
   const [gpsData, setGpsData] = useState<{
     lat: number | null;
@@ -206,6 +233,73 @@ export default function ProofPageContent() {
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx]; // current job
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function fetchReferenceImages(currentJob: Job | undefined) {
+      if (!currentJob) {
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: null, bringIn: null });
+          setReferenceLookupComplete(false);
+        }
+        return;
+      }
+
+      setReferenceLookupComplete(false);
+      setReferenceUrls({ putOut: null, bringIn: null });
+
+      const referenceDate = (() => {
+        if (!currentJob.last_completed_on) return new Date();
+        const parsed = new Date(currentJob.last_completed_on);
+        return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+      })();
+
+      const prefix = buildStoragePrefix(currentJob, referenceDate);
+      const bucket = supabase.storage.from("proofs");
+
+      async function getSignedUrl(fileName: string): Promise<string | null> {
+        const filePath = `${prefix}${fileName}`;
+        try {
+          const { data, error } = await bucket.createSignedUrl(filePath, 60 * 60);
+          if (error) {
+            console.warn(`Unable to load reference image at ${filePath}:`, error);
+            return null;
+          }
+          return data?.signedUrl ?? null;
+        } catch (err) {
+          console.warn(`Unexpected error loading reference image at ${filePath}:`, err);
+          return null;
+        }
+      }
+
+      try {
+        const [putOutUrl, bringInUrl] = await Promise.all([
+          getSignedUrl("Put Out.jpg"),
+          getSignedUrl("Bring In.jpg"),
+        ]);
+
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: putOutUrl, bringIn: bringInUrl });
+        }
+      } catch (error) {
+        console.warn("Unable to load reference images:", error);
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: null, bringIn: null });
+        }
+      } finally {
+        if (!isCancelled) {
+          setReferenceLookupComplete(true);
+        }
+      }
+    }
+
+    fetchReferenceImages(job);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [job, supabase]);
+
   if (!job) return <div className="p-6 text-white">No job found.</div>;
 
   function renderBins(bins: string | null | undefined) {
@@ -261,19 +355,10 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const monthYearParts = new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        year: "numeric",
-      }).formatToParts(now);
-      const month = monthYearParts.find((part) => part.type === "month")?.value ?? "";
-      const year = monthYearParts.find((part) => part.type === "year")?.value ?? "";
-      const monthYear = [month, year].filter(Boolean).join(", ");
-      const week = Math.min(Math.max(Math.ceil(now.getDate() / 7), 1), 5);
-      const clientSegment = slugifyClientSegment(job.client_name);
-      const addressSegment = slugifyAddressSegment(job.address);
+      const storagePrefix = buildStoragePrefix(job, now);
       const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = `${clientSegment}/${addressSegment}/${monthYear}/Week ${week}/${finalFileName}`;
+      const path = `${storagePrefix}${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
@@ -324,6 +409,13 @@ export default function ProofPageContent() {
     }
   }
 
+  const putOutImageSrc = referenceLookupComplete
+    ? referenceUrls.putOut ?? PUT_OUT_PLACEHOLDER_URL
+    : referenceUrls.putOut ?? TRANSPARENT_PIXEL;
+  const bringInImageSrc = referenceLookupComplete
+    ? referenceUrls.bringIn ?? BRING_IN_PLACEHOLDER_URL
+    : referenceUrls.bringIn ?? TRANSPARENT_PIXEL;
+
   return (
     <div className="flex flex-col min-h-screen bg-black text-white relative">
       <div className="flex-1 p-6 pb-32 space-y-4">
@@ -350,7 +442,7 @@ export default function ProofPageContent() {
                 <div className="flex-1">
                   <p className="text-sm text-gray-500 mb-2">Bins Out:</p>
                   <img
-                    src="https://via.placeholder.com/600x800?text=Put+Bins+Out"
+                    src={putOutImageSrc}
                     alt="Bins Out Example"
                     className="w-full aspect-[3/4] object-cover rounded-lg"
                   />
@@ -358,7 +450,7 @@ export default function ProofPageContent() {
                 <div className="flex-1">
                   <p className="text-sm text-gray-500 mb-2">Bins In:</p>
                   <img
-                    src="https://via.placeholder.com/600x800?text=Bring+Bins+In"
+                    src={bringInImageSrc}
                     alt="Bins In Example"
                     className="w-full aspect-[3/4] object-cover rounded-lg"
                   />
