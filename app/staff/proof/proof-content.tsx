@@ -13,29 +13,10 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
+  photo_path: string | null; // ✅ now using this directly
   client_name: string | null;
   last_completed_on?: string | null;
 };
-
-function slugifySegment(value: string | null, fallback: string): string {
-  const trimmed = value?.trim();
-  if (!trimmed) return fallback;
-
-  const normalized = trimmed
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return normalized || fallback;
-}
-
-const slugifyClientSegment = (value: string | null): string =>
-  slugifySegment(value, "unknown-client");
-
-const slugifyAddressSegment = (value: string | null): string =>
-  slugifySegment(value, "unknown-address");
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -43,21 +24,6 @@ const PUT_OUT_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Put+Bins+Out";
 const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
-
-function buildStoragePrefix(job: Job, date: Date): string {
-  const monthYearParts = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    year: "numeric",
-  }).formatToParts(date);
-  const month = monthYearParts.find((part) => part.type === "month")?.value ?? "";
-  const year = monthYearParts.find((part) => part.type === "year")?.value ?? "";
-  const monthYear = [month, year].filter(Boolean).join(", ");
-  const week = Math.min(Math.max(Math.ceil(date.getDate() / 7), 1), 5);
-  const clientSegment = slugifyClientSegment(job.client_name);
-  const addressSegment = slugifyAddressSegment(job.address);
-
-  return `${clientSegment}/${addressSegment}/${monthYear}/Week ${week}/`;
-}
 
 async function prepareFileAsJpeg(
   originalFile: File,
@@ -159,27 +125,18 @@ export default function ProofPageContent() {
       if (rawJobs) {
         const parsed = JSON.parse(rawJobs);
         if (Array.isArray(parsed)) {
-          const normalized = parsed.map((j: any): Job => {
-            const lat = typeof j?.lat === "number" ? j.lat : Number(j?.lat ?? 0);
-            const lng = typeof j?.lng === "number" ? j.lng : Number(j?.lng ?? 0);
-            return {
-              id: String(j?.id ?? ""),
-              address: String(j?.address ?? ""),
-              job_type: j?.job_type === "bring_in" ? "bring_in" : "put_out",
-              bins: j?.bins ?? null,
-              notes: j?.notes ?? null,
-              lat: Number.isFinite(lat) ? lat : 0,
-              lng: Number.isFinite(lng) ? lng : 0,
-              client_name:
-                j?.client_name !== undefined && j?.client_name !== null
-                  ? String(j.client_name)
-                  : null,
-              last_completed_on:
-                j?.last_completed_on !== undefined && j?.last_completed_on !== null
-                  ? String(j.last_completed_on)
-                  : null,
-            };
-          });
+          const normalized = parsed.map((j: any): Job => ({
+            id: String(j?.id ?? ""),
+            address: String(j?.address ?? ""),
+            job_type: j?.job_type === "bring_in" ? "bring_in" : "put_out",
+            bins: j?.bins ?? null,
+            notes: j?.notes ?? null,
+            lat: Number(j?.lat ?? 0),
+            lng: Number(j?.lng ?? 0),
+            client_name: j?.client_name ?? null,
+            last_completed_on: j?.last_completed_on ?? null,
+            photo_path: j?.photo_path ?? null, // ✅
+          }));
           setJobs(normalized);
         }
       }
@@ -233,57 +190,54 @@ export default function ProofPageContent() {
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx]; // current job
 
+  // ✅ New: just grab signed URL for job.photo_path
   useEffect(() => {
     let isCancelled = false;
 
-    async function fetchReferenceImages(currentJob: Job | undefined) {
-      if (!currentJob) {
+    async function fetchReferenceImage(currentJob: Job | undefined) {
+      if (!currentJob?.photo_path) {
         if (!isCancelled) {
           setReferenceUrls({ putOut: null, bringIn: null });
-          setReferenceLookupComplete(false);
+          setReferenceLookupComplete(true);
         }
         return;
       }
 
       setReferenceLookupComplete(false);
-      setReferenceUrls({ putOut: null, bringIn: null });
-
-      const referenceDate = (() => {
-        if (!currentJob.last_completed_on) return new Date();
-        const parsed = new Date(currentJob.last_completed_on);
-        return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-      })();
-
-      const prefix = buildStoragePrefix(currentJob, referenceDate);
-      const bucket = supabase.storage.from("proofs");
-
-      async function getSignedUrl(fileName: string): Promise<string | null> {
-        const filePath = `${prefix}${fileName}`;
-        try {
-          const { data, error } = await bucket.createSignedUrl(filePath, 60 * 60);
-          if (error) {
-            console.warn(`Unable to load reference image at ${filePath}:`, error);
-            return null;
-          }
-          return data?.signedUrl ?? null;
-        } catch (err) {
-          console.warn(`Unexpected error loading reference image at ${filePath}:`, err);
-          return null;
-        }
-      }
 
       try {
-        const [putOutUrl, bringInUrl] = await Promise.all([
-          getSignedUrl("Put Out.jpg"),
-          getSignedUrl("Bring In.jpg"),
-        ]);
-        console.log("Signed URL for Put Out:", putOutUrl);
-        console.log("Signed URL for Bring In:", bringInUrl);
-        if (!isCancelled) {
-          setReferenceUrls({ putOut: putOutUrl, bringIn: bringInUrl });
+        const bucket = supabase.storage.from("proofs");
+        console.log("Looking for path:", currentJob.photo_path);
+
+        const { data, error } = await bucket.createSignedUrl(
+          currentJob.photo_path,
+          60 * 60
+        );
+
+        if (error) {
+          console.warn(
+            `Unable to load reference image at ${currentJob.photo_path}:`,
+            error
+          );
+          if (!isCancelled) {
+            setReferenceUrls({ putOut: null, bringIn: null });
+          }
+        } else {
+          if (!isCancelled) {
+            setReferenceUrls({
+              putOut:
+                currentJob.job_type === "put_out"
+                  ? data?.signedUrl ?? PUT_OUT_PLACEHOLDER_URL
+                  : null,
+              bringIn:
+                currentJob.job_type === "bring_in"
+                  ? data?.signedUrl ?? BRING_IN_PLACEHOLDER_URL
+                  : null,
+            });
+          }
         }
-      } catch (error) {
-        console.warn("Unable to load reference images:", error);
+      } catch (err) {
+        console.warn("Unexpected error loading reference image:", err);
         if (!isCancelled) {
           setReferenceUrls({ putOut: null, bringIn: null });
         }
@@ -294,7 +248,7 @@ export default function ProofPageContent() {
       }
     }
 
-    fetchReferenceImages(job);
+    fetchReferenceImage(job);
 
     return () => {
       isCancelled = true;
@@ -356,14 +310,13 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const storagePrefix = buildStoragePrefix(job, now);
       const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = `${storagePrefix}${finalFileName}`;
+      const path = job.photo_path ?? `${job.id}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
-        .upload(path, uploadFile, { upsert: false });
+        .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
 
       const staffNote = note.trim();
@@ -388,7 +341,7 @@ export default function ProofPageContent() {
 
       const { error: updateErr } = await supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr })
+        .update({ last_completed_on: dateStr, photo_path: path })
         .eq("id", job.id);
       if (updateErr) throw updateErr;
 
@@ -412,10 +365,10 @@ export default function ProofPageContent() {
 
   const putOutImageSrc = referenceLookupComplete
     ? referenceUrls.putOut ?? PUT_OUT_PLACEHOLDER_URL
-    : referenceUrls.putOut ?? TRANSPARENT_PIXEL;
+    : TRANSPARENT_PIXEL;
   const bringInImageSrc = referenceLookupComplete
     ? referenceUrls.bringIn ?? BRING_IN_PLACEHOLDER_URL
-    : referenceUrls.bringIn ?? TRANSPARENT_PIXEL;
+    : TRANSPARENT_PIXEL;
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white relative">
@@ -458,7 +411,6 @@ export default function ProofPageContent() {
                 </div>
               </div>
 
-
               {/* Text instructions */}
               <div>
                 <p className="text-sm text-gray-500 mb-2">
@@ -466,7 +418,7 @@ export default function ProofPageContent() {
                 </p>
                 <p>
                   Place bins neatly at the edge of the driveway with lids closed.
-                  Ensure bins do not block pedestrian walkways or driveways.  
+                  Ensure bins do not block pedestrian walkways or driveways.
                   (This text will be customized per job later.)
                 </p>
               </div>
@@ -522,23 +474,23 @@ export default function ProofPageContent() {
           )}
         </div>
 
-      {/* Leave note */}
-      <div>
-        <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
-        <textarea
-          value={note}
+        {/* Leave note */}
+        <div>
+          <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
+          <textarea
+            value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Add any details..."
-          className="w-full p-3 rounded-lg bg-white text-black min-h-[100px]"
-        />
-      </div>
-
-      {gpsError && (
-        <div className="text-sm text-red-400">
-          <p>{gpsError}</p>
+            className="w-full p-3 rounded-lg bg-white text-black min-h-[100px]"
+          />
         </div>
-      )}
-    </div>
+
+        {gpsError && (
+          <div className="text-sm text-red-400">
+            <p>{gpsError}</p>
+          </div>
+        )}
+      </div>
 
       {/* Mark Done pinned bottom */}
       <div className="absolute bottom-0 inset-x-0 p-4">
