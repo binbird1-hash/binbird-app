@@ -31,13 +31,16 @@ export default function SignInClient() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      setError("Supabase environment variables are not configured.");
-      setLoading(false);
-      return;
+    const supabase = createClientComponentClient({ isSingleton: false });
+    const authWithStorage = supabase.auth as unknown as {
+      storage?: { cookieOptions?: { maxAge?: number } };
+    };
+    const storage = authWithStorage.storage;
+    if (storage?.cookieOptions) {
+      storage.cookieOptions.maxAge = stayLoggedIn
+        ? 60 * 60 * 24 * 30 * 1000
+        : 60 * 60 * 12 * 1000;
     }
 
     const cookieOptions: DefaultCookieOptions = {
