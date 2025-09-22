@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -70,6 +71,7 @@ function formatTimestamp(input: string | null): string | null {
 }
 
 function CompletedRunContent() {
+  const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient(), []);
   const [runData, setRunData] = useState<RunSessionRecord | null | undefined>(
     undefined
@@ -404,12 +406,13 @@ function CompletedRunContent() {
           >
             Open planner
           </Link>
-          <Link
-            href="/ops/logs"
-            className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-4 py-3 font-semibold text-white hover:bg-gray-900 transition"
+          <button
+            type="button"
+            onClick={() => router.push("/staff")}
+            className="inline-flex items-center justify-center rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-black hover:opacity-90 transition"
           >
-            Review logs
-          </Link>
+            Exit Page
+          </button>
         </div>
       </section>
     </div>
