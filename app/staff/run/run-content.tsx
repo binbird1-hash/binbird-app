@@ -121,10 +121,11 @@ function RunPageContent() {
 
         const { data, error } = await supabase
           .from("jobs")
-          .select<JobRecord>("*")
+          .select("*")
           .eq("assigned_to", user.id)
           .eq("day_of_week", todayName)
-          .or(`last_completed_on.is.null,last_completed_on.neq.${todayDate}`);
+          .or(`last_completed_on.is.null,last_completed_on.neq.${todayDate}`)
+          .returns<JobRecord[]>();
 
         if (!error && data) {
           const normalized = normalizeJobs<JobRecord>(data);
