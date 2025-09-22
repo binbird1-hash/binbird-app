@@ -101,9 +101,12 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
     photo_path: normalizeOptionalString(record.photo_path),
     last_completed_on: normalizeDate(record.last_completed_on),
     assigned_to: normalizeOptionalString(record.assigned_to),
-    day_of_week: normalizeOptionalString(record.day_of_week),
+    day_of_week: record.day_of_week
+      ? String(record.day_of_week).trim()
+      : null,
   };
 }
+
 
 export function normalizeJobs<T extends Partial<JobRecord>>(
   records: T[] | null | undefined
