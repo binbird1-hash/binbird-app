@@ -263,25 +263,27 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <div className="pt-16 pb-12 px-6 max-w-3xl mx-auto space-y-8">
-      <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold text-[#ff5757]">Run complete!</h1>
-        <p className="text-gray-300">
-          Nice work out there. Here&apos;s a quick recap of your shift.
-        </p>
-      </header>
+    <>
+      <div className="mx-auto max-w-3xl px-6 pt-16 pb-32">
+        <div className="space-y-8">
+          <header className="space-y-2 text-center">
+            <h1 className="text-3xl font-bold text-[#ff5757]">Run complete!</h1>
+            <p className="text-gray-300">
+              Nice work out there. Here&apos;s a quick recap of your shift.
+            </p>
+          </header>
 
-      <section className="bg-[#0d0d0d] border border-gray-800 rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-white">Run summary</h2>
-          {runData === undefined && (
-            <span className="text-sm text-gray-500">Loading…</span>
-          )}
-        </div>
+          <section className="space-y-4 rounded-xl border border-gray-800 bg-[#0d0d0d] p-6">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-white">Run summary</h2>
+              {runData === undefined && (
+                <span className="text-sm text-gray-500">Loading…</span>
+              )}
+            </div>
 
-        {runData === undefined ? (
-          <p className="text-gray-400">
-            Hang tight while we gather the final numbers.
+            {runData === undefined ? (
+              <p className="text-gray-400">
+                Hang tight while we gather the final numbers.
           </p>
         ) : runData === null ? (
           <p className="text-gray-400">
@@ -344,67 +346,68 @@ function CompletedRunContent() {
             </div>
           </div>
         )}
-      </section>
+          </section>
 
-      <section className="bg-[#0d0d0d] border border-gray-800 rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-white">What&apos;s next</h2>
-          {assignmentStatus === "loading" && (
-            <span className="text-sm text-gray-500">Checking…</span>
-          )}
-        </div>
+          <section className="space-y-4 rounded-xl border border-gray-800 bg-[#0d0d0d] p-6">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-white">What&apos;s next</h2>
+              {assignmentStatus === "loading" && (
+                <span className="text-sm text-gray-500">Checking…</span>
+              )}
+            </div>
 
-        {assignmentStatus === "loading" ? (
-          <p className="text-gray-400">Looking up your next shift…</p>
-        ) : assignmentStatus === "error" ? (
-          <p className="text-gray-400">{assignmentError}</p>
-        ) : nextAssignment ? (
-          <div className="space-y-3">
-            <p className="text-gray-300">
-              You&apos;re next scheduled on
-              <span className="font-semibold text-white">
-                {" "}
-                {nextAssignment.day}
-              </span>
-              {" "}
-              with {nextAssignment.totalJobs} stop
-              {nextAssignment.totalJobs === 1 ? "" : "s"}.
-            </p>
-              <div className="bg-black border border-gray-800 rounded-lg p-4">
-                <p className="text-xs uppercase text-gray-400 tracking-wide">
-                  First stop
+            {assignmentStatus === "loading" ? (
+              <p className="text-gray-400">Looking up your next shift…</p>
+            ) : assignmentStatus === "error" ? (
+              <p className="text-gray-400">{assignmentError}</p>
+            ) : nextAssignment ? (
+              <div className="space-y-3">
+                <p className="text-gray-300">
+                  You&apos;re next scheduled on
+                  <span className="font-semibold text-white">
+                    {" "}
+                    {nextAssignment.day}
+                  </span>
+                  {" "}
+                  with {nextAssignment.totalJobs} stop
+                  {nextAssignment.totalJobs === 1 ? "" : "s"}.
                 </p>
-                <p className="text-lg font-semibold text-white">
-                  {nextAssignment.address || "Address TBC"}
-                </p>
+                <div className="rounded-lg border border-gray-800 bg-black p-4">
+                  <p className="text-xs uppercase text-gray-400 tracking-wide">
+                    First stop
+                  </p>
+                  <p className="text-lg font-semibold text-white">
+                    {nextAssignment.address || "Address TBC"}
+                  </p>
+                </div>
               </div>
-          </div>
-        ) : (
-          <p className="text-gray-300">
-            No other assignments are on the books yet. Check back next
-            {" "}
-            <span className="font-semibold text-white">
-              {todayName || "week"}
-            </span>
-            {" "}
-            for your usual route.
-          </p>
-        )}
-      </section>
-
-    <section className="space-y-3">
-      <div className="fixed bottom-6 left-0 right-0 px-6">
-        <button
-          type="button"
-          onClick={() => router.push("/staff/run")}
-          className="w-full bg-[#ff5757] text-black px-4 py-3 rounded-lg font-bold hover:opacity-90 transition"
-        >
-          End Session
-        </button>
+            ) : (
+              <p className="text-gray-300">
+                No other assignments are on the books yet. Check back next
+                {" "}
+                <span className="font-semibold text-white">
+                  {todayName || "week"}
+                </span>
+                {" "}
+                for your usual route.
+              </p>
+            )}
+          </section>
+        </div>
       </div>
-    </section>
 
-    </div>
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-gray-900 bg-black px-6 py-6">
+        <div className="mx-auto w-full max-w-3xl">
+          <button
+            type="button"
+            onClick={() => router.push("/staff/run")}
+            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-black transition hover:opacity-90"
+          >
+            End Session
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
