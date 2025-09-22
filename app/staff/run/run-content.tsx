@@ -102,7 +102,7 @@ function RunPageContent() {
           .select("*")
           .eq("assigned_to", profile.user_id)
           .ilike("day_of_week", todayName)
-          .eq("last_completed_on", null);
+          .is("last_completed_on", null);
 
         console.log("Jobs raw result:", data, "Error:", error);
         console.log("Filter values → user_id:", user?.id, "todayName:", todayName);
