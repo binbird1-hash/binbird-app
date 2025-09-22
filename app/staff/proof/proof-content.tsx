@@ -4,20 +4,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
-import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { normalizeJobs, type Job } from "@/lib/jobs";
 
-type Job = {
-  id: string;
-  address: string;
-  job_type: "put_out" | "bring_in";
-  bins?: string | null;
-  notes?: string | null;
-  lat: number;
-  lng: number;
-  photo_path: string | null;
-  client_name: string | null;
-  last_completed_on?: string | null;
-};
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -128,26 +116,8 @@ export default function ProofPageContent() {
       if (rawJobs) {
         const parsed = JSON.parse(rawJobs);
         if (Array.isArray(parsed)) {
-          const normalized = parsed.map((j: any): Job => ({
-            id: String(j?.id ?? ""),
-            address: String(j?.address ?? ""),
-            job_type: j?.job_type === "bring_in" ? "bring_in" : "put_out",
-            bins: j?.bins ?? null,
-            notes: j?.notes ?? null,
-            lat: Number(j?.lat ?? 0),
-            lng: Number(j?.lng ?? 0),
-            client_name: j?.client_name ?? null,
-            last_completed_on: j?.last_completed_on ?? null,
-            photo_path:
-              typeof j?.photo_path === "string" && j.photo_path.trim().length
-                ? j.photo_path
-                : null,
-          }));
-          setJobs(normalized);
-          setInitialTotalJobs((prev) => (prev === null ? normalized.length : prev));
-          setRemainingJobsCount((prev) =>
-            prev === null ? normalized.length : prev
-          );
+          setJobs(normalizeJobs(parsed));
+
         }
       }
       if (rawIdx) {

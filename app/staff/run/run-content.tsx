@@ -9,19 +9,8 @@ import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { getLocalISODate } from "@/lib/date";
-
-type Job = {
-  id: string;
-  address: string;
-  lat: number;
-  lng: number;
-  job_type: "put_out" | "bring_in";
-  bins?: string | null;
-  notes?: string | null;
-  client_name: string | null;
-  last_completed_on?: string | null;
-  photo_path: string | null;
-};
+import { normalizeJobs, type Job } from "@/lib/jobs";
+import type { JobRecord } from "@/lib/database.types";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -137,25 +126,15 @@ function RunPageContent() {
           .eq("day_of_week", todayName)
           .is("last_completed_on", null);
 
+
         if (!error && data) {
-          const normalized = (data as any[]).map((j) => ({
-            ...j,
-            client_name: j?.client_name ?? null,
-            last_completed_on:
-              j?.last_completed_on !== undefined && j?.last_completed_on !== null
-                ? String(j.last_completed_on)
-                : null,
-            photo_path:
-              typeof j?.photo_path === "string" && j.photo_path.trim().length
-                ? j.photo_path
-                : null,
-          }));
+          const normalized = normalizeJobs<JobRecord>(data);
 
           const availableJobs = normalized.filter(
             (job) => job.last_completed_on === null
           );
 
-          setJobs(availableJobs as Job[]);
+          setJobs(availableJobs);
         }
       } finally {
         setLoading(false);

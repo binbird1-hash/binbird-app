@@ -7,18 +7,8 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { normalizeJobs, type Job } from "@/lib/jobs";
 
-type Job = {
-  id: string;
-  address: string;
-  lat: number;
-  lng: number;
-  job_type: "put_out" | "bring_in" | "end";
-  bins?: string | null;
-  notes?: string | null;
-  client_name: string | null;
-  photo_path: string | null;
-};
 
 function RoutePageContent() {
   const supabase = createClientComponentClient();
@@ -66,33 +56,8 @@ function RoutePageContent() {
       if (rawJobs) {
         const parsedJobs = JSON.parse(rawJobs);
         if (Array.isArray(parsedJobs)) {
-          const normalizedJobs = parsedJobs.map((j: any): Job => {
-            const lat = typeof j?.lat === "number" ? j.lat : Number(j?.lat ?? 0);
-            const lng = typeof j?.lng === "number" ? j.lng : Number(j?.lng ?? 0);
-            return {
-              id: String(j?.id ?? ""),
-              address: String(j?.address ?? ""),
-              lat: Number.isFinite(lat) ? lat : 0,
-              lng: Number.isFinite(lng) ? lng : 0,
-              job_type:
-                j?.job_type === "bring_in"
-                  ? "bring_in"
-                  : j?.job_type === "end"
-                  ? "end"
-                  : "put_out",
-              bins: j?.bins ?? null,
-              notes: j?.notes ?? null,
-              client_name:
-                j?.client_name !== undefined && j?.client_name !== null
-                  ? String(j.client_name)
-                  : null,
-              photo_path:
-                typeof j?.photo_path === "string" && j.photo_path.trim().length
-                  ? j.photo_path
-                  : null,
-            };
-          });
-          setJobs(normalizedJobs);
+          setJobs(normalizeJobs(parsedJobs));
+
         }
       }
       if (rawStart) setStart(JSON.parse(rawStart));
