@@ -4,14 +4,18 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
 export async function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname
+
+  if (pathname.startsWith('/_next/')) {
+    return NextResponse.next()
+  }
+
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
   const {
     data: { session },
   } = await supabase.auth.getSession()
-
-  const pathname = req.nextUrl.pathname
 
   // Staff & Ops routes → require login
   if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops'))) {
