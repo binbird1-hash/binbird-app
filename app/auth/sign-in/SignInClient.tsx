@@ -8,6 +8,7 @@ import {
   createSupabaseClient,
 } from "@supabase/auth-helpers-shared";
 import type { DefaultCookieOptions } from "@supabase/auth-helpers-shared";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import packageInfo from "@supabase/auth-helpers-nextjs/package.json";
 import AuthLayout from "../layout";
 
@@ -32,13 +33,22 @@ export default function SignInClient() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClientComponentClient({ isSingleton: false });
-    const authWithStorage = supabase.auth as unknown as {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setError("Supabase environment variables are not configured.");
+      setLoading(false);
+      return;
+    }
+
+    const componentClient = createClientComponentClient({ isSingleton: false });
+    const authWithStorage = componentClient.auth as unknown as {
       storage?: { cookieOptions?: { maxAge?: number } };
     };
-    const storage = authWithStorage.storage;
-    if (storage?.cookieOptions) {
-      storage.cookieOptions.maxAge = stayLoggedIn
+    const existingStorage = authWithStorage.storage;
+    if (existingStorage?.cookieOptions) {
+      existingStorage.cookieOptions.maxAge = stayLoggedIn
         ? 60 * 60 * 24 * 30 * 1000
         : 60 * 60 * 12 * 1000;
     }
@@ -47,7 +57,7 @@ export default function SignInClient() {
       ...DEFAULT_COOKIE_OPTIONS,
       maxAge: stayLoggedIn ? 60 * 60 * 24 * 30 : 60 * 60 * 12,
     };
-    const storage = new BrowserCookieAuthStorageAdapter(cookieOptions);
+    const cookieStorage = new BrowserCookieAuthStorageAdapter(cookieOptions);
 
     const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -55,12 +65,15 @@ export default function SignInClient() {
           "X-Client-Info": `${packageInfo.name}@${packageInfo.version}`,
         },
       },
-      auth: { storage },
+      auth: { storage: cookieStorage },
     });
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
       return;
     }
