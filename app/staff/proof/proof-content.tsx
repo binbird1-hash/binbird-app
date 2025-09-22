@@ -162,6 +162,41 @@ export default function ProofPageContent() {
   }, [params]);
 
   useEffect(() => {
+  let isCancelled = false;
+
+  async function fetchReferenceImages() {
+    if (!job) return;
+
+    const safeClient = toKebab(job.client_name, "unknown-client");
+    const safeAddress = toKebab(job.address, "unknown-address");
+    const { monthYear, week } = getMonthAndWeek(new Date());
+
+    const basePath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
+
+    const bucket = supabase.storage.from("proofs");
+
+    const [putOutRes, bringInRes] = await Promise.all([
+      bucket.createSignedUrl(`${basePath}/Put Out.jpg`, 3600),
+      bucket.createSignedUrl(`${basePath}/Bring In.jpg`, 3600),
+    ]);
+
+    if (!isCancelled) {
+      setReferenceUrls({
+        putOut: putOutRes.data?.signedUrl ?? null,
+        bringIn: bringInRes.data?.signedUrl ?? null,
+      });
+      setReferenceLookupComplete(true);
+    }
+  }
+
+  fetchReferenceImages();
+
+  return () => {
+    isCancelled = true;
+  };
+}, [jobs, idx, supabase]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const totalFromState =
