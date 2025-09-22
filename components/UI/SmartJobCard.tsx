@@ -1,17 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-
-type Job = {
-  id: string;
-  address: string;
-  job_type: "put_out" | "bring_in";
-  bins?: string | null;
-  notes?: string | null;
-  lat: number;
-  lng: number;
-  client_name: string | null;
-};
+import type { Job } from "@/lib/jobs";
 
 export default function SmartJobCard({
   job,
@@ -88,6 +78,12 @@ export default function SmartJobCard({
         user_id: user.id,
       });
       if (logErr) throw logErr;
+
+      const { error: updateErr } = await supabase
+        .from("jobs")
+        .update({ last_completed_on: dateStr })
+        .eq("id", job.id);
+      if (updateErr) throw updateErr;
 
       onCompleted();
     } catch (e: any) {
