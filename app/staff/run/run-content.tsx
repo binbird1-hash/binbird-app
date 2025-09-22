@@ -58,24 +58,55 @@ function RunPageContent() {
     libraries: LIBRARIES,
   });
 
-  // Load user settings from Supabase
+  // Load today's jobs
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile, error } = await supabase
-        .from("user_profile")
-        .select("map_style_pref, nav_pref")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!error && profile) {
-        if (profile.map_style_pref) setMapStylePref(profile.map_style_pref);
-        if (profile.nav_pref) setNavPref(profile.nav_pref);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+  
+        // 1. Look up the profile row for this logged-in user
+        const { data: profile, error: profileError } = await supabase
+          .from("user_profile")
+          .select("user_id")
+          .eq("email", user.email) // link via email
+          .single();
+  
+        if (profileError || !profile) {
+          console.warn("No matching profile for logged-in user:", profileError);
+          return;
+        }
+  
+        const now = new Date();
+        const todayName =
+          process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE ||
+          now.toLocaleDateString("en-AU", {
+            weekday: "long",
+            timeZone: "Australia/Melbourne", // force Melbourne time
+          });
+  
+        // 2. Fetch jobs assigned to that profile user_id
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*")
+          .eq("assigned_to", profile.user_id)
+          .eq("day_of_week", todayName)
+          .is("last_completed_on", null);
+  
+        console.log("Today:", todayName, "Profile user_id:", profile.user_id, "Jobs:", data, "Error:", error);
+  
+        if (!error && data) {
+          const normalized = normalizeJobs<JobRecord>(data);
+          const availableJobs = normalized.filter(
+            (job) => job.last_completed_on === null
+          );
+          setJobs(availableJobs);
+        }
+      } finally {
+        setLoading(false);
       }
     })();
-  }, []);
+  }, [supabase]);
 
   // Fit bounds helper
   const fitBoundsToMap = useCallback(() => {
