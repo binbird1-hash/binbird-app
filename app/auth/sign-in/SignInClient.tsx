@@ -33,60 +33,34 @@ export default function SignInClient() {
     setError(null);
     setLoading(true);
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    try {
+      const supabase = createClientComponentClient();
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      setError("Supabase environment variables are not configured.");
-      setLoading(false);
-      return;
-    }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const componentClient = createClientComponentClient({ isSingleton: false });
-    const authWithStorage = componentClient.auth as unknown as {
-      storage?: { cookieOptions?: { maxAge?: number } };
-    };
-    const existingStorage = authWithStorage.storage;
-    if (existingStorage?.cookieOptions) {
-      existingStorage.cookieOptions.maxAge = stayLoggedIn
-        ? 60 * 60 * 24 * 30 * 1000
-        : 60 * 60 * 12 * 1000;
-    }
-
-    const cookieOptions: DefaultCookieOptions = {
-      ...DEFAULT_COOKIE_OPTIONS,
-      maxAge: stayLoggedIn ? 60 * 60 * 24 * 30 : 60 * 60 * 12,
-    };
-    const cookieStorage = new BrowserCookieAuthStorageAdapter(cookieOptions);
-
-    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          "X-Client-Info": `${packageInfo.name}@${packageInfo.version}`,
-        },
-      },
-      auth: { storage: cookieStorage },
-    });
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (signInError) {
-      setError(signInError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      if (stayLoggedIn) {
-        window.localStorage.setItem("binbird-stay-logged-in", "true");
-      } else {
-        window.localStorage.removeItem("binbird-stay-logged-in");
+      if (signInError) {
+        setError(signInError.message);
+        return;
       }
+
+      // save preference
+      if (typeof window !== "undefined") {
+        if (stayLoggedIn) {
+          window.localStorage.setItem("binbird-stay-logged-in", "true");
+        } else {
+          window.localStorage.removeItem("binbird-stay-logged-in");
+        }
+      }
+
+      router.push("/staff/run");
+    } finally {
+      setLoading(false);
     }
-    router.push("/staff/run");
   }
+
 
   return (
     <AuthLayout>

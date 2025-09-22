@@ -126,7 +126,7 @@ function RunPageContent() {
           .eq("day_of_week", todayName)
           .is("last_completed_on", null);
 
-
+        console.log("Today:", todayName, "Jobs in table:", data);
         if (!error && data) {
           const normalized = normalizeJobs<JobRecord>(data);
 
