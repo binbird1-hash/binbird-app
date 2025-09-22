@@ -376,26 +376,40 @@ function RunPageContent() {
             </div>
 
             <div className="mt-4">
-              <button
-                className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
-                  isPlanned ? "bg-green-600 hover:bg-green-700" : "bg-[#ff5757] hover:opacity-90"
-                }`}
-                onClick={() => {
-                  console.log("Button clicked, isPlanned:", isPlanned);
-                  if (isPlanned) {
-                    router.push(
-                      `/staff/route?jobs=${encodeURIComponent(JSON.stringify(ordered))}&start=${encodeURIComponent(
-                        JSON.stringify(start)
-                      )}&end=${encodeURIComponent(JSON.stringify(end))}`
-                    );
-                  } else {
-                    buildRoute();
-                  }
-                }}
-              >
-                {isPlanned ? "Start Route" : "Plan Route"}
-              </button>
+              {jobs.length === 0 ? (
+                <button
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-gray-600 cursor-not-allowed"
+                  disabled
+                >
+                  No Jobs Today
+                </button>
+              ) : (
+                <button
+                  className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
+                    isPlanned
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-[#ff5757] hover:opacity-90"
+                  }`}
+                  onClick={() => {
+                    console.log("Button clicked, isPlanned:", isPlanned);
+                    if (isPlanned) {
+                      router.push(
+                        `/staff/route?jobs=${encodeURIComponent(
+                          JSON.stringify(ordered)
+                        )}&start=${encodeURIComponent(
+                          JSON.stringify(start)
+                        )}&end=${encodeURIComponent(JSON.stringify(end))}`
+                      );
+                    } else {
+                      buildRoute();
+                    }
+                  }}
+                >
+                  {isPlanned ? "Start Route" : "Plan Route"}
+                </button>
+              )}
             </div>
+
           </div>
         </div>
       </div>
