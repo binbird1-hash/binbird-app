@@ -43,6 +43,7 @@ export default function SignInClient() {
 
       if (signInError) {
         setError(signInError.message);
+        setLoading(false);
         return;
       }
 
@@ -56,7 +57,12 @@ export default function SignInClient() {
       }
 
       router.push("/staff/run");
-    } finally {
+    } catch (unknownError) {
+      const message =
+        unknownError instanceof Error
+          ? unknownError.message
+          : "An unexpected error occurred. Please try again.";
+      setError(message);
       setLoading(false);
     }
   }
