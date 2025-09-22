@@ -9,7 +9,6 @@ import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSet
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 
-
 function RoutePageContent() {
   const supabase = createClientComponentClient();
   const params = useSearchParams();
@@ -21,9 +20,7 @@ function RoutePageContent() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<
-    google.maps.LatLngLiteral | null
-  >(null);
+  const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -57,7 +54,6 @@ function RoutePageContent() {
         const parsedJobs = JSON.parse(rawJobs);
         if (Array.isArray(parsedJobs)) {
           setJobs(normalizeJobs(parsedJobs));
-
         }
       }
       if (rawStart) setStart(JSON.parse(rawStart));
@@ -82,12 +78,7 @@ function RoutePageContent() {
     : null;
   const isEndStop = normalizedAddress === "end";
 
-  const originLatLng = useMemo(() => {
-    if (currentLocation) return currentLocation;
-    if (previousJob) return { lat: previousJob.lat, lng: previousJob.lng };
-    return start;
-  }, [currentLocation, previousJob, start]);
-
+  // Update current location
   useEffect(() => {
     if (!activeJob || !navigator.geolocation) return;
 
@@ -103,9 +94,7 @@ function RoutePageContent() {
       },
       (err) => {
         console.warn("Unable to read current location:", err);
-        if (!isCancelled) {
-          setCurrentLocation(null);
-        }
+        if (!isCancelled) setCurrentLocation(null);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -124,11 +113,22 @@ function RoutePageContent() {
       return;
     }
 
+    // ✅ Origin priority:
+    // 1) GPS current location
+    // 2) Previous job (if not the first)
+    // 3) The run's "start"
     let origin: google.maps.LatLngLiteral | null = null;
-    if (currentLocation) origin = currentLocation;
-    else if (activeIdx > 0 && previousJob)
+
+    if (currentLocation) {
+      origin = currentLocation;
+      console.log("🚗 Using GPS as origin:", origin);
+    } else if (activeIdx > 0 && previousJob) {
       origin = { lat: previousJob.lat, lng: previousJob.lng };
-    else if (start) origin = start;
+      console.log("📍 GPS unavailable, using previous job as origin:", origin);
+    } else if (start) {
+      origin = start;
+      console.log("📍 GPS unavailable, using run start as origin:", origin);
+    }
 
     if (!origin) {
       setDirections(null);
@@ -144,8 +144,10 @@ function RoutePageContent() {
       { origin, destination, travelMode: google.maps.TravelMode.DRIVING },
       (result, status) => {
         if (isCancelled) return;
-        if (status === "OK" && result) setDirections(result);
-        else {
+        if (status === "OK" && result) {
+          setDirections(result);
+          console.log(`✅ Directions built: ${JSON.stringify(origin)} → ${JSON.stringify(destination)}`);
+        } else {
           console.warn("❌ Directions request failed:", status, result);
           setDirections(null);
         }
@@ -155,16 +157,7 @@ function RoutePageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [
-    isLoaded,
-    jobs,
-    activeIdx,
-    start,
-    activeJob,
-    currentLocation,
-    previousJob,
-    isEndStop,
-  ]);
+  }, [isLoaded, jobs, activeIdx, start, activeJob, currentLocation, previousJob, isEndStop]);
 
   // Fit map bounds
   useEffect(() => {
@@ -173,12 +166,12 @@ function RoutePageContent() {
     if (directions)
       directions.routes[0].overview_path.forEach((p) => bounds.extend(p));
     else {
-      if (originLatLng) bounds.extend(originLatLng);
+      if (currentLocation) bounds.extend(currentLocation);
       if (activeJob) bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
     if (!bounds.isEmpty())
       mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
-  }, [mapRef, directions, originLatLng, activeJob]);
+  }, [mapRef, directions, currentLocation, activeJob]);
 
   // Distance calculation
   function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -235,7 +228,7 @@ function RoutePageContent() {
       <div className="relative h-[150vh]">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
-          center={originLatLng || { lat: activeJob.lat, lng: activeJob.lng }}
+          center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
           zoom={13}
           options={{
             styles: styleMap,
@@ -248,8 +241,8 @@ function RoutePageContent() {
           }}
           onLoad={(map) => setMapRef(map)}
         >
-          {originLatLng && (
-            <Marker position={originLatLng} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />
+          {currentLocation && (
+            <Marker position={currentLocation} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />
           )}
           <Marker position={{ lat: activeJob.lat, lng: activeJob.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />
           {directions && (
