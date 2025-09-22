@@ -27,18 +27,17 @@ function toKebab(value: string | null | undefined, fallback: string): string {
 
 // 🟢 Helper: Month-Year and Week
 function getMonthAndWeek(date: Date) {
-  const monthYear = date
-    .toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    })
-    .replace(", ", "-"); // "September-2025"
+  const monthYear = date.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  }); // e.g. "September, 2024"
 
   const day = date.getDate();
-  const week = `Week-${Math.ceil(day / 7)}`;
+  const week = `Week ${Math.ceil(day / 7)}`;
 
   return { monthYear, week };
 }
+
 
 async function prepareFileAsJpeg(
   originalFile: File,
