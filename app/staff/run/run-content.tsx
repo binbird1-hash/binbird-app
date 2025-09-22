@@ -20,6 +20,7 @@ type Job = {
   notes?: string | null;
   client_name: string | null;
   last_completed_on?: string | null;
+  photo_path: string | null;
 };
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -143,6 +144,10 @@ function RunPageContent() {
             last_completed_on:
               j?.last_completed_on !== undefined && j?.last_completed_on !== null
                 ? String(j.last_completed_on)
+                : null,
+            photo_path:
+              typeof j?.photo_path === "string" && j.photo_path.trim().length
+                ? j.photo_path
                 : null,
           }));
 

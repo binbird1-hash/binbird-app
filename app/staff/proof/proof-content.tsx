@@ -13,7 +13,7 @@ type Job = {
   notes?: string | null;
   lat: number;
   lng: number;
-  photo_path: string | null; // ✅ now using this directly
+  photo_path: string | null;
   client_name: string | null;
   last_completed_on?: string | null;
 };
@@ -135,7 +135,10 @@ export default function ProofPageContent() {
             lng: Number(j?.lng ?? 0),
             client_name: j?.client_name ?? null,
             last_completed_on: j?.last_completed_on ?? null,
-            photo_path: j?.photo_path ?? null, // ✅
+            photo_path:
+              typeof j?.photo_path === "string" && j.photo_path.trim().length
+                ? j.photo_path
+                : null,
           }));
           setJobs(normalized);
         }
@@ -190,7 +193,6 @@ export default function ProofPageContent() {
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx]; // current job
 
-  // ✅ New: just grab signed URL for job.photo_path
   useEffect(() => {
     let isCancelled = false;
 
@@ -205,34 +207,107 @@ export default function ProofPageContent() {
 
       setReferenceLookupComplete(false);
 
+      const sanitizePhotoPath = (input: string): string | null => {
+        if (!input) return null;
+
+        let sanitized = input.trim();
+        if (!sanitized.length) return null;
+
+        const publicSegment = "/storage/v1/object/public/proofs/";
+        const publicIndex = sanitized.indexOf(publicSegment);
+        if (publicIndex !== -1) {
+          sanitized = sanitized.slice(publicIndex + publicSegment.length);
+        }
+
+        if (sanitized.startsWith("public/")) {
+          sanitized = sanitized.slice("public/".length);
+        }
+
+        if (sanitized.startsWith("proofs/")) {
+          sanitized = sanitized.slice("proofs/".length);
+        }
+
+        sanitized = sanitized.split("?")[0]?.split("#")[0] ?? sanitized;
+        sanitized = sanitized.replace(/\\/g, "/");
+
+        try {
+          sanitized = decodeURIComponent(sanitized);
+        } catch {
+          sanitized = sanitized.replace(/%20/g, " ");
+        }
+
+        sanitized = sanitized.replace(/^\/+/, "").replace(/\/{2,}/g, "/").trim();
+
+        return sanitized.length ? sanitized : null;
+      };
+
       try {
         const bucket = supabase.storage.from("proofs");
-        console.log("Looking for path:", currentJob.photo_path);
+        const sanitizedPath = sanitizePhotoPath(currentJob.photo_path);
 
-        const { data, error } = await bucket.createSignedUrl(
-          currentJob.photo_path,
-          60 * 60
-        );
-
-        if (error) {
-          console.warn(
-            `Unable to load reference image at ${currentJob.photo_path}:`,
-            error
-          );
+        if (!sanitizedPath) {
           if (!isCancelled) {
             setReferenceUrls({ putOut: null, bringIn: null });
           }
+          return;
+        }
+
+        const getSignedUrlForPath = async (path: string) => {
+          const normalized = path.replace(/^\/+/, "");
+          const { data: signedData, error: signedError } = await bucket.createSignedUrl(
+            normalized,
+            60 * 60
+          );
+
+          if (signedError) {
+            console.warn(`Unable to load reference image at ${normalized}:`, signedError);
+            return null;
+          }
+
+          return signedData?.signedUrl ?? null;
+        };
+
+        const normalizedPath = sanitizedPath.replace(/^\/+/, "");
+
+        const derivesFolderFromNamedAsset = /\/(put out|bring in)\.jpe?g$/i.test(
+          normalizedPath
+        );
+        const lastSegment = normalizedPath.split("/").filter(Boolean).pop() ?? "";
+        const hasFileExtension = /\.[^./]+$/i.test(lastSegment);
+
+        let baseDir: string | null = null;
+
+        if (normalizedPath.endsWith("/")) {
+          baseDir = normalizedPath.replace(/\/+$/, "");
+        } else if (derivesFolderFromNamedAsset) {
+          const lastSlash = normalizedPath.lastIndexOf("/");
+          baseDir = lastSlash > -1 ? normalizedPath.slice(0, lastSlash) : null;
+        } else if (!hasFileExtension) {
+          baseDir = normalizedPath;
+        }
+
+        if (baseDir && !baseDir.trim().length) {
+          baseDir = null;
+        }
+
+        if (baseDir) {
+          const normalizedBaseDir = baseDir.replace(/^\/+/, "").replace(/\/+$/, "");
+
+          const [putOutUrl, bringInUrl] = await Promise.all([
+            getSignedUrlForPath(`${normalizedBaseDir}/Put Out.jpg`),
+            getSignedUrlForPath(`${normalizedBaseDir}/Bring In.jpg`),
+          ]);
+
+          if (!isCancelled) {
+            setReferenceUrls({ putOut: putOutUrl, bringIn: bringInUrl });
+          }
         } else {
+          const signedUrl = await getSignedUrlForPath(normalizedPath);
+
           if (!isCancelled) {
             setReferenceUrls({
-              putOut:
-                currentJob.job_type === "put_out"
-                  ? data?.signedUrl ?? PUT_OUT_PLACEHOLDER_URL
-                  : null,
-              bringIn:
-                currentJob.job_type === "bring_in"
-                  ? data?.signedUrl ?? BRING_IN_PLACEHOLDER_URL
-                  : null,
+              putOut: currentJob.job_type === "put_out" ? signedUrl : null,
+              bringIn: currentJob.job_type === "bring_in" ? signedUrl : null,
             });
           }
         }
@@ -310,9 +385,11 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const finalFileName = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
+      const fileLabel = job.job_type === "bring_in" ? "bring-in" : "put-out";
+      const finalFileName = `${fileLabel}-${safeTimestamp}.jpg`;
       const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = job.photo_path ?? `${job.id}/${finalFileName}`;
+      const path = `${job.id}/${finalFileName}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
@@ -341,7 +418,7 @@ export default function ProofPageContent() {
 
       const { error: updateErr } = await supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr, photo_path: path })
+        .update({ last_completed_on: dateStr })
         .eq("id", job.id);
       if (updateErr) throw updateErr;
 
