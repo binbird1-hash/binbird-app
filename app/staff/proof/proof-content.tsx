@@ -14,6 +14,32 @@ const PUT_OUT_PLACEHOLDER_URL =
 const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
 
+// 🟢 Helper: turn text into kebab-case
+function toKebab(value: string | null, fallback: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return fallback;
+
+  return trimmed
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric with hyphen
+    .replace(/^-+|-+$/g, ""); // trim leading/trailing hyphens
+}
+
+// 🟢 Helper: Month-Year and Week
+function getMonthAndWeek(date: Date) {
+  const monthYear = date
+    .toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    })
+    .replace(", ", "-"); // e.g. "September-2025"
+
+  const day = date.getDate();
+  const week = `Week-${Math.ceil(day / 7)}`;
+
+  return { monthYear, week };
+}
+
 async function prepareFileAsJpeg(
   originalFile: File,
   desiredName: string
@@ -117,7 +143,6 @@ export default function ProofPageContent() {
         const parsed = JSON.parse(rawJobs);
         if (Array.isArray(parsed)) {
           setJobs(normalizeJobs(parsed));
-
         }
       }
       if (rawIdx) {
@@ -217,145 +242,6 @@ export default function ProofPageContent() {
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx]; // current job
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function fetchReferenceImage(currentJob: Job | undefined) {
-      if (!currentJob?.photo_path) {
-        if (!isCancelled) {
-          setReferenceUrls({ putOut: null, bringIn: null });
-          setReferenceLookupComplete(true);
-        }
-        return;
-      }
-
-      setReferenceLookupComplete(false);
-
-      const sanitizePhotoPath = (input: string): string | null => {
-        if (!input) return null;
-
-        let sanitized = input.trim();
-        if (!sanitized.length) return null;
-
-        const publicSegment = "/storage/v1/object/public/proofs/";
-        const publicIndex = sanitized.indexOf(publicSegment);
-        if (publicIndex !== -1) {
-          sanitized = sanitized.slice(publicIndex + publicSegment.length);
-        }
-
-        if (sanitized.startsWith("public/")) {
-          sanitized = sanitized.slice("public/".length);
-        }
-
-        if (sanitized.startsWith("proofs/")) {
-          sanitized = sanitized.slice("proofs/".length);
-        }
-
-        sanitized = sanitized.split("?")[0]?.split("#")[0] ?? sanitized;
-        sanitized = sanitized.replace(/\\/g, "/");
-
-        try {
-          sanitized = decodeURIComponent(sanitized);
-        } catch {
-          sanitized = sanitized.replace(/%20/g, " ");
-        }
-
-        sanitized = sanitized.replace(/^\/+/, "").replace(/\/{2,}/g, "/").trim();
-
-        return sanitized.length ? sanitized : null;
-      };
-
-      try {
-        const bucket = supabase.storage.from("proofs");
-        const sanitizedPath = sanitizePhotoPath(currentJob.photo_path);
-
-        if (!sanitizedPath) {
-          if (!isCancelled) {
-            setReferenceUrls({ putOut: null, bringIn: null });
-          }
-          return;
-        }
-
-        const getSignedUrlForPath = async (path: string) => {
-          const normalized = path.replace(/^\/+/, "");
-          const { data: signedData, error: signedError } = await bucket.createSignedUrl(
-            normalized,
-            60 * 60
-          );
-
-          if (signedError) {
-            console.warn(`Unable to load reference image at ${normalized}:`, signedError);
-            return null;
-          }
-
-          return signedData?.signedUrl ?? null;
-        };
-
-        const normalizedPath = sanitizedPath.replace(/^\/+/, "");
-
-        const derivesFolderFromNamedAsset = /\/(put out|bring in)\.jpe?g$/i.test(
-          normalizedPath
-        );
-        const lastSegment = normalizedPath.split("/").filter(Boolean).pop() ?? "";
-        const hasFileExtension = /\.[^./]+$/i.test(lastSegment);
-
-        let baseDir: string | null = null;
-
-        if (normalizedPath.endsWith("/")) {
-          baseDir = normalizedPath.replace(/\/+$/, "");
-        } else if (derivesFolderFromNamedAsset) {
-          const lastSlash = normalizedPath.lastIndexOf("/");
-          baseDir = lastSlash > -1 ? normalizedPath.slice(0, lastSlash) : null;
-        } else if (!hasFileExtension) {
-          baseDir = normalizedPath;
-        }
-
-        if (baseDir && !baseDir.trim().length) {
-          baseDir = null;
-        }
-
-        if (baseDir) {
-          const normalizedBaseDir = baseDir.replace(/^\/+/, "").replace(/\/+$/, "");
-
-          const [putOutUrl, bringInUrl] = await Promise.all([
-            getSignedUrlForPath(`${normalizedBaseDir}/Put Out.jpg`),
-            getSignedUrlForPath(`${normalizedBaseDir}/Bring In.jpg`),
-          ]);
-
-          if (!isCancelled) {
-            setReferenceUrls({ putOut: putOutUrl, bringIn: bringInUrl });
-          }
-        } else {
-          const signedUrl = await getSignedUrlForPath(normalizedPath);
-
-          if (!isCancelled) {
-            setReferenceUrls({
-              putOut: currentJob.job_type === "put_out" ? signedUrl : null,
-              bringIn: currentJob.job_type === "bring_in" ? signedUrl : null,
-            });
-          }
-        }
-      } catch (err) {
-        console.warn("Unexpected error loading reference image:", err);
-        if (!isCancelled) {
-          setReferenceUrls({ putOut: null, bringIn: null });
-        }
-      } finally {
-        if (!isCancelled) {
-          setReferenceLookupComplete(true);
-        }
-      }
-    }
-
-    fetchReferenceImage(job);
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [job, supabase]);
-
-  if (!job) return <div className="p-6 text-white">No job found.</div>;
-
   function renderBins(bins: string | null | undefined) {
     if (!bins) return <span className="text-gray-400">—</span>;
     return bins.split(",").map((b) => {
@@ -427,11 +313,16 @@ export default function ProofPageContent() {
 
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
-      const fileLabel = job.job_type === "bring_in" ? "bring-in" : "put-out";
-      const finalFileName = `${fileLabel}-${safeTimestamp}.jpg`;
-      const uploadFile = await prepareFileAsJpeg(file, finalFileName);
-      const path = `${job.id}/${finalFileName}`;
+      const { monthYear, week } = getMonthAndWeek(now);
+
+      const safeClient = toKebab(job.client_name, "unknown-client");
+      const safeAddress = toKebab(job.address, "unknown-address");
+
+      const folderPath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
+      const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+
+      const uploadFile = await prepareFileAsJpeg(file, fileLabel);
+      const path = `${folderPath}/${fileLabel}`;
 
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
