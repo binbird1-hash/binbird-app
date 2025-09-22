@@ -162,39 +162,44 @@ export default function ProofPageContent() {
   }, [params]);
 
   useEffect(() => {
-  let isCancelled = false;
+    let isCancelled = false;
 
-  async function fetchReferenceImages() {
-    if (!job) return;
+    async function fetchReferenceImages() {
+      if (!job?.photo_path) {
+        console.log("No photo_path found for job:", job);
+        return;
+      }
 
-    const safeClient = toKebab(job.client_name, "unknown-client");
-    const safeAddress = toKebab(job.address, "unknown-address");
-    const { monthYear, week } = getMonthAndWeek(new Date());
+      // Use photo_path from jobs directly (it's already the folder path)
+      const basePath = job.photo_path;
+      console.log("Using basePath for instructions:", basePath);
 
-    const basePath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
+      const bucket = supabase.storage.from("proofs");
 
-    const bucket = supabase.storage.from("proofs");
+      const [putOutRes, bringInRes] = await Promise.all([
+        bucket.createSignedUrl(`${basePath}/Put Out.jpg`, 3600),
+        bucket.createSignedUrl(`${basePath}/Bring In.jpg`, 3600),
+      ]);
 
-    const [putOutRes, bringInRes] = await Promise.all([
-      bucket.createSignedUrl(`${basePath}/Put Out.jpg`, 3600),
-      bucket.createSignedUrl(`${basePath}/Bring In.jpg`, 3600),
-    ]);
+      if (!isCancelled) {
+        setReferenceUrls({
+          putOut: putOutRes.data?.signedUrl ?? null,
+          bringIn: bringInRes.data?.signedUrl ?? null,
+        });
+        setReferenceLookupComplete(true);
 
-    if (!isCancelled) {
-      setReferenceUrls({
-        putOut: putOutRes.data?.signedUrl ?? null,
-        bringIn: bringInRes.data?.signedUrl ?? null,
-      });
-      setReferenceLookupComplete(true);
+        console.log("Put Out signed URL:", putOutRes.data?.signedUrl);
+        console.log("Bring In signed URL:", bringInRes.data?.signedUrl);
+      }
     }
-  }
 
-  fetchReferenceImages();
+    fetchReferenceImages();
 
-  return () => {
-    isCancelled = true;
-  };
-}, [jobs, idx, supabase]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [jobs, idx, supabase]);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -346,6 +351,7 @@ export default function ProofPageContent() {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+      console.log("Supabase user:", user, "authError:", authError);
       if (authError) throw authError;
       if (!user) throw new Error("You must be signed in to submit proof.");
 
@@ -459,19 +465,18 @@ export default function ProofPageContent() {
                 </div>
               </div>
 
-              {/* Text instructions */}
-              <div>
-                <p className="text-sm text-gray-500 mb-2">
-                  Placement Instructions:
-                </p>
+              {/* Dynamic instructions */}
+              <div className="mt-4">
+                <p className="text-sm text-gray-500 mb-2">Placement Instructions:</p>
                 <p>
-                  Place bins neatly at the edge of the driveway with lids closed.
-                  Ensure bins do not block pedestrian walkways or driveways.
-                  (This text will be customized per job later.)
+                  {job.job_type === "bring_in"
+                    ? "Return bins neatly to their storage location. Ensure lids are closed and bins are not left blocking walkways or driveways."
+                    : "Place bins neatly at the edge of the driveway with lids closed. Ensure bins do not block pedestrian walkways or driveways."}
                 </p>
               </div>
             </div>
           )}
+
         </div>
 
         {job.notes && (
