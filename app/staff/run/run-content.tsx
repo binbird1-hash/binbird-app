@@ -71,17 +71,10 @@ function RunPageContent() {
           return;
         }
 
-        // Profile lookup
-        const { data: profile, error: profileError } = await supabase
-          .from("user_profile")
-          .select("*")
-          .eq("email", user.email)
-          .single();
+        const assigneeId = user.id;
 
-        console.log("Profile lookup result:", profile, "Error:", profileError);
-
-        if (profileError || !profile) {
-          console.warn("No profile found for user, aborting job fetch");
+        if (!assigneeId) {
+          console.warn("No assignee ID available, aborting job fetch");
           return;
         }
 
@@ -100,13 +93,12 @@ function RunPageContent() {
         const { data, error } = await supabase
           .from("jobs")
           .select("*")
-          .eq("assigned_to", profile.user_id)
+          .eq("assigned_to", assigneeId)
           .ilike("day_of_week", todayName)
           .is("last_completed_on", null);
 
         console.log("Jobs raw result:", data, "Error:", error);
-        console.log("Filter values → user_id:", user?.id, "todayName:", todayName);
-
+        console.log("Filter values → assigneeId:", assigneeId, "todayName:", todayName);
 
         if (!error && data) {
           const normalized = normalizeJobs<JobRecord>(data);
