@@ -263,108 +263,108 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <>
-      <div className="mx-auto max-w-3xl px-6 pt-16 pb-32">
-        <div className="space-y-8">
-          <header className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold text-[#ff5757]">Run complete!</h1>
-            <p className="text-gray-300">
-              Nice work out there. Here&apos;s a quick recap of your shift.
-            </p>
-          </header>
+    <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 py-10">
+      <header className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold text-[#ff5757]">Run complete!</h1>
+        <p className="text-gray-300">
+          Nice work out there. Here&apos;s a quick recap of your shift.
+        </p>
+      </header>
 
-          <section className="space-y-4 rounded-xl border border-gray-800 bg-[#0d0d0d] p-6">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-white">Run summary</h2>
-              {runData === undefined && (
-                <span className="text-sm text-gray-500">Loading…</span>
-              )}
-            </div>
-
-            {runData === undefined ? (
-              <p className="text-gray-400">
-                Hang tight while we gather the final numbers.
-          </p>
-        ) : runData === null ? (
-          <p className="text-gray-400">
-            We couldn&apos;t find run details for this session, but your proofs
-            were saved successfully.
-          </p>
-        ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-black border border-gray-800 rounded-lg p-4">
-                <p className="text-xs uppercase text-gray-400 tracking-wide">
-                  Duration
-                </p>
-                <p className="text-2xl font-semibold text-white">
-                  {derivedStats.durationLabel}
-                </p>
-              </div>
-              <div className="bg-black border border-gray-800 rounded-lg p-4">
-                <p className="text-xs uppercase text-gray-400 tracking-wide">
-                  Jobs completed
-                </p>
-                <p className="text-2xl font-semibold text-white">
-                  {derivedStats.jobsCompleted ?? "—"}
-                  {derivedStats.totalJobs !== undefined &&
-                    derivedStats.totalJobs !== derivedStats.jobsCompleted &&
-                    derivedStats.totalJobs !== 0 && (
-                      <span className="text-sm text-gray-400 ml-1">
-                        / {derivedStats.totalJobs}
-                      </span>
-                    )}
-                </p>
-              </div>
-              <div className="bg-black border border-gray-800 rounded-lg p-4">
-                <p className="text-xs uppercase text-gray-400 tracking-wide">
-                  Avg per job
-                </p>
-                <p className="text-2xl font-semibold text-white">
-                  {derivedStats.avgPerJob}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-black border border-gray-800 rounded-lg p-4">
-                <p className="text-xs uppercase text-gray-400 tracking-wide">
-                  Started
-                </p>
-                <p className="text-sm text-white">
-                  {derivedStats.startLabel ?? "—"}
-                </p>
-              </div>
-              <div className="bg-black border border-gray-800 rounded-lg p-4">
-                <p className="text-xs uppercase text-gray-400 tracking-wide">
-                  Wrapped up
-                </p>
-                <p className="text-sm text-white">
-                  {derivedStats.endLabel ?? "—"}
-                </p>
-              </div>
-            </div>
+      <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-2">
+        <section className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Run summary</h2>
+            {runData === undefined && (
+              <span className="text-sm text-gray-500">Loading…</span>
+            )}
           </div>
-        )}
-          </section>
 
-          <section className="space-y-4 rounded-xl border border-gray-800 bg-[#0d0d0d] p-6">
+          {runData === undefined ? (
+            <p className="text-gray-600">
+              Hang tight while we gather the final numbers.
+            </p>
+          ) : runData === null ? (
+            <p className="text-gray-600">
+              We couldn&apos;t find run details for this session, but your proofs
+              were saved successfully.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Duration
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {derivedStats.durationLabel}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Jobs completed
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {derivedStats.jobsCompleted ?? "—"}
+                    {derivedStats.totalJobs !== undefined &&
+                      derivedStats.totalJobs !== derivedStats.jobsCompleted &&
+                      derivedStats.totalJobs !== 0 && (
+                        <span className="ml-1 text-sm text-gray-600">
+                          / {derivedStats.totalJobs}
+                        </span>
+                      )}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Avg per job
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {derivedStats.avgPerJob}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Started
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {derivedStats.startLabel ?? "—"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Wrapped up
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {derivedStats.endLabel ?? "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-white">What&apos;s next</h2>
+              <h2 className="text-lg font-semibold text-gray-900">What&apos;s next</h2>
               {assignmentStatus === "loading" && (
                 <span className="text-sm text-gray-500">Checking…</span>
               )}
             </div>
 
             {assignmentStatus === "loading" ? (
-              <p className="text-gray-400">Looking up your next shift…</p>
+              <p className="text-gray-600">Looking up your next shift…</p>
             ) : assignmentStatus === "error" ? (
-              <p className="text-gray-400">{assignmentError}</p>
+              <p className="text-gray-600">{assignmentError}</p>
             ) : nextAssignment ? (
               <div className="space-y-3">
-                <p className="text-gray-300">
+                <p className="text-gray-700">
                   You&apos;re next scheduled on
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-gray-900">
                     {" "}
                     {nextAssignment.day}
                   </span>
@@ -372,20 +372,20 @@ function CompletedRunContent() {
                   with {nextAssignment.totalJobs} stop
                   {nextAssignment.totalJobs === 1 ? "" : "s"}.
                 </p>
-                <div className="rounded-lg border border-gray-800 bg-black p-4">
-                  <p className="text-xs uppercase text-gray-400 tracking-wide">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
                     First stop
                   </p>
-                  <p className="text-lg font-semibold text-white">
+                  <p className="text-lg font-semibold text-gray-900">
                     {nextAssignment.address || "Address TBC"}
                   </p>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-300">
+              <p className="text-gray-700">
                 No other assignments are on the books yet. Check back next
                 {" "}
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-gray-900">
                   {todayName || "week"}
                 </span>
                 {" "}
@@ -393,11 +393,7 @@ function CompletedRunContent() {
               </p>
             )}
           </section>
-        </div>
-      </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-gray-900 bg-black px-6 py-6">
-        <div className="mx-auto w-full max-w-3xl">
           <button
             type="button"
             onClick={() => router.push("/staff/run")}
@@ -407,7 +403,7 @@ function CompletedRunContent() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
