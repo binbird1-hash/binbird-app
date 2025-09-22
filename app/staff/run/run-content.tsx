@@ -143,6 +143,15 @@ function RunPageContent() {
   const fitBoundsToMap = useCallback(() => {
     if (!mapRef.current) return;
     const bounds = new google.maps.LatLngBounds();
+
+      if (jobs.length === 0) {
+    // ✅ No jobs → zoom out to Melbourne
+    bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
+    bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
+    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
+    mapRef.current?.setZoom(10);
+    return;
+  }
     if (start) bounds.extend(start);
     if (end) bounds.extend(end);
     (routePath.length ? ordered : jobs).forEach((j) => {

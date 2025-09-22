@@ -370,19 +370,14 @@ function CompletedRunContent() {
               with {nextAssignment.totalJobs} stop
               {nextAssignment.totalJobs === 1 ? "" : "s"}.
             </p>
-            <div className="bg-black border border-gray-800 rounded-lg p-4">
-              <p className="text-xs uppercase text-gray-400 tracking-wide">
-                First stop
-              </p>
-              <p className="text-lg font-semibold text-white">
-                {nextAssignment.address || "Address TBC"}
-              </p>
-              {nextAssignment.clientName && (
-                <p className="text-sm text-gray-400 mt-1">
-                  {nextAssignment.clientName}
+              <div className="bg-black border border-gray-800 rounded-lg p-4">
+                <p className="text-xs uppercase text-gray-400 tracking-wide">
+                  First stop
                 </p>
-              )}
-            </div>
+                <p className="text-lg font-semibold text-white">
+                  {nextAssignment.address || "Address TBC"}
+                </p>
+              </div>
           </div>
         ) : (
           <p className="text-gray-300">
@@ -397,24 +392,18 @@ function CompletedRunContent() {
         )}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">Need anything else?</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Link
-            href="/staff/run"
-            className="inline-flex items-center justify-center rounded-lg bg-[#ff5757] px-4 py-3 font-semibold text-black hover:opacity-90 transition"
-          >
-            Open planner
-          </Link>
-          <button
-            type="button"
-            onClick={() => router.push("/staff")}
-            className="inline-flex items-center justify-center rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-black hover:opacity-90 transition"
-          >
-            Exit Page
-          </button>
-        </div>
-      </section>
+    <section className="space-y-3">
+      <div className="fixed bottom-6 left-0 right-0 px-6">
+        <button
+          type="button"
+          onClick={() => router.push("/staff/run")}
+          className="w-full bg-[#ff5757] text-black px-4 py-3 rounded-lg font-bold hover:opacity-90 transition"
+        >
+          End Session
+        </button>
+      </div>
+    </section>
+
     </div>
   );
 }
