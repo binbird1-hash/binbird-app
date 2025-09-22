@@ -64,6 +64,8 @@ function RunPageContent() {
 
       try {
         const { data: { user }, error: userErr } = await supabase.auth.getUser();
+        
+        // ✅ log raw
         console.log("Supabase user:", user, "Error:", userErr);
 
         if (!user) {
@@ -83,10 +85,14 @@ function RunPageContent() {
         const now = new Date();
         const todayName = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE || days[now.getDay()];
 
-        console.log("Date debug:", {
-          nowISO: now.toISOString(),
-          todayIndex: now.getDay(),
+        // ✅ log all main variables in one place
+        console.log("Debug snapshot:", {
+          userId: user.id,
+          assigneeId,
+          email: user.email,
           todayName,
+          todayIndex: now.getDay(),
+          nowISO: now.toISOString(),
         });
 
         // Jobs query
@@ -98,11 +104,21 @@ function RunPageContent() {
           .is("last_completed_on", null);
 
         console.log("Jobs raw result:", data, "Error:", error);
-        console.log("Filter values → assigneeId:", assigneeId, "todayName:", todayName);
 
         if (!error && data) {
           const normalized = normalizeJobs<JobRecord>(data);
+
+          // ✅ log jobs in detail
           console.log("Normalized jobs:", normalized);
+          normalized.forEach((j, i) => {
+            console.log(`Job[${i}]`, {
+              id: j.id,
+              address: j.address,
+              assigned_to: j.assigned_to,
+              day_of_week: j.day_of_week,
+              last_completed_on: j.last_completed_on,
+            });
+          });
 
           const availableJobs = normalized.filter(
             (job) => job.last_completed_on === null
@@ -121,6 +137,7 @@ function RunPageContent() {
       }
     })();
   }, [supabase]);
+
 
   // Fit bounds helper
   const fitBoundsToMap = useCallback(() => {
