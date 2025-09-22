@@ -133,7 +133,7 @@ export default function SettingsDrawer() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-black hover:opacity-90 transition"
+                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Log Out</span>

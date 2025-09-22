@@ -3,7 +3,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import {
+  BrowserCookieAuthStorageAdapter,
+  DEFAULT_COOKIE_OPTIONS,
+  createSupabaseClient,
+} from "@supabase/auth-helpers-shared";
+import type { DefaultCookieOptions } from "@supabase/auth-helpers-shared";
+import packageInfo from "@supabase/auth-helpers-nextjs/package.json";
 import AuthLayout from "../layout";
 
 export default function SignInClient() {
@@ -26,6 +32,7 @@ export default function SignInClient() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     const supabase = createClientComponentClient({ isSingleton: false });
     const authWithStorage = supabase.auth as unknown as {
       storage?: { cookieOptions?: { maxAge?: number } };
@@ -36,6 +43,21 @@ export default function SignInClient() {
         ? 60 * 60 * 24 * 30 * 1000
         : 60 * 60 * 12 * 1000;
     }
+
+    const cookieOptions: DefaultCookieOptions = {
+      ...DEFAULT_COOKIE_OPTIONS,
+      maxAge: stayLoggedIn ? 60 * 60 * 24 * 30 : 60 * 60 * 12,
+    };
+    const storage = new BrowserCookieAuthStorageAdapter(cookieOptions);
+
+    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          "X-Client-Info": `${packageInfo.name}@${packageInfo.version}`,
+        },
+      },
+      auth: { storage },
+    });
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
