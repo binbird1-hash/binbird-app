@@ -79,7 +79,7 @@ export default function SignUpClient() {
               setName(e.target.value);
               setErrors((prev) => ({ ...prev, name: "" }));
             }}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757]"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
             autoComplete="name"
             required
           />
@@ -96,7 +96,7 @@ export default function SignUpClient() {
               setEmail(e.target.value);
               setErrors((prev) => ({ ...prev, email: "" }));
             }}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757]"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
             autoComplete="email"
             required
           />
@@ -125,7 +125,7 @@ export default function SignUpClient() {
                 setPhone(e.target.value);
                 setErrors((prev) => ({ ...prev, phone: "" }));
               }}
-              className="w-full px-4 py-2 border rounded-r-lg focus:ring-2 focus:ring-[#ff5757]"
+              className="w-full px-4 py-2 border rounded-r-lg focus:ring-2 focus:ring-[#ff5757] text-black"
               autoComplete="tel"
               required
             />
@@ -143,7 +143,7 @@ export default function SignUpClient() {
               setPassword(e.target.value);
               setErrors((prev) => ({ ...prev, password: "" }));
             }}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757]"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
             autoComplete="new-password"
             required
           />
@@ -160,7 +160,7 @@ export default function SignUpClient() {
               setConfirmPassword(e.target.value);
               setErrors((prev) => ({ ...prev, confirmPassword: "" }));
             }}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757]"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
             autoComplete="new-password"
             required
           />
@@ -181,14 +181,14 @@ export default function SignUpClient() {
         </button>
 
         <p className="mt-4 flex justify-center items-center text-sm !text-black">
-        <span>Already have an account?</span>
-        <button
+          <span>Already have an account?</span>
+          <button
             type="button"
             onClick={() => router.push("/auth/sign-in")}
             className="ml-2 text-[#ff5757] hover:underline"
-        >
+          >
             Sign In
-        </button>
+          </button>
         </p>
       </form>
     </AuthLayout>
