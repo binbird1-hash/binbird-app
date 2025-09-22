@@ -58,7 +58,6 @@ export default function SettingsDrawer() {
 
     if (!error) {
       setActivePanel(null);
-      setIsOpen(false);
     }
   };
 
