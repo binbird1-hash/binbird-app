@@ -27,9 +27,10 @@ export default function SignInClient() {
     setError(null);
     setLoading(true);
     const supabase = createClientComponentClient({ isSingleton: false });
-    const storage = (supabase.auth as {
+    const authWithStorage = supabase.auth as unknown as {
       storage?: { cookieOptions?: { maxAge?: number } };
-    }).storage;
+    };
+    const storage = authWithStorage.storage;
     if (storage?.cookieOptions) {
       storage.cookieOptions.maxAge = stayLoggedIn
         ? 60 * 60 * 24 * 30 * 1000
