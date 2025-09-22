@@ -14,15 +14,15 @@ const PUT_OUT_PLACEHOLDER_URL =
 const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
 
-// 🟢 Helper: turn text into kebab-case
-function toKebab(value: string | null, fallback: string): string {
-  const trimmed = value?.trim();
-  if (!trimmed) return fallback;
+// 🟢 Helper: turn text into kebab-case (handles commas)
+function toKebab(value: string | null | undefined, fallback: string): string {
+  if (!value || typeof value !== "string") return fallback;
 
-  return trimmed
+  return value
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric with hyphen
-    .replace(/^-+|-+$/g, ""); // trim leading/trailing hyphens
+    .replace(/,\s*/g, "-")        // replace commas (with or without space) with hyphen
+    .replace(/[^a-z0-9-]+/g, "-") // non-alphanumeric → hyphen
+    .replace(/^-+|-+$/g, "");     // trim leading/trailing hyphens
 }
 
 // 🟢 Helper: Month-Year and Week
@@ -32,7 +32,7 @@ function getMonthAndWeek(date: Date) {
       month: "long",
       year: "numeric",
     })
-    .replace(", ", "-"); // e.g. "September-2025"
+    .replace(", ", "-"); // "September-2025"
 
   const day = date.getDate();
   const week = `Week-${Math.ceil(day / 7)}`;
@@ -240,7 +240,11 @@ export default function ProofPageContent() {
   }, [preview]);
 
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
-  const job = jobs[currentIdx]; // current job
+  const job = jobs[currentIdx];
+
+  if (!job) {
+    return <div className="p-6 text-white">No job found.</div>;
+  }
 
   function renderBins(bins: string | null | undefined) {
     if (!bins) return <span className="text-gray-400">—</span>;
