@@ -80,7 +80,7 @@ function RoutePageContent() {
   const normalizedAddress = activeJob?.address
     ? activeJob.address.trim().toLowerCase()
     : null;
-  const isEndStop = activeJob?.job_type === "end" || normalizedAddress === "end";
+  const isEndStop = normalizedAddress === "end";
 
   const originLatLng = useMemo(() => {
     if (currentLocation) return currentLocation;
