@@ -355,7 +355,7 @@ export default function ProofPageContent() {
 
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
-
+      
       const folderPath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
 
