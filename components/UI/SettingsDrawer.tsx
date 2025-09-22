@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function SettingsDrawer() {
   const supabase = createClientComponentClient();
+  const router = useRouter();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
   const [isOpen, setIsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
   useEffect(() => {
@@ -55,6 +59,18 @@ export default function SettingsDrawer() {
     if (!error) {
       setActivePanel(null);
     }
+  };
+
+  const handleSignOut = async () => {
+    setLogoutError(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setLogoutError("We couldn't sign you out. Please try again.");
+      return;
+    }
+    setActivePanel(null);
+    setIsOpen(false);
+    router.push("/auth/sign-in");
   };
 
   return (
@@ -114,6 +130,17 @@ export default function SettingsDrawer() {
                 >
                   Map Style
                 </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-black hover:opacity-90 transition"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log Out</span>
+                </button>
+                {logoutError && (
+                  <p className="text-sm text-red-500">{logoutError}</p>
+                )}
               </div>
             </div>
 
