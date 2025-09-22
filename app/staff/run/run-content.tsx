@@ -374,11 +374,10 @@ function RunPageContent() {
                 </button>
               )}
             </div>
-
             <div className="mt-4">
               {jobs.length === 0 ? (
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-gray-600 cursor-not-allowed"
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] opacity-60 cursor-not-allowed"
                   disabled
                 >
                   No Jobs Today
@@ -409,7 +408,6 @@ function RunPageContent() {
                 </button>
               )}
             </div>
-
           </div>
         </div>
       </div>
