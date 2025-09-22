@@ -267,78 +267,76 @@ function CompletedRunContent() {
       <header className="space-y-2 text-center">
         <h1 className="text-3xl font-bold text-[#ff5757]">Run complete!</h1>
         <p className="text-gray-300">
-          Nice work out there. Here&apos;s a quick recap of your shift.
+          <span className="block">Nice work there.</span>
+          <span className="block">Here&apos;s a quick recap of your shift.</span>
         </p>
       </header>
 
       <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-2">
-        <section className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">Run summary</h2>
+            <h2 className="text-lg font-semibold text-gray-100">Run summary</h2>
             {runData === undefined && (
-              <span className="text-sm text-gray-500">Loading…</span>
+              <span className="text-sm text-gray-400">Loading…</span>
             )}
           </div>
 
           {runData === undefined ? (
-            <p className="text-gray-600">
+            <p className="text-gray-300">
               Hang tight while we gather the final numbers.
             </p>
           ) : runData === null ? (
-            <p className="text-gray-600">
+            <p className="text-gray-300">
               We couldn&apos;t find run details for this session, but your proofs
               were saved successfully.
             </p>
           ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+            <div className="space-y-4">
+              <div className="divide-y divide-gray-800 text-gray-100">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
                     Duration
                   </p>
-                  <p className="text-2xl font-semibold text-gray-900">
+                  <p className="text-xl font-semibold text-gray-100">
                     {derivedStats.durationLabel}
                   </p>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
                     Jobs completed
                   </p>
-                  <p className="text-2xl font-semibold text-gray-900">
+                  <p className="text-xl font-semibold text-gray-100">
                     {derivedStats.jobsCompleted ?? "—"}
                     {derivedStats.totalJobs !== undefined &&
                       derivedStats.totalJobs !== derivedStats.jobsCompleted &&
                       derivedStats.totalJobs !== 0 && (
-                        <span className="ml-1 text-sm text-gray-600">
+                        <span className="ml-1 text-sm font-medium text-gray-400">
                           / {derivedStats.totalJobs}
                         </span>
                       )}
                   </p>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
                     Avg per job
                   </p>
-                  <p className="text-2xl font-semibold text-gray-900">
+                  <p className="text-xl font-semibold text-gray-100">
                     {derivedStats.avgPerJob}
                   </p>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
                     Started
                   </p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-200">
                     {derivedStats.startLabel ?? "—"}
                   </p>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
                     Wrapped up
                   </p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-200">
                     {derivedStats.endLabel ?? "—"}
                   </p>
                 </div>
@@ -348,23 +346,23 @@ function CompletedRunContent() {
         </section>
 
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-gray-900">What&apos;s next</h2>
+              <h2 className="text-lg font-semibold text-gray-100">What&apos;s next</h2>
               {assignmentStatus === "loading" && (
-                <span className="text-sm text-gray-500">Checking…</span>
+                <span className="text-sm text-gray-400">Checking…</span>
               )}
             </div>
 
             {assignmentStatus === "loading" ? (
-              <p className="text-gray-600">Looking up your next shift…</p>
+              <p className="text-gray-300">Looking up your next shift…</p>
             ) : assignmentStatus === "error" ? (
-              <p className="text-gray-600">{assignmentError}</p>
+              <p className="text-gray-300">{assignmentError}</p>
             ) : nextAssignment ? (
-              <div className="space-y-3">
-                <p className="text-gray-700">
+              <div className="space-y-2">
+                <p className="text-gray-300">
                   You&apos;re next scheduled on
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-gray-100">
                     {" "}
                     {nextAssignment.day}
                   </span>
@@ -372,20 +370,20 @@ function CompletedRunContent() {
                   with {nextAssignment.totalJobs} stop
                   {nextAssignment.totalJobs === 1 ? "" : "s"}.
                 </p>
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                <div className="rounded-lg bg-neutral-800 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
                     First stop
                   </p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-lg font-semibold text-gray-100">
                     {nextAssignment.address || "Address TBC"}
                   </p>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-700">
+              <p className="text-gray-300">
                 No other assignments are on the books yet. Check back next
                 {" "}
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-gray-100">
                   {todayName || "week"}
                 </span>
                 {" "}
