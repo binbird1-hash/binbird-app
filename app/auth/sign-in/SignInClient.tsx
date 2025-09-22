@@ -1,29 +1,89 @@
-// app/auth/sign-in/SignInClient.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  BrowserCookieAuthStorageAdapter,
+  DEFAULT_COOKIE_OPTIONS,
+  createSupabaseClient,
+} from "@supabase/auth-helpers-shared";
+import type { DefaultCookieOptions } from "@supabase/auth-helpers-shared";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import packageInfo from "@supabase/auth-helpers-nextjs/package.json";
 import AuthLayout from "../layout";
 
 export default function SignInClient() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedPreference = window.localStorage.getItem("binbird-stay-logged-in");
+    if (storedPreference === "true") {
+      setStayLoggedIn(true);
+    }
+  }, []);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setError("Supabase environment variables are not configured.");
       setLoading(false);
       return;
+    }
+
+    const componentClient = createClientComponentClient({ isSingleton: false });
+    const authWithStorage = componentClient.auth as unknown as {
+      storage?: { cookieOptions?: { maxAge?: number } };
+    };
+    const existingStorage = authWithStorage.storage;
+    if (existingStorage?.cookieOptions) {
+      existingStorage.cookieOptions.maxAge = stayLoggedIn
+        ? 60 * 60 * 24 * 30 * 1000
+        : 60 * 60 * 12 * 1000;
+    }
+
+    const cookieOptions: DefaultCookieOptions = {
+      ...DEFAULT_COOKIE_OPTIONS,
+      maxAge: stayLoggedIn ? 60 * 60 * 24 * 30 : 60 * 60 * 12,
+    };
+    const cookieStorage = new BrowserCookieAuthStorageAdapter(cookieOptions);
+
+    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          "X-Client-Info": `${packageInfo.name}@${packageInfo.version}`,
+        },
+      },
+      auth: { storage: cookieStorage },
+    });
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      if (stayLoggedIn) {
+        window.localStorage.setItem("binbird-stay-logged-in", "true");
+      } else {
+        window.localStorage.removeItem("binbird-stay-logged-in");
+      }
     }
     router.push("/staff/run");
   }
@@ -51,6 +111,15 @@ export default function SignInClient() {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
           required
         />
+        <label className="flex items-center gap-2 text-sm text-black">
+          <input
+            type="checkbox"
+            checked={stayLoggedIn}
+            onChange={(e) => setStayLoggedIn(e.target.checked)}
+            className="h-4 w-4 rounded border border-gray-400 text-[#ff5757] focus:ring-[#ff5757]"
+          />
+          Stay logged in
+        </label>
         <button
           type="submit"
           disabled={loading}

@@ -124,14 +124,14 @@ function RunPageContent() {
           .select("*")
           .eq("assigned_to", user.id)
           .eq("day_of_week", todayName)
-          .or(`last_completed_on.is.null,last_completed_on.neq.${todayDate}`)
-          .returns<JobRecord[]>();
+          .is("last_completed_on", null);
+
 
         if (!error && data) {
           const normalized = normalizeJobs<JobRecord>(data);
 
           const availableJobs = normalized.filter(
-            (job) => !job.last_completed_on || job.last_completed_on !== todayDate
+            (job) => job.last_completed_on === null
           );
 
           setJobs(availableJobs);

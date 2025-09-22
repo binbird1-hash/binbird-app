@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function SettingsDrawer() {
   const supabase = createClientComponentClient();
+  const router = useRouter();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
   const [isOpen, setIsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
   useEffect(() => {
@@ -55,6 +59,18 @@ export default function SettingsDrawer() {
     if (!error) {
       setActivePanel(null);
     }
+  };
+
+  const handleSignOut = async () => {
+    setLogoutError(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setLogoutError("We couldn't sign you out. Please try again.");
+      return;
+    }
+    setActivePanel(null);
+    setIsOpen(false);
+    router.push("/auth/sign-in");
   };
 
   return (
@@ -104,16 +120,27 @@ export default function SettingsDrawer() {
               <div className="flex flex-col gap-4">
                 <button
                   onClick={() => setActivePanel(activePanel === "nav" ? null : "nav")}
-                  className="w-full text-left font-semibold text-white uppercase text-sm"
+                  className="w-full text-left font-semibold text-white uppercase text-sm transition hover:text-[#ff5757]"
                 >
                   Navigation App
                 </button>
                 <button
                   onClick={() => setActivePanel(activePanel === "style" ? null : "style")}
-                  className="w-full text-left font-semibold text-white uppercase text-sm"
+                  className="w-full text-left font-semibold text-white uppercase text-sm transition hover:text-[#ff5757]"
                 >
                   Map Style
                 </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log Out</span>
+                </button>
+                {logoutError && (
+                  <p className="text-sm text-red-500">{logoutError}</p>
+                )}
               </div>
             </div>
 

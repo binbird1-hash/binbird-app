@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -8,6 +8,7 @@ import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
+
 
 function RoutePageContent() {
   const supabase = createClientComponentClient();
@@ -20,6 +21,9 @@ function RoutePageContent() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<
+    google.maps.LatLngLiteral | null
+  >(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -53,6 +57,7 @@ function RoutePageContent() {
         const parsedJobs = JSON.parse(rawJobs);
         if (Array.isArray(parsedJobs)) {
           setJobs(normalizeJobs(parsedJobs));
+
         }
       }
       if (rawStart) setStart(JSON.parse(rawStart));
@@ -71,21 +76,74 @@ function RoutePageContent() {
   }, [params]);
 
   const activeJob = jobs[activeIdx];
+  const previousJob = activeIdx > 0 ? jobs[activeIdx - 1] : null;
+  const normalizedAddress = activeJob?.address
+    ? activeJob.address.trim().toLowerCase()
+    : null;
+  const isEndStop = activeJob?.job_type === "end" || normalizedAddress === "end";
+
+  const originLatLng = useMemo(() => {
+    if (currentLocation) return currentLocation;
+    if (previousJob) return { lat: previousJob.lat, lng: previousJob.lng };
+    return start;
+  }, [currentLocation, previousJob, start]);
+
+  useEffect(() => {
+    if (!activeJob || !navigator.geolocation) return;
+
+    let isCancelled = false;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (isCancelled) return;
+        setCurrentLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.warn("Unable to read current location:", err);
+        if (!isCancelled) {
+          setCurrentLocation(null);
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeJob]);
 
   // Directions request
   useEffect(() => {
     if (!isLoaded || !jobs.length || !activeJob) return;
 
-    const service = new google.maps.DirectionsService();
-    const origin =
-      activeIdx > 0
-        ? { lat: jobs[activeIdx - 1].lat, lng: jobs[activeIdx - 1].lng }
-        : start!;
+    if (isEndStop) {
+      setDirections(null);
+      return;
+    }
+
+    let origin: google.maps.LatLngLiteral | null = null;
+    if (currentLocation) origin = currentLocation;
+    else if (activeIdx > 0 && previousJob)
+      origin = { lat: previousJob.lat, lng: previousJob.lng };
+    else if (start) origin = start;
+
+    if (!origin) {
+      setDirections(null);
+      return;
+    }
+
     const destination = { lat: activeJob.lat, lng: activeJob.lng };
+
+    const service = new google.maps.DirectionsService();
+    let isCancelled = false;
 
     service.route(
       { origin, destination, travelMode: google.maps.TravelMode.DRIVING },
       (result, status) => {
+        if (isCancelled) return;
         if (status === "OK" && result) setDirections(result);
         else {
           console.warn("❌ Directions request failed:", status, result);
@@ -93,19 +151,34 @@ function RoutePageContent() {
         }
       }
     );
-  }, [isLoaded, jobs, activeIdx, start, activeJob]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    isLoaded,
+    jobs,
+    activeIdx,
+    start,
+    activeJob,
+    currentLocation,
+    previousJob,
+    isEndStop,
+  ]);
 
   // Fit map bounds
   useEffect(() => {
     if (!mapRef) return;
     const bounds = new google.maps.LatLngBounds();
-    if (directions) directions.routes[0].overview_path.forEach((p) => bounds.extend(p));
-    else if (start && activeJob) {
-      bounds.extend(start);
-      bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
+    if (directions)
+      directions.routes[0].overview_path.forEach((p) => bounds.extend(p));
+    else {
+      if (originLatLng) bounds.extend(originLatLng);
+      if (activeJob) bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
-    if (!bounds.isEmpty()) mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
-  }, [mapRef, directions, start, activeJob]);
+    if (!bounds.isEmpty())
+      mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
+  }, [mapRef, directions, originLatLng, activeJob]);
 
   // Distance calculation
   function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -162,7 +235,7 @@ function RoutePageContent() {
       <div className="relative h-[150vh]">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
-          center={start || { lat: activeJob.lat, lng: activeJob.lng }}
+          center={originLatLng || { lat: activeJob.lat, lng: activeJob.lng }}
           zoom={13}
           options={{
             styles: styleMap,
@@ -175,13 +248,8 @@ function RoutePageContent() {
           }}
           onLoad={(map) => setMapRef(map)}
         >
-          {activeIdx > 0 ? (
-            <Marker
-              position={{ lat: jobs[activeIdx - 1].lat, lng: jobs[activeIdx - 1].lng }}
-              icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-            />
-          ) : (
-            start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />
+          {originLatLng && (
+            <Marker position={originLatLng} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />
           )}
           <Marker position={{ lat: activeJob.lat, lng: activeJob.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />
           {directions && (
