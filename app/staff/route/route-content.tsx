@@ -21,6 +21,7 @@ function RoutePageContent() {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
+  const [popupMsg, setPopupMsg] = useState<string | null>(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -113,10 +114,6 @@ function RoutePageContent() {
       return;
     }
 
-    // ✅ Origin priority:
-    // 1) GPS current location
-    // 2) Previous job (if not the first)
-    // 3) The run's "start"
     let origin: google.maps.LatLngLiteral | null = null;
 
     if (currentLocation) {
@@ -186,19 +183,24 @@ function RoutePageContent() {
   }
 
   function handleArrivedAtLocation() {
-    if (!navigator.geolocation) return alert("Geolocation not supported");
+    if (!navigator.geolocation) {
+      setPopupMsg("Geolocation not supported");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
-        if (dist <= 30)
+        if (dist <= 30) {
           router.push(
             `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
           );
-        else alert(`You are too far from the job location. (${Math.round(dist)}m away)`);
+        } else {
+          setPopupMsg(`You are too far from the job location. (${Math.round(dist)}m away)`);
+        }
       },
       (err) => {
         console.error("Geolocation error", err);
-        alert("Unable to get your current location.");
+        setPopupMsg("Unable to get your current location.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -207,7 +209,6 @@ function RoutePageContent() {
   if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
   if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
 
-  // Determine URL based on preference
   const navigateUrl =
     navPref === "google"
       ? `https://www.google.com/maps/dir/?api=1&destination=${activeJob.lat},${activeJob.lng}`
@@ -215,7 +216,6 @@ function RoutePageContent() {
       ? `https://waze.com/ul?ll=${activeJob.lat},${activeJob.lng}&navigate=yes`
       : `http://maps.apple.com/?daddr=${activeJob.lat},${activeJob.lng}&dirflg=d`;
 
-  // Determine map style
   const styleMap =
     mapStylePref === "Dark"
       ? darkMapStyle
@@ -276,6 +276,21 @@ function RoutePageContent() {
           </div>
         </div>
       </div>
+
+      {/* ✅ Custom Popup Modal instead of alert() */}
+      {popupMsg && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
+          <div className="bg-white text-black p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <p className="mb-4">{popupMsg}</p>
+            <button
+              onClick={() => setPopupMsg(null)}
+              className="w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
