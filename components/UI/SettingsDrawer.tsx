@@ -3,19 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {
-  Flag,
-  LogOut,
-  Navigation2,
-  Palette,
-  MapPinned,
-  Route,
-  Apple,
-  MoonStar,
-  Sun,
-  Satellite,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Flag, LogOut, Navigation2, Palette } from "lucide-react";
 import clsx from "clsx";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -28,61 +16,19 @@ type MapStyleKey = "Dark" | "Light" | "Satellite";
 const navigationOptions: Array<{
   key: NavOptionKey;
   label: string;
-  Icon: LucideIcon;
-  accent: string;
-  description: string;
 }> = [
-  {
-    key: "google",
-    label: "Google Maps",
-    Icon: MapPinned,
-    accent: "text-[#4285F4]",
-    description: "Works everywhere with traffic and Street View.",
-  },
-  {
-    key: "waze",
-    label: "Waze",
-    Icon: Route,
-    accent: "text-[#05C3DD]",
-    description: "Crowd alerts keep you ahead of slow-downs.",
-  },
-  {
-    key: "apple",
-    label: "Apple Maps",
-    Icon: Apple,
-    accent: "text-gray-500",
-    description: "Perfect for iPhone crews and CarPlay dashboards.",
-  },
+  { key: "google", label: "Google Maps" },
+  { key: "waze", label: "Waze" },
+  { key: "apple", label: "Apple Maps" },
 ];
 
 const mapStyleOptions: Array<{
   key: MapStyleKey;
   label: string;
-  Icon: LucideIcon;
-  accent: string;
-  description: string;
 }> = [
-  {
-    key: "Dark",
-    label: "Dark",
-    Icon: MoonStar,
-    accent: "text-indigo-300",
-    description: "Low-glare theme made for night runs.",
-  },
-  {
-    key: "Light",
-    label: "Light",
-    Icon: Sun,
-    accent: "text-amber-400",
-    description: "Bright daylight view with crisp roads.",
-  },
-  {
-    key: "Satellite",
-    label: "Satellite",
-    Icon: Satellite,
-    accent: "text-emerald-300",
-    description: "Aerial imagery for precise property spots.",
-  },
+  { key: "Dark", label: "Dark" },
+  { key: "Light", label: "Light" },
+  { key: "Satellite", label: "Satellite" },
 ];
 
 export default function SettingsDrawer() {
@@ -345,7 +291,7 @@ export default function SettingsDrawer() {
                   <div className="overflow-y-auto flex-1 mb-4">
                     {activePanel === "nav" ? (
                       <ul className="flex flex-col gap-3">
-                        {navigationOptions.map(({ key, label, Icon, accent, description }) => {
+                        {navigationOptions.map(({ key, label }) => {
                           const isSelected = navPref === key;
                           return (
                             <li key={key}>
@@ -353,36 +299,13 @@ export default function SettingsDrawer() {
                                 type="button"
                                 onClick={() => setNavPref(key)}
                                 className={clsx(
-                                  "flex w-full items-center gap-4 rounded-2xl border px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
+                                  "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
                                   isSelected
                                     ? "border-white bg-white text-black focus:ring-[#ff5757]"
-                                    : "border-white/10 bg-white/5 text-white hover:bg-white/10 focus:ring-white/40"
+                                    : "border-white/10 bg-white/5 text-white hover:border-[#ff5757]/60 hover:text-[#ff5757] focus:ring-white/40"
                                 )}
                               >
-                                <span
-                                  className={clsx(
-                                    "flex h-12 w-12 items-center justify-center rounded-xl transition",
-                                    isSelected ? "bg-black/5" : "bg-white/10"
-                                  )}
-                                >
-                                  <Icon className={clsx("h-6 w-6", accent)} />
-                                </span>
-                                <div className="flex flex-1 flex-col">
-                                  <span className="font-semibold">{label}</span>
-                                  <span
-                                    className={clsx(
-                                      "text-xs",
-                                      isSelected ? "text-black/60" : "text-white/70"
-                                    )}
-                                  >
-                                    {description}
-                                  </span>
-                                </div>
-                                {isSelected && (
-                                  <span className="rounded-full bg-[#ff5757]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#ff5757]">
-                                    Active
-                                  </span>
-                                )}
+                                {label}
                               </button>
                             </li>
                           );
@@ -390,7 +313,7 @@ export default function SettingsDrawer() {
                       </ul>
                     ) : (
                       <ul className="flex flex-col gap-3">
-                        {mapStyleOptions.map(({ key, label, Icon, accent, description }) => {
+                        {mapStyleOptions.map(({ key, label }) => {
                           const isSelected = mapStylePref === key;
                           return (
                             <li key={key}>
@@ -398,36 +321,13 @@ export default function SettingsDrawer() {
                                 type="button"
                                 onClick={() => setMapStylePref(key)}
                                 className={clsx(
-                                  "flex w-full items-center gap-4 rounded-2xl border px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
+                                  "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
                                   isSelected
                                     ? "border-white bg-white text-black focus:ring-[#ff5757]"
-                                    : "border-white/10 bg-white/5 text-white hover:bg-white/10 focus:ring-white/40"
+                                    : "border-white/10 bg-white/5 text-white hover:border-[#ff5757]/60 hover:text-[#ff5757] focus:ring-white/40"
                                 )}
                               >
-                                <span
-                                  className={clsx(
-                                    "flex h-12 w-12 items-center justify-center rounded-xl transition",
-                                    isSelected ? "bg-black/5" : "bg-white/10"
-                                  )}
-                                >
-                                  <Icon className={clsx("h-6 w-6", accent)} />
-                                </span>
-                                <div className="flex flex-1 flex-col">
-                                  <span className="font-semibold">{label}</span>
-                                  <span
-                                    className={clsx(
-                                      "text-xs",
-                                      isSelected ? "text-black/60" : "text-white/70"
-                                    )}
-                                  >
-                                    {description}
-                                  </span>
-                                </div>
-                                {isSelected && (
-                                  <span className="rounded-full bg-[#ff5757]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#ff5757]">
-                                    Active
-                                  </span>
-                                )}
+                                {label}
                               </button>
                             </li>
                           );
