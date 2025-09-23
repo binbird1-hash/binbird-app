@@ -22,10 +22,13 @@ export default function SignUpClient() {
   function validate() {
     const newErrors: { [key: string]: string } = {};
     if (!name.trim()) newErrors.name = "Full name is required";
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) newErrors.email = "Enter a valid email";
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
+      newErrors.email = "Enter a valid email";
     if (!phone.trim()) newErrors.phone = "Phone number is required";
-    if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
-    if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+    if (password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
+    if (password !== confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -46,7 +49,6 @@ export default function SignUpClient() {
     });
 
     if (error) {
-      // Route errors to the correct field
       if (error.message.toLowerCase().includes("password")) {
         setErrors({ password: error.message });
       } else if (error.message.toLowerCase().includes("email")) {
@@ -58,7 +60,6 @@ export default function SignUpClient() {
       return;
     }
 
-    // If email confirmation is required, no session will be returned
     if (!data.session) {
       setLoading(false);
       setErrors({
@@ -67,30 +68,31 @@ export default function SignUpClient() {
       return;
     }
 
-    // If we have a confirmed session, insert profile
     const userId = data.user?.id;
+
     if (userId) {
-      const { error: insertError } = await supabase.from("user_profile").insert({
-        user_id: userId,
-        name,
-        phone: `${countryCode}${phone}`,
-        email,
-      });
+      const { error: insertError } = await supabase
+        .from("user_profile")
+        .upsert({
+          user_id: userId,
+          full_name: name,
+          phone: `${countryCode}${phone}`,
+          email,
+        })
+        .select();
 
       if (insertError) {
-        console.error("Profile insert error:", insertError.message);
         setErrors({
           general: "Account created, but failed to save profile.",
         });
         setLoading(false);
-        return; // don’t redirect if profile creation failed
+        return;
       }
     }
 
     setLoading(false);
-    router.push("/staff/run"); // ✅ only redirect on full success
+    router.push("/staff/run");
   }
-
 
   return (
     <AuthLayout>
@@ -204,7 +206,6 @@ export default function SignUpClient() {
         <button
           type="submit"
           disabled={loading}
-          onClick={() => router.push("/auth/sign-in")}
           className="w-full py-2 rounded-lg bg-[#ff5757] text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
         >
           {loading ? "Creating Account…" : "Sign Up"}
