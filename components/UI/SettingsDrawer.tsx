@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { Flag, LogOut } from "lucide-react";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { clearPlannedRun } from "@/lib/planned-run";
+import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
+import { readRunSession, writeRunSession } from "@/lib/run-session";
 
 export default function SettingsDrawer() {
   const supabase = createClientComponentClient();
@@ -16,6 +17,7 @@ export default function SettingsDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [endRunError, setEndRunError] = useState<string | null>(null);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
   useEffect(() => {
@@ -62,8 +64,60 @@ export default function SettingsDrawer() {
     }
   };
 
+  const handleEndRun = () => {
+    setEndRunError(null);
+
+    const existingSession = readRunSession();
+    const plannedRun = readPlannedRun();
+
+    if (!existingSession && (!plannedRun || plannedRun.jobs.length === 0)) {
+      setEndRunError("No active run to end.");
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+
+    const hasValidStart =
+      existingSession?.startedAt &&
+      !Number.isNaN(new Date(existingSession.startedAt).getTime());
+
+    const planCreatedAt =
+      plannedRun?.createdAt && !Number.isNaN(new Date(plannedRun.createdAt).getTime())
+        ? plannedRun.createdAt
+        : null;
+
+    const safeCompleted = Math.max(0, existingSession?.completedJobs ?? 0);
+    const existingTotal = Number.isFinite(existingSession?.totalJobs)
+      ? Math.max(0, existingSession!.totalJobs)
+      : 0;
+    const plannedTotal = plannedRun?.jobs?.length ?? 0;
+    const totalJobs = Math.max(existingTotal, plannedTotal, safeCompleted);
+    const completedJobs = Math.min(safeCompleted, totalJobs);
+
+    const startedAt = hasValidStart
+      ? existingSession!.startedAt
+      : planCreatedAt ?? nowIso;
+
+    try {
+      writeRunSession({
+        startedAt,
+        endedAt: nowIso,
+        totalJobs,
+        completedJobs,
+      });
+      clearPlannedRun();
+      setActivePanel(null);
+      setIsOpen(false);
+      router.push("/staff/run/completed");
+    } catch (err) {
+      console.error("Unable to end run", err);
+      setEndRunError("We couldn't end the run. Please try again.");
+    }
+  };
+
   const handleSignOut = async () => {
     setLogoutError(null);
+    setEndRunError(null);
     clearPlannedRun();
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -86,6 +140,8 @@ export default function SettingsDrawer() {
           onClick={() => {
             setIsOpen(true);
             setActivePanel(null);
+            setEndRunError(null);
+            setLogoutError(null);
           }}
           className="flex flex-col justify-center items-center h-10 w-10 p-2"
         >
@@ -132,6 +188,17 @@ export default function SettingsDrawer() {
                 >
                   Map Style
                 </button>
+                <button
+                  type="button"
+                  onClick={handleEndRun}
+                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                >
+                  <Flag className="h-4 w-4" />
+                  <span>End Run</span>
+                </button>
+                {endRunError && (
+                  <p className="text-sm text-red-500">{endRunError}</p>
+                )}
                 <button
                   type="button"
                   onClick={handleSignOut}
