@@ -362,7 +362,7 @@ export default function ProofPageContent() {
         // go to route page for the next job
         const paramsObj = new URLSearchParams({
           jobs: JSON.stringify(jobs),
-          idx: String(nextIdx),
+          nextIdx: String(nextIdx),
           total: String(jobs.length),
         });
         router.push(`/staff/route?${paramsObj.toString()}`);
