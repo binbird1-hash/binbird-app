@@ -287,15 +287,15 @@ export default function ProofPageContent() {
       );
     });
   }
-
+    
   async function handleMarkDone() {
     if (!file) {
       alert("Please take a photo before marking the job done.");
       return;
     }
-
+  
     setSubmitting(true);
-
+  
     try {
       const {
         data: { user },
@@ -303,28 +303,28 @@ export default function ProofPageContent() {
       } = await supabase.auth.getUser();
       if (authError) throw authError;
       if (!user) throw new Error("You must be signed in to submit proof.");
-
+  
       const now = new Date();
       const dateStr = getLocalISODate(now);
       const { monthYear, week } = getMonthAndWeek(now);
-
+  
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
-
+  
       const folderPath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
-
+  
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
-
+  
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
         .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
-
+  
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
-
+  
       const { error: logErr } = await supabase.from("logs").insert({
         job_id: job.id,
         client_name: job.client_name ?? null,
@@ -341,9 +341,10 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
-
+  
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
-
+  
+      // cleanup state
       setNote("");
       setFile(null);
       setPreview((prev) => {
@@ -351,13 +352,28 @@ export default function ProofPageContent() {
         return null;
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
-      router.push("/staff/run/completed");
+  
+      // 👉 Decide where to navigate
+      const nextIdx = idx + 1;
+      if (nextIdx >= jobs.length) {
+        // all jobs done
+        router.push("/staff/completed");
+      } else {
+        // go to route page for the next job
+        const paramsObj = new URLSearchParams({
+          jobs: JSON.stringify(jobs),
+          idx: String(nextIdx),
+          total: String(jobs.length),
+        });
+        router.push(`/staff/route?${paramsObj.toString()}`);
+      }
     } catch (err: any) {
       alert(err?.message || "Unable to save proof. Please try again.");
     } finally {
       setSubmitting(false);
     }
   }
+
 
   const putOutImageSrc = referenceLookupComplete
     ? referenceUrls.putOut ?? PUT_OUT_PLACEHOLDER_URL
