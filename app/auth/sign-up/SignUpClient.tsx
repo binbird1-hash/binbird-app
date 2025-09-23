@@ -48,7 +48,7 @@ export default function SignUpClient() {
     const userId = data.user?.id;
     if (userId) {
       const { error: insertError } = await supabase.from("user_profile").insert({
-        id: userId,
+        user_id: userId,
         name,
         phone: `${countryCode}${phone}`,
         email,

@@ -22,7 +22,7 @@ export default function Dashboard() {
       const { data: profile } = await supabase
         .from('user_profile')
         .select('role')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .maybeSingle()
 
       setRole(profile?.role || 'staff')
