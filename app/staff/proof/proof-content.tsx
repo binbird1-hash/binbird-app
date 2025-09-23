@@ -6,6 +6,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { clearPlannedRun } from "@/lib/planned-run";
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -357,6 +358,7 @@ export default function ProofPageContent() {
       // 👉 Decide where to navigate
       if (nextIdx >= jobs.length) {
         // all jobs done
+        clearPlannedRun();
         router.push("/staff/run/completed");
       } else {
         // go to route page for the next job

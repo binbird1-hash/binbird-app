@@ -10,6 +10,11 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
+import {
+  clearPlannedRun,
+  readPlannedRun,
+  writePlannedRun,
+} from "@/lib/planned-run";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -29,6 +34,22 @@ function RunPageContent() {
   const router = useRouter();
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
+  const hasRedirectedToRoute = useRef(false);
+
+  const redirectToRoute = useCallback(
+    (
+      jobsList: Job[],
+      startLocation: { lat: number; lng: number },
+      endLocation: { lat: number; lng: number }
+    ) => {
+      const params = new URLSearchParams();
+      params.set("jobs", JSON.stringify(jobsList));
+      params.set("start", JSON.stringify(startLocation));
+      params.set("end", JSON.stringify(endLocation));
+      router.replace(`/staff/route?${params.toString()}`);
+    },
+    [router]
+  );
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [ordered, setOrdered] = useState<Job[]>([]);
@@ -46,6 +67,7 @@ function RunPageContent() {
   const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
 
   const [isPlanned, setIsPlanned] = useState(false);
+  const [plannerLocked, setPlannerLocked] = useState(true);
   const [resetCounter, setResetCounter] = useState(0);
   const [userMoved, setUserMoved] = useState(false);
   const [forceFit, setForceFit] = useState(false);
@@ -56,6 +78,31 @@ function RunPageContent() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: LIBRARIES,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const stored = readPlannedRun();
+    if (stored) {
+      setPlannerLocked(true);
+      setIsPlanned(true);
+      setJobs(stored.jobs);
+      setStart({ lat: stored.start.lat, lng: stored.start.lng });
+      setEnd({ lat: stored.end.lat, lng: stored.end.lng });
+      setStartAddress(stored.startAddress ?? "");
+      setEndAddress(stored.endAddress ?? "");
+      setOrdered(stored.jobs);
+      setRoutePath([]);
+      if (!hasRedirectedToRoute.current) {
+        hasRedirectedToRoute.current = true;
+        redirectToRoute(stored.jobs, stored.start, stored.end);
+      }
+      return;
+    }
+
+    hasRedirectedToRoute.current = false;
+    setPlannerLocked(false);
+  }, [redirectToRoute]);
 
   // ✅ Load today's jobs
   useEffect(() => {
@@ -251,10 +298,51 @@ function RunPageContent() {
     if (place.formatted_address) setEndAddress(place.formatted_address);
   };
 
+  const redirectExistingPlan = useCallback(() => {
+    if (start && end && ordered.length) {
+      hasRedirectedToRoute.current = true;
+      redirectToRoute(ordered, start, end);
+      return true;
+    }
+
+    const stored = readPlannedRun();
+    if (stored) {
+      hasRedirectedToRoute.current = true;
+      redirectToRoute(stored.jobs, stored.start, stored.end);
+      return true;
+    }
+
+    return false;
+  }, [end, ordered, redirectToRoute, start]);
+
+  const handleReset = useCallback(() => {
+    console.log("Resetting route");
+    clearPlannedRun();
+    hasRedirectedToRoute.current = false;
+    setRoutePath([]);
+    setOrdered([]);
+    setSameAsStart(false);
+    setEnd(null);
+    setEndAddress("");
+    setIsPlanned(false);
+    setPlannerLocked(false);
+    setResetCounter((c) => c + 1);
+    setUserMoved(false);
+    setForceFit(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) =>
+        setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      );
+    }
+  }, []);
+
   // Build route
   const buildRoute = async () => {
     console.log("Building route with:", { start, end, jobs });
-    if (!start || !end || jobs.length === 0) return alert("Need start, end, and jobs");
+    if (!start || !end || jobs.length === 0) {
+      alert("Need start, end, and jobs");
+      return;
+    }
     setRoutePath([]);
     setOrdered([]);
     setIsPlanned(false);
@@ -272,10 +360,32 @@ function RunPageContent() {
     console.log("Optimize API response:", opt);
     if (!resp.ok || !opt?.polyline) return alert("Could not build route.");
 
+    const plannedJobs = (opt.order || []).map((i: number) => jobs[i]);
+    if (!plannedJobs.length) {
+      alert("Could not build route.");
+      return;
+    }
+
     setRoutePath(polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] })));
-    setOrdered((opt.order || []).map((i: number) => jobs[i]));
+    setOrdered(plannedJobs);
     setIsPlanned(true);
     setForceFit(true);
+
+    const normalizedStartAddress = startAddress.trim().length ? startAddress.trim() : null;
+    const normalizedEndAddress = endAddress.trim().length ? endAddress.trim() : null;
+
+    writePlannedRun({
+      start,
+      end,
+      jobs: plannedJobs,
+      startAddress: normalizedStartAddress,
+      endAddress: normalizedEndAddress,
+      createdAt: new Date().toISOString(),
+    });
+
+    setPlannerLocked(true);
+    hasRedirectedToRoute.current = true;
+    redirectToRoute(plannedJobs, start, end);
   };
 
   if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
@@ -323,7 +433,7 @@ function RunPageContent() {
                 onChange={(e) => setStartAddress(e.target.value)}
                 placeholder="Start Location"
                 className="w-full px-3 py-2 rounded-lg text-black"
-                disabled={isPlanned}
+                disabled={isPlanned || plannerLocked}
               />
             </Autocomplete>
 
@@ -334,7 +444,7 @@ function RunPageContent() {
                 onChange={(e) => setEndAddress(e.target.value)}
                 placeholder="End Location"
                 className="w-full px-3 py-2 rounded-lg text-black"
-                disabled={sameAsStart || isPlanned}
+                disabled={sameAsStart || isPlanned || plannerLocked}
               />
             </Autocomplete>
 
@@ -344,30 +454,14 @@ function RunPageContent() {
                   type="checkbox"
                   checked={sameAsStart}
                   onChange={(e) => setSameAsStart(e.target.checked)}
-                  disabled={isPlanned}
+                  disabled={isPlanned || plannerLocked}
                 />
                 End same as Start
               </label>
 
               {isPlanned && (
                 <button
-                  onClick={() => {
-                    console.log("Resetting route");
-                    setRoutePath([]);
-                    setOrdered([]);
-                    setSameAsStart(false);
-                    setEnd(null);
-                    setEndAddress("");
-                    setIsPlanned(false);
-                    setResetCounter((c) => c + 1);
-                    setUserMoved(false);
-                    setForceFit(true);
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition((pos) =>
-                        setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-                      );
-                    }
-                  }}
+                  onClick={handleReset}
                   className="text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition"
                 >
                   Reset
@@ -390,18 +484,15 @@ function RunPageContent() {
                       : "bg-[#ff5757] hover:opacity-90"
                   }`}
                   onClick={() => {
-                    console.log("Button clicked, isPlanned:", isPlanned);
-                    if (isPlanned) {
-                      router.push(
-                        `/staff/route?jobs=${encodeURIComponent(
-                          JSON.stringify(ordered)
-                        )}&start=${encodeURIComponent(
-                          JSON.stringify(start)
-                        )}&end=${encodeURIComponent(JSON.stringify(end))}`
-                      );
-                    } else {
-                      buildRoute();
+                    console.log("Button clicked", {
+                      isPlanned,
+                      plannerLocked,
+                    });
+                    if (plannerLocked) {
+                      redirectExistingPlan();
+                      return;
                     }
+                    buildRoute();
                   }}
                 >
                   {isPlanned ? "Start Route" : "Plan Route"}

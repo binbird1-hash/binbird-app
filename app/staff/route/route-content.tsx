@@ -8,6 +8,7 @@ import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
+import { readPlannedRun } from "@/lib/planned-run";
 
 function RoutePageContent() {
   const supabase = createClientComponentClient();
@@ -48,6 +49,15 @@ function RoutePageContent() {
 
   // Parse jobs + start
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = readPlannedRun();
+      if (stored) {
+        setJobs(stored.jobs.map((job) => ({ ...job })));
+        setStart({ lat: stored.start.lat, lng: stored.start.lng });
+        return;
+      }
+    }
+
     const rawJobs = params.get("jobs");
     const rawStart = params.get("start");
     try {
