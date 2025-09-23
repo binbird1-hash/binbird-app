@@ -23,6 +23,7 @@ function RoutePageContent() {
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
+  const [lockNavigation, setLockNavigation] = useState(false);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -52,10 +53,12 @@ function RoutePageContent() {
     if (typeof window !== "undefined") {
       const stored = readPlannedRun();
       if (stored) {
+        setLockNavigation(Boolean(stored.hasStarted));
         setJobs(stored.jobs.map((job) => ({ ...job })));
         setStart({ lat: stored.start.lat, lng: stored.start.lng });
         return;
       }
+      setLockNavigation(false);
     }
 
     const rawJobs = params.get("jobs");
@@ -72,6 +75,30 @@ function RoutePageContent() {
       console.error("Parse failed:", err);
     }
   }, [params]);
+
+  useEffect(() => {
+    if (!lockNavigation || typeof window === "undefined") return;
+
+    const enforceRouteFocus = () => {
+      const latest = readPlannedRun();
+      if (latest && latest.hasStarted) {
+        window.history.pushState(null, "", window.location.href);
+      } else {
+        setLockNavigation(false);
+      }
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      enforceRouteFocus();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [lockNavigation]);
 
   // Pick up nextIdx
   useEffect(() => {
