@@ -265,7 +265,7 @@ function CompletedRunContent() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 py-10">
       <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold text-[#ff5757]">Run complete!</h1>
+        <h1 className="text-3xl font-bold text-[#ff5757]">Run Complete!</h1>
         <p className="text-gray-300">
           <span className="block">Nice work there.</span>
           <span className="block">Here&apos;s a quick recap of your shift.</span>
@@ -370,17 +370,6 @@ function CompletedRunContent() {
                   day: "numeric",
                 })}
               </p>
-        
-              {/* Divider + First Stop styled like Run Summary */}
-              <div className="divide-y divide-gray-800 text-gray-100">
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    First stop
-                  </p>
-                  <p className="text-lg font-semibold text-gray-100">
-                    {nextAssignment.address || "Address TBC"}
-                  </p>
-                </div>
               </div>
             </div>
           ) : (
