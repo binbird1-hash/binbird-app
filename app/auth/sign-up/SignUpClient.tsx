@@ -90,7 +90,6 @@ export default function SignUpClient() {
       }
     }
 
-    setLoading(false);
     router.push("/staff/run");
   }
 
