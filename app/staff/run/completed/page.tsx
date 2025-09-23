@@ -11,6 +11,7 @@ import {
   readRunSession,
   RunSessionRecord,
 } from "@/lib/run-session";
+import { clearPlannedRun } from "@/lib/planned-run";
 
 const WEEKDAYS = [
   "Sunday",
@@ -101,6 +102,7 @@ function CompletedRunContent() {
     const stored = readRunSession();
     setRunData(stored);
     clearRunSession();
+    clearPlannedRun();
   }, []);
 
   useEffect(() => {
