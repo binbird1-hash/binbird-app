@@ -301,7 +301,7 @@ export default function SettingsDrawer() {
                                 className={clsx(
                                   "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
                                   isSelected
-                                    ? "border-white bg-white text-black focus:ring-[#ff5757]"
+                                    ? "border-white bg-white text-black hover:border-white hover:text-black focus:ring-white/40"
                                     : "border-white/10 bg-white/5 text-white hover:border-[#ff5757]/60 hover:text-[#ff5757] focus:ring-white/40"
                                 )}
                               >
@@ -323,7 +323,7 @@ export default function SettingsDrawer() {
                                 className={clsx(
                                   "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
                                   isSelected
-                                    ? "border-white bg-white text-black focus:ring-[#ff5757]"
+                                    ? "border-white bg-white text-black hover:border-white hover:text-black focus:ring-white/40"
                                     : "border-white/10 bg-white/5 text-white hover:border-[#ff5757]/60 hover:text-[#ff5757] focus:ring-white/40"
                                 )}
                               >
