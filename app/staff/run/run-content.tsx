@@ -148,7 +148,7 @@ function RunPageContent() {
     // ✅ No jobs → zoom out to Melbourne
     bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
     bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
-    mapRef.current.fitBounds(bounds, { top: 100, right: 50, bottom: 250, left: 50 });
+    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
     mapRef.current?.setZoom(9.9);
     return;
   }
@@ -161,7 +161,7 @@ function RunPageContent() {
 
     if (!bounds.isEmpty() && (!userMoved || forceFit)) {
       console.log("Fitting map bounds");
-      mapRef.current.fitBounds(bounds, { top: 100, right: 50, bottom: 250, left: 50 });
+      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
       setForceFit(false);
     }
   }, [start, end, jobs, ordered, routePath, userMoved, forceFit]);
