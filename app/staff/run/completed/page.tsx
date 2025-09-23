@@ -360,16 +360,13 @@ function CompletedRunContent() {
               <p className="text-gray-300">{assignmentError}</p>
             ) : nextAssignment ? (
               <div className="space-y-2">
-                <p className="text-gray-300">
-                  You&apos;re next scheduled on
-                  <span className="font-semibold text-gray-100">
-                    {" "}
-                    {nextAssignment.day}
-                  </span>
-                  {" "}
-                  with {nextAssignment.totalJobs} stop
+              <div className="space-y-1">
+                <p className="text-gray-300">Your next scheduled Job:</p>
+                <p className="text-lg font-semibold text-gray-100">
+                  {nextAssignment.day} with {nextAssignment.totalJobs} stop
                   {nextAssignment.totalJobs === 1 ? "" : "s"}.
                 </p>
+              </div>
                 <div className="rounded-lg bg-neutral-800 px-4 py-3">
                   <p className="text-xs uppercase tracking-wide text-gray-400">
                     First stop
