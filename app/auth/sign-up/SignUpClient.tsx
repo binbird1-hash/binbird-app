@@ -37,14 +37,37 @@ export default function SignUpClient() {
     setLoading(true);
     setErrors({});
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
     if (error) {
-      setErrors({ email: error.message });
+      // Route errors to the correct field
+      if (error.message.toLowerCase().includes("password")) {
+        setErrors({ password: error.message });
+      } else if (error.message.toLowerCase().includes("email")) {
+        setErrors({ email: error.message });
+      } else {
+        setErrors({ general: error.message });
+      }
       setLoading(false);
       return;
     }
 
+    // If email confirmation is required, no session will be returned
+    if (!data.session) {
+      setLoading(false);
+      setErrors({
+        general: "Please check your email to confirm your account before signing in.",
+      });
+      return;
+    }
+
+    // If we have a confirmed session, insert profile
     const userId = data.user?.id;
     if (userId) {
       const { error: insertError } = await supabase.from("user_profile").insert({
@@ -53,15 +76,21 @@ export default function SignUpClient() {
         phone: `${countryCode}${phone}`,
         email,
       });
+
       if (insertError) {
         console.error("Profile insert error:", insertError.message);
-        setErrors({ general: "Account created, but failed to save profile." });
+        setErrors({
+          general: "Account created, but failed to save profile.",
+        });
+        setLoading(false);
+        return; // don’t redirect if profile creation failed
       }
     }
 
     setLoading(false);
-    router.push("/staff/run");
+    router.push("/staff/run"); // ✅ only redirect on full success
   }
+
 
   return (
     <AuthLayout>
