@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
@@ -101,8 +101,6 @@ export default function ProofPageContent() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [idx, setIdx] = useState<number>(0);
-  const [initialTotalJobs, setInitialTotalJobs] = useState<number | null>(null);
-  const [remainingJobsCount, setRemainingJobsCount] = useState<number | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -140,18 +138,22 @@ export default function ProofPageContent() {
         const parsedIdx = parseInt(rawIdx, 10);
         if (!Number.isNaN(parsedIdx)) setIdx(parsedIdx);
       }
-      const rawTotal = params.get("total");
-      if (rawTotal) {
-        const parsedTotal = parseInt(rawTotal, 10);
-        if (!Number.isNaN(parsedTotal)) {
-          setRemainingJobsCount(parsedTotal);
-          setInitialTotalJobs((prev) => (prev === null ? parsedTotal : prev));
-        }
-      }
     } catch (err) {
       console.error("Parse failed:", err);
     }
   }, [params]);
+
+  const getActiveRunSession = useCallback(() => {
+    const existing = readRunSession();
+    if (!existing) return null;
+    if (existing.endedAt) {
+      const endDate = new Date(existing.endedAt);
+      if (!Number.isNaN(endDate.getTime())) {
+        return null;
+      }
+    }
+    return existing;
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -188,42 +190,24 @@ export default function ProofPageContent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!jobs.length) return;
 
-    const totalFromState =
-      initialTotalJobs ??
-      (remainingJobsCount !== null && remainingJobsCount > 0
-        ? remainingJobsCount
-        : null) ??
-      (jobs.length > 0 ? jobs.length : null);
+    const activeSession = getActiveRunSession();
+    const totalJobs = Math.max(activeSession?.totalJobs ?? 0, jobs.length);
+    const safeIdx = Number.isFinite(idx) ? idx : 0;
+    const completedFromIdx = Math.min(Math.max(safeIdx, 0), totalJobs);
+    const startedAt =
+      activeSession?.startedAt && !Number.isNaN(new Date(activeSession.startedAt).getTime())
+        ? activeSession.startedAt
+        : new Date().toISOString();
 
-    if (!totalFromState || !Number.isFinite(totalFromState)) return;
-
-    const completedFromRemaining =
-      remainingJobsCount !== null
-        ? Math.max(totalFromState - remainingJobsCount, 0)
-        : 0;
-
-    const existing = readRunSession();
-
-    if (!existing) {
-      writeRunSession({
-        startedAt: new Date().toISOString(),
-        endedAt: null,
-        totalJobs: totalFromState,
-        completedJobs: completedFromRemaining,
-      });
-      return;
-    }
-
-    const updated = {
-      ...existing,
-      totalJobs: existing.totalJobs || totalFromState,
-      completedJobs: Math.max(existing.completedJobs, completedFromRemaining),
+    writeRunSession({
+      startedAt,
       endedAt: null,
-    };
-
-    writeRunSession(updated);
-  }, [initialTotalJobs, remainingJobsCount, jobs.length]);
+      totalJobs,
+      completedJobs: Math.max(activeSession?.completedJobs ?? 0, completedFromIdx),
+    });
+  }, [jobs.length, idx, getActiveRunSession]);
 
   useEffect(() => {
     if (!("geolocation" in navigator)) {
@@ -353,8 +337,24 @@ export default function ProofPageContent() {
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
   
-      // 👉 Decide where to navigate
       const nextIdx = idx + 1;
+
+      const activeSession = getActiveRunSession();
+      const nowIso = new Date().toISOString();
+      const totalJobs = Math.max(activeSession?.totalJobs ?? 0, jobs.length, nextIdx);
+      const completedAfterThisJob = Math.min(nextIdx, totalJobs);
+
+      writeRunSession({
+        startedAt:
+          activeSession?.startedAt && !Number.isNaN(new Date(activeSession.startedAt).getTime())
+            ? activeSession.startedAt
+            : nowIso,
+        endedAt: nextIdx >= jobs.length ? nowIso : null,
+        totalJobs,
+        completedJobs: Math.max(activeSession?.completedJobs ?? 0, completedAfterThisJob),
+      });
+
+      // 👉 Decide where to navigate
       if (nextIdx >= jobs.length) {
         // all jobs done
         router.push("/staff/run/completed");
