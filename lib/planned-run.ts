@@ -1,4 +1,5 @@
 import type { Job } from "./jobs";
+import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
 
 export type PlannedRunLocation = { lat: number; lng: number };
 
@@ -143,6 +144,8 @@ export function writePlannedRun(payload: PlannedRunPayload) {
   } catch (err) {
     console.warn("Unable to persist planned run payload", err);
   }
+
+  syncActiveRunCookie(normalized.hasStarted);
 }
 
 export function clearPlannedRun() {
@@ -152,6 +155,8 @@ export function clearPlannedRun() {
   } catch (err) {
     console.warn("Unable to clear planned run payload", err);
   }
+
+  clearActiveRunCookie();
 }
 
 export function markPlannedRunStarted() {
