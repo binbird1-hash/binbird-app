@@ -474,7 +474,7 @@ export default function ProofPageContent() {
               <img
                 src={preview}
                 alt="preview"
-                className="w-40 h-40 object-cover rounded-lg border border-gray-600"
+                className="w-full aspect-[3/4] object-cover rounded-lg border border-gray-600"
               />
             </div>
           )}
