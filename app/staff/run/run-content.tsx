@@ -14,6 +14,7 @@ import {
   clearPlannedRun,
   readPlannedRun,
   writePlannedRun,
+  markPlannedRunStarted,
 } from "@/lib/planned-run";
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -116,9 +117,11 @@ function RunPageContent() {
       setEndAddress(stored.endAddress ?? "");
       setOrdered(stored.jobs);
       setRoutePath([]);
-      if (!hasRedirectedToRoute.current) {
+      if (stored.hasStarted && !hasRedirectedToRoute.current) {
         hasRedirectedToRoute.current = true;
         redirectToRoute(stored.jobs, stored.start, stored.end);
+      } else if (!stored.hasStarted) {
+        hasRedirectedToRoute.current = false;
       }
       return;
     }
@@ -332,21 +335,41 @@ function RunPageContent() {
   };
 
   const redirectExistingPlan = useCallback(() => {
-    if (start && end && ordered.length) {
-      hasRedirectedToRoute.current = true;
-      redirectToRoute(ordered, start, end);
-      return true;
-    }
-
     const stored = readPlannedRun();
     if (stored) {
+      if (!stored.hasStarted) {
+        markPlannedRunStarted();
+      }
       hasRedirectedToRoute.current = true;
       redirectToRoute(stored.jobs, stored.start, stored.end);
       return true;
     }
 
+    if (start && end && ordered.length) {
+      const normalizedStartAddress = startAddress.trim().length
+        ? startAddress.trim()
+        : null;
+      const normalizedEndAddress = endAddress.trim().length
+        ? endAddress.trim()
+        : null;
+
+      writePlannedRun({
+        start,
+        end,
+        jobs: ordered,
+        startAddress: normalizedStartAddress,
+        endAddress: normalizedEndAddress,
+        createdAt: new Date().toISOString(),
+        hasStarted: true,
+      });
+
+      hasRedirectedToRoute.current = true;
+      redirectToRoute(ordered, start, end);
+      return true;
+    }
+
     return false;
-  }, [end, ordered, redirectToRoute, start]);
+  }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
 
   const handleReset = useCallback(() => {
     console.log("Resetting route");
@@ -414,11 +437,11 @@ function RunPageContent() {
       startAddress: normalizedStartAddress,
       endAddress: normalizedEndAddress,
       createdAt: new Date().toISOString(),
+      hasStarted: false,
     });
 
     setPlannerLocked(true);
-    hasRedirectedToRoute.current = true;
-    redirectToRoute(plannedJobs, start, end);
+    hasRedirectedToRoute.current = false;
   };
 
   if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
