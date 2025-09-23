@@ -346,6 +346,19 @@ function CompletedRunContent() {
         </section>
 
         <div className="flex flex-col gap-6">
+          
+        {/* Run Summary Section */}
+        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
+            {runData === undefined && (
+              <span className="text-sm text-gray-400">Loading…</span>
+            )}
+          </div>
+          {/* ... your existing run summary content ... */}
+        </section>
+        
+        {/* Next Run Section */}
         <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
           {assignmentStatus === "loading" && (
             <span className="text-sm text-gray-400">Checking…</span>
@@ -356,18 +369,16 @@ function CompletedRunContent() {
           ) : assignmentStatus === "error" ? (
             <p className="text-gray-300">{assignmentError}</p>
           ) : nextAssignment ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-2xl font-bold text-white">
-                  {nextAssignment.day},{" "}
-                  {new Date().toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}{" "}
-                  — {nextAssignment.totalJobs} stop
-                  {nextAssignment.totalJobs === 1 ? "" : "s"}
-                </p>
-              </div>
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-gray-100">Next Run</h2>
+              <p className="text-sm text-gray-300">
+                {nextAssignment.totalJobs} job
+                {nextAssignment.totalJobs === 1 ? "" : "s"} on {nextAssignment.day},{" "}
+                {new Date().toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
         
               <div className="rounded-lg bg-neutral-800 px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-gray-400">
@@ -388,6 +399,7 @@ function CompletedRunContent() {
             </p>
           )}
         </section>
+
 
 
           <button
