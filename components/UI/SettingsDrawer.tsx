@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -94,6 +94,27 @@ export default function SettingsDrawer() {
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [endRunError, setEndRunError] = useState<string | null>(null);
+  const [hasActiveRun, setHasActiveRun] = useState(false);
+
+  const syncActiveRunState = useCallback(() => {
+    const existingSession = readRunSession();
+    let hasActiveSession = false;
+
+    if (existingSession) {
+      if (!existingSession.endedAt) {
+        hasActiveSession = true;
+      } else {
+        const endedAtDate = new Date(existingSession.endedAt);
+        if (Number.isNaN(endedAtDate.getTime())) {
+          hasActiveSession = true;
+        }
+      }
+    }
+
+    const plannedRun = readPlannedRun();
+
+    setHasActiveRun(hasActiveSession || Boolean(plannedRun));
+  }, []);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
   useEffect(() => {
@@ -122,6 +143,10 @@ export default function SettingsDrawer() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    syncActiveRunState();
+  }, [syncActiveRunState]);
 
   // Save preferences to Supabase
   const saveSettings = async () => {
@@ -182,6 +207,7 @@ export default function SettingsDrawer() {
         completedJobs,
       });
       clearPlannedRun();
+      syncActiveRunState();
       setActivePanel(null);
       setIsOpen(false);
       router.push("/staff/run/completed");
@@ -195,6 +221,7 @@ export default function SettingsDrawer() {
     setLogoutError(null);
     setEndRunError(null);
     clearPlannedRun();
+    syncActiveRunState();
     const { error } = await supabase.auth.signOut();
     if (error) {
       setLogoutError("We couldn't sign you out. Please try again.");
@@ -214,6 +241,7 @@ export default function SettingsDrawer() {
       >
         <button
           onClick={() => {
+            syncActiveRunState();
             setIsOpen(true);
             setActivePanel(null);
             setEndRunError(null);
@@ -256,50 +284,38 @@ export default function SettingsDrawer() {
                   onClick={() => setActivePanel(activePanel === "nav" ? null : "nav")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    activePanel === "nav"
-                      ? "text-[#ff5757]"
-                      : "text-white hover:text-[#ff5757]"
+                    "text-white hover:text-[#ff5757]",
+                    activePanel === "nav" && "text-[#ff5757]"
                   )}
                 >
-                  <span
-                    className={clsx(
-                      "flex h-9 w-9 items-center justify-center rounded-full transition",
-                      activePanel === "nav" ? "bg-[#ff5757]/20" : "bg-white/10"
-                    )}
-                  >
-                    <Navigation2 className="h-4 w-4 text-[#ff5757]" />
-                  </span>
+                  <Navigation2 className="h-4 w-4" />
                   <span>Navigation App</span>
                 </button>
                 <button
                   onClick={() => setActivePanel(activePanel === "style" ? null : "style")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    activePanel === "style"
-                      ? "text-[#ff5757]"
-                      : "text-white hover:text-[#ff5757]"
+                    "text-white hover:text-[#ff5757]",
+                    activePanel === "style" && "text-[#ff5757]"
                   )}
                 >
-                  <span
-                    className={clsx(
-                      "flex h-9 w-9 items-center justify-center rounded-full transition",
-                      activePanel === "style" ? "bg-[#ff5757]/20" : "bg-white/10"
-                    )}
-                  >
-                    <Palette className="h-4 w-4 text-[#ff5757]" />
-                  </span>
+                  <Palette className="h-4 w-4" />
                   <span>Map Style</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleEndRun}
-                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
-                >
-                  <Flag className="h-4 w-4" />
-                  <span>End Run</span>
-                </button>
-                {endRunError && (
-                  <p className="text-sm text-red-500">{endRunError}</p>
+                {hasActiveRun && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleEndRun}
+                      className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                    >
+                      <Flag className="h-4 w-4" />
+                      <span>End Run</span>
+                    </button>
+                    {endRunError && (
+                      <p className="text-sm text-red-500">{endRunError}</p>
+                    )}
+                  </>
                 )}
                 <button
                   type="button"
