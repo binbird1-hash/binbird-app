@@ -360,7 +360,9 @@ function CompletedRunContent() {
           ) : nextAssignment ? (
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-gray-100">Next Run</h2>
-              <p className="text-sm text-gray-300">
+        
+              {/* Bigger + White jobs/date text */}
+              <p className="text-xl font-semibold text-white">
                 {nextAssignment.totalJobs} job
                 {nextAssignment.totalJobs === 1 ? "" : "s"} on {nextAssignment.day},{" "}
                 {new Date().toLocaleDateString(undefined, {
@@ -369,12 +371,13 @@ function CompletedRunContent() {
                 })}
               </p>
         
+              {/* Divider + First Stop styled like Run Summary */}
               <div className="divide-y divide-gray-800 text-gray-100">
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
                   <p className="text-xs uppercase tracking-wide text-gray-400">
                     First stop
                   </p>
-                  <p className="text-xl font-semibold text-gray-100">
+                  <p className="text-lg font-semibold text-gray-100">
                     {nextAssignment.address || "Address TBC"}
                   </p>
                 </div>
@@ -390,6 +393,7 @@ function CompletedRunContent() {
             </p>
           )}
         </section>
+
 
 
 
