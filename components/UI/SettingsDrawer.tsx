@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { clearPlannedRun } from "@/lib/planned-run";
 
 export default function SettingsDrawer() {
   const supabase = createClientComponentClient();
@@ -63,6 +64,7 @@ export default function SettingsDrawer() {
 
   const handleSignOut = async () => {
     setLogoutError(null);
+    clearPlannedRun();
     const { error } = await supabase.auth.signOut();
     if (error) {
       setLogoutError("We couldn't sign you out. Please try again.");
