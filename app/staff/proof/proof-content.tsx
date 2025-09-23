@@ -357,7 +357,7 @@ export default function ProofPageContent() {
       const nextIdx = idx + 1;
       if (nextIdx >= jobs.length) {
         // all jobs done
-        router.push("/staff/completed");
+        router.push("/staff/run/completed");
       } else {
         // go to route page for the next job
         const paramsObj = new URLSearchParams({
