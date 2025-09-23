@@ -25,6 +25,12 @@ export async function middleware(req: NextRequest) {
   if (session) {
     const { data: role, error } = await supabase.rpc('get_my_role')
     if (!error) {
+      if (
+        (pathname === '/' || pathname === '/auth' || pathname === '/auth/') &&
+        (role === 'staff' || role === 'admin')
+      ) {
+        return NextResponse.redirect(new URL('/staff/run', req.url))
+      }
       if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
         return NextResponse.redirect(new URL('/', req.url))
       }
