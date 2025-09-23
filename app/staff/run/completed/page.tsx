@@ -384,13 +384,7 @@ function CompletedRunContent() {
               </div>
             </div>
           ) : (
-            <p className="text-gray-300">
-              No other assignments are on the books yet. Check back next{" "}
-              <span className="font-semibold text-gray-100">
-                {todayName || "week"}
-              </span>{" "}
-              for your usual route.
-            </p>
+            <p className="text-gray-300">Check again next week.</p>
           )}
         </section>
 
@@ -400,7 +394,7 @@ function CompletedRunContent() {
           <button
             type="button"
             onClick={() => router.push("/staff/run")}
-            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-black transition hover:opacity-90"
+            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
           >
             End Session
           </button>
