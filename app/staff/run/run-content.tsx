@@ -18,6 +18,29 @@ import {
 
 const LIBRARIES: ("places")[] = ["places"];
 
+const VICTORIA_BOUNDS: google.maps.LatLngBoundsLiteral = {
+  north: -33.7,
+  south: -39.2,
+  east: 150.05,
+  west: 140.95,
+};
+
+const applyVictoriaAutocompleteLimits = (
+  autocomplete: google.maps.places.Autocomplete
+) => {
+  const bounds = new google.maps.LatLngBounds(
+    { lat: VICTORIA_BOUNDS.south, lng: VICTORIA_BOUNDS.west },
+    { lat: VICTORIA_BOUNDS.north, lng: VICTORIA_BOUNDS.east }
+  );
+
+  autocomplete.setBounds(bounds);
+  autocomplete.setOptions({
+    bounds,
+    strictBounds: true,
+    componentRestrictions: { country: "au" },
+  });
+};
+
 export default function RunPage() {
   return (
     <MapSettingsProvider>
@@ -103,6 +126,16 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
     setPlannerLocked(false);
   }, [redirectToRoute]);
+
+  useEffect(() => {
+    if (!startAuto) return;
+    applyVictoriaAutocompleteLimits(startAuto);
+  }, [startAuto]);
+
+  useEffect(() => {
+    if (!endAuto) return;
+    applyVictoriaAutocompleteLimits(endAuto);
+  }, [endAuto]);
 
   // ✅ Load today's jobs
   useEffect(() => {
