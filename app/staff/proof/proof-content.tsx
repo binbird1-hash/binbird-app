@@ -20,24 +20,20 @@ function toKebab(value: string | null | undefined, fallback: string): string {
 
   return value
     .toLowerCase()
-    .replace(/,\s*/g, "-")        // replace commas (with or without space) with hyphen
-    .replace(/[^a-z0-9-]+/g, "-") // non-alphanumeric → hyphen
-    .replace(/^-+|-+$/g, "");     // trim leading/trailing hyphens
+    .replace(/,\s*/g, "-")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 // 🟢 Helper: Month-Year and Week
 function getMonthAndWeek(date: Date) {
-  const month = date.toLocaleString("en-US", { month: "long" }); // "September"
-  const year = date.getFullYear(); // 2025
-  const monthYear = `${month}, ${year}`; // "September, 2025"
-
+  const month = date.toLocaleString("en-US", { month: "long" });
+  const year = date.getFullYear();
+  const monthYear = `${month}, ${year}`;
   const day = date.getDate();
   const week = `Week ${Math.ceil(day / 7)}`;
-
   return { monthYear, week };
 }
-
-
 
 async function prepareFileAsJpeg(
   originalFile: File,
@@ -73,9 +69,7 @@ async function prepareFileAsJpeg(
   if (typeof img.decode === "function") {
     try {
       await img.decode();
-    } catch {
-      // ignore decode errors; drawImage fallback still works.
-    }
+    } catch {}
   }
 
   const canvas = document.createElement("canvas");
@@ -83,9 +77,7 @@ async function prepareFileAsJpeg(
   canvas.height = img.naturalHeight || img.height;
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Unable to convert image to JPEG.");
-  }
+  if (!ctx) throw new Error("Unable to convert image to JPEG.");
   ctx.drawImage(img, 0, 0);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
@@ -170,10 +162,7 @@ export default function ProofPageContent() {
         return;
       }
 
-      // Use photo_path from jobs directly (it's already the folder path)
       const basePath = job.photo_path;
-      console.log("Using basePath for instructions:", basePath);
-
       const bucket = supabase.storage.from("proofs");
 
       const [putOutRes, bringInRes] = await Promise.all([
@@ -187,9 +176,6 @@ export default function ProofPageContent() {
           bringIn: bringInRes.data?.signedUrl ?? null,
         });
         setReferenceLookupComplete(true);
-
-        console.log("Put Out signed URL:", putOutRes.data?.signedUrl);
-        console.log("Bring In signed URL:", bringInRes.data?.signedUrl);
       }
     }
 
@@ -199,7 +185,6 @@ export default function ProofPageContent() {
       isCancelled = true;
     };
   }, [jobs, idx, supabase]);
-
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -257,7 +242,6 @@ export default function ProofPageContent() {
         setGpsError(null);
       },
       (error) => {
-        console.warn("Geolocation error", error);
         if (error.code === error.PERMISSION_DENIED) {
           setGpsError("Location permission denied. Proofs will save without GPS data.");
         } else {
@@ -304,40 +288,6 @@ export default function ProofPageContent() {
     });
   }
 
-  function goToNextJob(remainingJobs: Job[]) {
-    if (typeof window !== "undefined") {
-      const existing = readRunSession();
-      const derivedTotal = existing?.totalJobs || initialTotalJobs || jobs.length || 0;
-      const normalizedTotal =
-        Number.isFinite(derivedTotal) && derivedTotal > 0
-          ? derivedTotal
-          : existing?.totalJobs || initialTotalJobs || jobs.length || 0;
-      const computedCompleted = normalizedTotal
-        ? Math.max(normalizedTotal - remainingJobs.length, 0)
-        : Math.max(jobs.length - remainingJobs.length, 0);
-      const nextRecord = {
-        startedAt: existing?.startedAt ?? new Date().toISOString(),
-        endedAt: remainingJobs.length === 0 ? new Date().toISOString() : null,
-        totalJobs: normalizedTotal,
-        completedJobs: Math.max(existing?.completedJobs ?? 0, computedCompleted),
-      };
-      writeRunSession(nextRecord);
-    }
-
-    if (!remainingJobs.length) {
-      router.push("/staff/run/completed");
-      return;
-    }
-
-    const nextIdx = Math.min(currentIdx, Math.max(remainingJobs.length - 1, 0));
-
-    router.push(
-      `/staff/route?jobs=${encodeURIComponent(
-        JSON.stringify(remainingJobs)
-      )}&nextIdx=${nextIdx}&total=${remainingJobs.length}`
-    );
-  }
-
   async function handleMarkDone() {
     if (!file) {
       alert("Please take a photo before marking the job done.");
@@ -351,7 +301,6 @@ export default function ProofPageContent() {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-      console.log("Supabase user:", user, "authError:", authError);
       if (authError) throw authError;
       if (!user) throw new Error("You must be signed in to submit proof.");
 
@@ -361,7 +310,7 @@ export default function ProofPageContent() {
 
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
-      
+
       const folderPath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
 
@@ -393,11 +342,7 @@ export default function ProofPageContent() {
       });
       if (logErr) throw logErr;
 
-      const { error: updateErr } = await supabase
-        .from("jobs")
-        .update({ last_completed_on: dateStr })
-        .eq("id", job.id);
-      if (updateErr) throw updateErr;
+      await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
 
       setNote("");
       setFile(null);
@@ -406,11 +351,8 @@ export default function ProofPageContent() {
         return null;
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
-
-      const remainingJobs = jobs.filter((j) => j.id !== job.id);
-      goToNextJob(remainingJobs);
+      router.push("/staff/run/completed");
     } catch (err: any) {
-      console.error("Error saving proof", err);
       alert(err?.message || "Unable to save proof. Please try again.");
     } finally {
       setSubmitting(false);
@@ -437,18 +379,17 @@ export default function ProofPageContent() {
         <div className="border border-gray-800 rounded-lg overflow-hidden">
           <button
             onClick={() => setShowInstructions((p) => !p)}
-            className="w-full flex justify-between items-center px-4 py-3 font-semibold bg-white text-gray-900 hover:bg-gray-100 transition"
+            className="w-full flex justify-between items-center px-4 py-3 font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
           >
             <span>Instructions</span>
             <span>{showInstructions ? "▲" : "▼"}</span>
           </button>
 
           {showInstructions && (
-            <div className="p-4 space-y-4 bg-white text-gray-900">
-              {/* Photos side by side */}
+            <div className="p-4 space-y-4 bg-neutral-800 text-white">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 mb-2">Bins Out:</p>
+                  <p className="text-sm text-gray-400 mb-2">Bins Out:</p>
                   <img
                     src={putOutImageSrc}
                     alt="Bins Out Example"
@@ -456,7 +397,7 @@ export default function ProofPageContent() {
                   />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 mb-2">Bins In:</p>
+                  <p className="text-sm text-gray-400 mb-2">Bins In:</p>
                   <img
                     src={bringInImageSrc}
                     alt="Bins In Example"
@@ -464,10 +405,8 @@ export default function ProofPageContent() {
                   />
                 </div>
               </div>
-
-              {/* Dynamic instructions */}
               <div className="mt-4">
-                <p className="text-sm text-gray-500 mb-2">Placement Instructions:</p>
+                <p className="text-sm text-gray-400 mb-2">Placement Instructions:</p>
                 <p>
                   {job.job_type === "bring_in"
                     ? "Return bins neatly to their storage location. Ensure lids are closed and bins are not left blocking walkways or driveways."
@@ -476,17 +415,15 @@ export default function ProofPageContent() {
               </div>
             </div>
           )}
-
         </div>
 
         {job.notes && (
-          <div>
+          <div className="bg-neutral-900 rounded-lg p-4">
             <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
             <p className="text-white font-medium">{job.notes}</p>
           </div>
         )}
 
-        {/* Bins */}
         <div>
           <p className="text-sm text-gray-400 mb-1">Bins:</p>
           <div className="flex flex-wrap gap-2">{renderBins(job.bins)}</div>
@@ -512,7 +449,7 @@ export default function ProofPageContent() {
           />
           <label
             htmlFor="photo-upload"
-            className="w-full cursor-pointer bg-white text-black px-4 py-2 rounded-lg text-center font-semibold"
+            className="w-full cursor-pointer bg-neutral-900 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-neutral-800 transition"
           >
             {preview ? "Retake Photo ✓" : "Take Photo"}
           </label>
@@ -534,7 +471,7 @@ export default function ProofPageContent() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Add any details..."
-            className="w-full p-3 rounded-lg bg-white text-black min-h-[100px]"
+            className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
           />
         </div>
 
@@ -550,7 +487,7 @@ export default function ProofPageContent() {
         <button
           onClick={handleMarkDone}
           disabled={!file || submitting}
-          className="w-full bg-[#ff5757] text-black px-4 py-3 rounded-lg font-bold disabled:opacity-50"
+          className="w-full bg-[#ff5757] text-white px-4 py-3 rounded-lg font-bold disabled:opacity-50"
         >
           {submitting ? "Saving…" : "Mark Done"}
         </button>
