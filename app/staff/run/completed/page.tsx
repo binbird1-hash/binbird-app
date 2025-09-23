@@ -136,9 +136,7 @@ function CompletedRunContent() {
           ? data
               .map((job) => {
                 const day =
-                  typeof job?.day_of_week === "string"
-                    ? job.day_of_week
-                    : "";
+                  typeof job?.day_of_week === "string" ? job.day_of_week : "";
                 const addressValue =
                   typeof job?.address === "string" ? job.address.trim() : "";
                 const clientValue = job?.client_name;
@@ -346,39 +344,31 @@ function CompletedRunContent() {
         </section>
 
         <div className="flex flex-col gap-6">
-          
-        {/* Next Run Section */}
-        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
-          {assignmentStatus === "loading" && (
-            <span className="text-sm text-gray-400">Checking…</span>
-          )}
-        
-          {assignmentStatus === "loading" ? (
-            <p className="text-gray-300">Looking up your next shift…</p>
-          ) : assignmentStatus === "error" ? (
-            <p className="text-gray-300">{assignmentError}</p>
-          ) : nextAssignment ? (
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-gray-100">Next Run</h2>
-        
-              {/* Bigger + White jobs/date text */}
-              <p className="text-xl font-semibold text-white">
-                {nextAssignment.totalJobs} job
-                {nextAssignment.totalJobs === 1 ? "" : "s"} on {nextAssignment.day},{" "}
-                {new Date().toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
+          {/* Next Run Section */}
+          <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
+            {assignmentStatus === "loading" ? (
+              <p className="text-gray-300">Looking up your next shift…</p>
+            ) : assignmentStatus === "error" ? (
+              <p className="text-gray-300">{assignmentError}</p>
+            ) : nextAssignment ? (
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-gray-100">Next Run</h2>
+
+                {/* Bigger + White jobs/date text */}
+                <p className="text-xl font-semibold text-white">
+                  {nextAssignment.totalJobs} job
+                  {nextAssignment.totalJobs === 1 ? "" : "s"} on{" "}
+                  {nextAssignment.day},{" "}
+                  {new Date().toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
               </div>
-            </div>
-          ) : (
-            <p className="text-gray-300">Check again next week.</p>
-          )}
-        </section>
-
-
-
+            ) : (
+              <p className="text-gray-300">Check again next week.</p>
+            )}
+          </section>
 
           <button
             type="button"
