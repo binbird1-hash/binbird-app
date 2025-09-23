@@ -275,7 +275,7 @@ function CompletedRunContent() {
       <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-gray-100">Run summary</h2>
+            <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
             {runData === undefined && (
               <span className="text-sm text-gray-400">Loading…</span>
             )}
@@ -347,17 +347,6 @@ function CompletedRunContent() {
 
         <div className="flex flex-col gap-6">
           
-        {/* Run Summary Section */}
-        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
-            {runData === undefined && (
-              <span className="text-sm text-gray-400">Loading…</span>
-            )}
-          </div>
-          {/* ... your existing run summary content ... */}
-        </section>
-        
         {/* Next Run Section */}
         <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
           {assignmentStatus === "loading" && (
@@ -380,13 +369,15 @@ function CompletedRunContent() {
                 })}
               </p>
         
-              <div className="rounded-lg bg-neutral-800 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-400">
-                  First stop
-                </p>
-                <p className="text-lg font-semibold text-gray-100">
-                  {nextAssignment.address || "Address TBC"}
-                </p>
+              <div className="divide-y divide-gray-800 text-gray-100">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    First stop
+                  </p>
+                  <p className="text-xl font-semibold text-gray-100">
+                    {nextAssignment.address || "Address TBC"}
+                  </p>
+                </div>
               </div>
             </div>
           ) : (
