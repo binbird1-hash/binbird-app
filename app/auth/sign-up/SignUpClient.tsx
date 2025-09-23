@@ -204,6 +204,7 @@ export default function SignUpClient() {
         <button
           type="submit"
           disabled={loading}
+          onClick={() => router.push("/auth/sign-in")}
           className="w-full py-2 rounded-lg bg-[#ff5757] text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
         >
           {loading ? "Creating Account…" : "Sign Up"}
