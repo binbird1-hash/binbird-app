@@ -276,21 +276,28 @@ function RoutePageContent() {
           </div>
         </div>
       </div>
-
-      {/* ✅ Custom Popup Modal instead of alert() */}
+      
       {popupMsg && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
-          <div className="bg-white text-black p-6 rounded-lg shadow-xl max-w-sm w-full">
-            <p className="mb-4">{popupMsg}</p>
+          <div className="bg-white text-black p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            {/* Split into two lines */}
+            <p className="mb-2">
+              {popupMsg.includes("(") ? popupMsg.split("(")[0] : popupMsg}
+            </p>
+            {popupMsg.includes("(") && (
+              <p className="text-sm text-gray-700">({popupMsg.split("(")[1]}</p>
+            )}
+      
             <button
               onClick={() => setPopupMsg(null)}
-              className="w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold"
+              className="mt-4 w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold"
             >
               OK
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }
