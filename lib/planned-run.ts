@@ -9,6 +9,7 @@ export type PlannedRunPayload = {
   startAddress: string | null;
   endAddress: string | null;
   createdAt: string;
+  hasStarted: boolean;
 };
 
 const PLANNED_RUN_STORAGE_KEY = "binbird:planned-run";
@@ -106,6 +107,7 @@ export function readPlannedRun(): PlannedRunPayload | null {
         typeof parsed.createdAt === "string" && parsed.createdAt.length
           ? parsed.createdAt
           : new Date().toISOString(),
+      hasStarted: Boolean(parsed.hasStarted),
     };
   } catch (err) {
     console.warn("Unable to parse planned run payload", err);
@@ -128,6 +130,7 @@ export function writePlannedRun(payload: PlannedRunPayload) {
       typeof payload.createdAt === "string" && payload.createdAt.length
         ? payload.createdAt
         : new Date().toISOString(),
+    hasStarted: Boolean(payload.hasStarted),
   };
 
   if (!normalized.jobs.length) return;
@@ -149,4 +152,16 @@ export function clearPlannedRun() {
   } catch (err) {
     console.warn("Unable to clear planned run payload", err);
   }
+}
+
+export function markPlannedRunStarted() {
+  if (!isBrowser()) return;
+
+  const existing = readPlannedRun();
+  if (!existing) return;
+
+  writePlannedRun({
+    ...existing,
+    hasStarted: true,
+  });
 }
