@@ -346,48 +346,49 @@ function CompletedRunContent() {
         </section>
 
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-gray-100">What&apos;s next</h2>
-              {assignmentStatus === "loading" && (
-                <span className="text-sm text-gray-400">Checking…</span>
-              )}
-            </div>
-
-            {assignmentStatus === "loading" ? (
-              <p className="text-gray-300">Looking up your next shift…</p>
-            ) : assignmentStatus === "error" ? (
-              <p className="text-gray-300">{assignmentError}</p>
-            ) : nextAssignment ? (
-              <div className="space-y-2">
-              <div className="space-y-1">
-                <p className="text-gray-300">Your next scheduled Job:</p>
-                <p className="text-lg font-semibold text-gray-100">
-                  {nextAssignment.day} with {nextAssignment.totalJobs} stop
-                  {nextAssignment.totalJobs === 1 ? "" : "s"}.
+        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
+          {assignmentStatus === "loading" && (
+            <span className="text-sm text-gray-400">Checking…</span>
+          )}
+        
+          {assignmentStatus === "loading" ? (
+            <p className="text-gray-300">Looking up your next shift…</p>
+          ) : assignmentStatus === "error" ? (
+            <p className="text-gray-300">{assignmentError}</p>
+          ) : nextAssignment ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {nextAssignment.day},{" "}
+                  {new Date().toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}{" "}
+                  — {nextAssignment.totalJobs} stop
+                  {nextAssignment.totalJobs === 1 ? "" : "s"}
                 </p>
               </div>
-                <div className="rounded-lg bg-neutral-800 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    First stop
-                  </p>
-                  <p className="text-lg font-semibold text-gray-100">
-                    {nextAssignment.address || "Address TBC"}
-                  </p>
-                </div>
+        
+              <div className="rounded-lg bg-neutral-800 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-gray-400">
+                  First stop
+                </p>
+                <p className="text-lg font-semibold text-gray-100">
+                  {nextAssignment.address || "Address TBC"}
+                </p>
               </div>
-            ) : (
-              <p className="text-gray-300">
-                No other assignments are on the books yet. Check back next
-                {" "}
-                <span className="font-semibold text-gray-100">
-                  {todayName || "week"}
-                </span>
-                {" "}
-                for your usual route.
-              </p>
-            )}
-          </section>
+            </div>
+          ) : (
+            <p className="text-gray-300">
+              No other assignments are on the books yet. Check back next{" "}
+              <span className="font-semibold text-gray-100">
+                {todayName || "week"}
+              </span>{" "}
+              for your usual route.
+            </p>
+          )}
+        </section>
+
 
           <button
             type="button"
