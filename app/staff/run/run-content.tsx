@@ -486,7 +486,18 @@ function RunPageContent() {
               <input
                 type="text"
                 value={startAddress}
-                onChange={(e) => setStartAddress(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setStartAddress(value);
+                  if (!value.trim()) {
+                    setStart(null);
+                    setForceFit(true);
+                    if (sameAsStart) {
+                      setEnd(null);
+                      setEndAddress("");
+                    }
+                  }
+                }}
                 placeholder="Where you are right now"
                 className="w-full px-3 py-2 rounded-lg text-black"
                 disabled={isPlanned || plannerLocked}
