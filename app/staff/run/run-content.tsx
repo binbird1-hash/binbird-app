@@ -232,8 +232,8 @@ function RunPageContent() {
     // ✅ No jobs → zoom out to Melbourne
     bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
     bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
-    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
-    mapRef.current?.setZoom(9.9);
+    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
+    mapRef.current?.setZoom(9);
     return;
   }
     if (start) bounds.extend(start);
@@ -245,7 +245,7 @@ function RunPageContent() {
 
     if (!bounds.isEmpty() && (!userMoved || forceFit)) {
       console.log("Fitting map bounds");
-      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
+      mapRef.current.fitBounds(bounds, { top: 0, right: 50, bottom: 250, left: 50 });
       setForceFit(false);
     }
   }, [start, end, jobs, ordered, routePath, userMoved, forceFit]);
@@ -474,8 +474,10 @@ function RunPageContent() {
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <div className="relative h-[150vh]">
+    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+
+      <div className="flex-grow relative">
+
         <GoogleMap
           key={resetCounter}
           mapContainerStyle={{ width: "100%", height: "100%" }}

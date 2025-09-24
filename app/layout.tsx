@@ -22,10 +22,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="h-full bg-black text-white antialiased">
+    <html lang="en" className="h-full overflow-hidden">
+      <body className="h-full overflow-hidden bg-black text-white">
         <MapSettingsProvider>
-          <div className="relative h-screen">
+          <div className="flex flex-col min-h-screen">
             {children}
           </div>
         </MapSettingsProvider>
