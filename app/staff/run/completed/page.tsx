@@ -388,11 +388,9 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative flex h-dvh flex-col bg-black text-white">
+      <div className="relative h-dvh overflow-y-auto bg-black text-white">
         <SettingsDrawer />
-        <main className="flex-1 overflow-y-auto">
-          <CompletedRunContent />
-        </main>
+        <CompletedRunContent />
       </div>
     </MapSettingsProvider>
   );
