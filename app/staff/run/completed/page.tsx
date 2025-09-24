@@ -371,14 +371,17 @@ function CompletedRunContent() {
               <p className="text-gray-300">Check again next week.</p>
             )}
           </section>
-
-          <button
-            type="button"
-            onClick={() => router.push("/staff/run")}
-            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90 mb-6"
-          >
-            End Run
-          </button>
+            <div className="fixed inset-x-0 bottom-0 z-10">
+              <div className="bg-black w-full p-6">
+                <button
+                  type="button"
+                  onClick={() => router.push("/staff/run")}
+                  className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
+                >
+                  End Run
+                </button>
+              </div>
+            </div>
         </div>
       </div>
     </div>
