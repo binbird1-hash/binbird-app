@@ -166,26 +166,38 @@ function CompletedRunContent() {
 
         const fallbackIndex = new Date().getDay();
         const startIndex = todayIndex >= 0 ? todayIndex : fallbackIndex;
-
+        
         let found: NextAssignment | null = null;
-        for (let offset = 1; offset <= WEEKDAYS.length; offset += 1) {
-          const idx = (startIndex + offset) % WEEKDAYS.length;
-          const dayName = WEEKDAYS[idx];
-          const jobsForDay = jobsByDay.get(dayName);
-          if (jobsForDay && jobsForDay.length > 0) {
-            const [primary] = jobsForDay;
-            found = {
-              day: dayName,
-              address: primary.address,
-              clientName:
-                typeof primary.clientName === "string"
-                  ? primary.clientName
-                  : null,
-              totalJobs: jobsForDay.length,
-            };
-            break;
+        
+        // 1️⃣ Check for jobs today
+        const todayJobs = jobsByDay.get(todayName);
+        if (todayJobs && todayJobs.length > 0) {
+          const [primary] = todayJobs;
+          found = {
+            day: "Today",
+            address: primary.address,
+            clientName: typeof primary.clientName === "string" ? primary.clientName : null,
+            totalJobs: todayJobs.length,
+          };
+        } else {
+          // 2️⃣ Otherwise, look ahead for the next day with jobs
+          for (let offset = 1; offset <= WEEKDAYS.length; offset += 1) {
+            const idx = (startIndex + offset) % WEEKDAYS.length;
+            const dayName = WEEKDAYS[idx];
+            const jobsForDay = jobsByDay.get(dayName);
+            if (jobsForDay && jobsForDay.length > 0) {
+              const [primary] = jobsForDay;
+              found = {
+                day: dayName,
+                address: primary.address,
+                clientName: typeof primary.clientName === "string" ? primary.clientName : null,
+                totalJobs: jobsForDay.length,
+              };
+              break;
+            }
           }
         }
+
 
         if (!isActive) return;
 
@@ -348,12 +360,14 @@ function CompletedRunContent() {
                       : assignmentStatus === "error"
                       ? assignmentError
                       : nextAssignment
-                      ? `${nextAssignment.totalJobs} job${
-                          nextAssignment.totalJobs === 1 ? "" : "s"
-                        } on ${nextAssignment.day}, ${new Date().toLocaleDateString(
-                          undefined,
-                          { month: "short", day: "numeric" }
-                        )}`
+                      ? nextAssignment.day === "Today"
+                        ? `${nextAssignment.totalJobs} job${nextAssignment.totalJobs === 1 ? "" : "s"} left today`
+                        : `${nextAssignment.totalJobs} job${
+                            nextAssignment.totalJobs === 1 ? "" : "s"
+                          } on ${nextAssignment.day}, ${new Date().toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}`
                       : "—"}
                   </p>
                 </div>
