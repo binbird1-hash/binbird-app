@@ -396,7 +396,7 @@ export default function ProofPageContent() {
     : TRANSPARENT_PIXEL;
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white relative">
+    <div className="relative flex min-h-full flex-col bg-black text-white">
       <div className="flex-1 p-6 pb-32 space-y-4">
         <h1 className="text-2xl font-bold text-[#ff5757]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
