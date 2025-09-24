@@ -375,9 +375,9 @@ function CompletedRunContent() {
           <button
             type="button"
             onClick={() => router.push("/staff/run")}
-            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
+            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90 mb-6"
           >
-            End Session
+            End Run
           </button>
         </div>
       </div>
