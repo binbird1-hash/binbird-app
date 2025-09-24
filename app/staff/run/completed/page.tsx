@@ -388,7 +388,7 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative h-dvh overflow-y-auto bg-black text-white">
+      <div className="relative w-full overflow-y-auto bg-black text-white">
         <SettingsDrawer />
         <CompletedRunContent />
       </div>
