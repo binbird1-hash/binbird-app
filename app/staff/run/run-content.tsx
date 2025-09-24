@@ -541,7 +541,7 @@ function RunPageContent() {
                   className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] opacity-60 cursor-not-allowed"
                   disabled
                 >
-                  No Jobs Today
+                  All Jobs Completed
                 </button>
               ) : !isPlanned ? (
                 // Plan Run button (grey)
