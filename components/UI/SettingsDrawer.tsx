@@ -46,6 +46,15 @@ export default function SettingsDrawer() {
   );
   const bottomPanelRef = useRef<HTMLDivElement | null>(null);
 
+  const navHasPendingChange =
+    draftNavPref !== null && draftNavPref !== navPref;
+  const mapStyleHasPendingChange =
+    draftMapStylePref !== null && draftMapStylePref !== mapStylePref;
+
+  const navButtonIsActive = activePanel === "nav" || navHasPendingChange;
+  const mapButtonIsActive =
+    activePanel === "style" || mapStyleHasPendingChange;
+
   const dismissPanel = useCallback(() => {
     setActivePanel(null);
     setDraftNavPref(null);
@@ -310,8 +319,8 @@ export default function SettingsDrawer() {
                   onClick={() => handlePanelToggle("nav")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    "text-white hover:text-[#ff5757]",
-                    activePanel === "nav" && "text-[#ff5757]"
+                    navButtonIsActive ? "text-[#ff5757]" : "text-white",
+                    "hover:text-[#ff5757]"
                   )}
                 >
                   <Navigation2 className="h-4 w-4" />
@@ -321,8 +330,8 @@ export default function SettingsDrawer() {
                   onClick={() => handlePanelToggle("style")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    "text-white hover:text-[#ff5757]",
-                    activePanel === "style" && "text-[#ff5757]"
+                    mapButtonIsActive ? "text-[#ff5757]" : "text-white",
+                    "hover:text-[#ff5757]"
                   )}
                 >
                   <Palette className="h-4 w-4" />
