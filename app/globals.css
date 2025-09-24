@@ -268,9 +268,13 @@ input[type="file"] {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* ==============================
-   Mobile (Small Screens)
-   ============================== */
+/* globals.css */
+vercel-toolbar,
+#__next-build-watcher,
+#__next-prerender-indicator {
+  display: none !important;
+}
+
 @media (max-width: 480px) {
   .wrap {
     padding: 12px 8px;
