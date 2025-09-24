@@ -15,11 +15,31 @@ export type PlannedRunPayload = {
 
 const PLANNED_RUN_STORAGE_KEY = "binbird:planned-run";
 
-function isBrowser(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.sessionStorage !== "undefined"
-  );
+type StorageKey = "sessionStorage" | "localStorage";
+
+type StorageEntry = {
+  storage: Storage;
+  type: StorageKey;
+};
+
+const STORAGE_CANDIDATES: StorageKey[] = ["sessionStorage", "localStorage"];
+
+function getAvailableStorages(): StorageEntry[] {
+  if (typeof window === "undefined") return [];
+
+  const storages: StorageEntry[] = [];
+  for (const key of STORAGE_CANDIDATES) {
+    try {
+      const storage = window[key];
+      if (storage) {
+        storages.push({ storage, type: key });
+      }
+    } catch {
+      // Accessing storage can throw in private browsing modes; ignore.
+    }
+  }
+
+  return storages;
 }
 
 function isLatLng(value: unknown): value is PlannedRunLocation {
@@ -72,11 +92,7 @@ function normalizeJob(value: Job): Job {
   };
 }
 
-export function readPlannedRun(): PlannedRunPayload | null {
-  if (!isBrowser()) return null;
-  const raw = window.sessionStorage.getItem(PLANNED_RUN_STORAGE_KEY);
-  if (!raw) return null;
-
+function parsePlannedRun(raw: string): PlannedRunPayload | null {
   try {
     const parsed = JSON.parse(raw) as Partial<PlannedRunPayload> | null;
     if (!parsed || !isLatLng(parsed.start) || !isLatLng(parsed.end)) {
@@ -116,8 +132,36 @@ export function readPlannedRun(): PlannedRunPayload | null {
   }
 }
 
+export function readPlannedRun(): PlannedRunPayload | null {
+  const storages = getAvailableStorages();
+  if (!storages.length) return null;
+
+  for (let index = 0; index < storages.length; index += 1) {
+    const { storage } = storages[index];
+    let raw: string | null = null;
+
+    try {
+      raw = storage.getItem(PLANNED_RUN_STORAGE_KEY);
+    } catch {
+      continue;
+    }
+
+    if (!raw) continue;
+
+    const parsed = parsePlannedRun(raw);
+    if (parsed) {
+      if (index > 0) {
+        writePlannedRun(parsed);
+      }
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 export function writePlannedRun(payload: PlannedRunPayload) {
-  if (!isBrowser()) return;
+  const storages = getAvailableStorages();
 
   const normalized: PlannedRunPayload = {
     start: isLatLng(payload.start) ? payload.start : { lat: 0, lng: 0 },
@@ -134,34 +178,37 @@ export function writePlannedRun(payload: PlannedRunPayload) {
     hasStarted: Boolean(payload.hasStarted),
   };
 
-  if (!normalized.jobs.length) return;
+  if (!normalized.jobs.length) {
+    return;
+  }
 
-  try {
-    window.sessionStorage.setItem(
-      PLANNED_RUN_STORAGE_KEY,
-      JSON.stringify(normalized)
-    );
-  } catch (err) {
-    console.warn("Unable to persist planned run payload", err);
+  const payloadJson = JSON.stringify(normalized);
+
+  for (const { storage, type } of storages) {
+    try {
+      storage.setItem(PLANNED_RUN_STORAGE_KEY, payloadJson);
+    } catch (err) {
+      console.warn(`Unable to persist planned run payload in ${type}`, err);
+    }
   }
 
   syncActiveRunCookie(normalized.hasStarted);
 }
 
 export function clearPlannedRun() {
-  if (!isBrowser()) return;
-  try {
-    window.sessionStorage.removeItem(PLANNED_RUN_STORAGE_KEY);
-  } catch (err) {
-    console.warn("Unable to clear planned run payload", err);
+  const storages = getAvailableStorages();
+  for (const { storage, type } of storages) {
+    try {
+      storage.removeItem(PLANNED_RUN_STORAGE_KEY);
+    } catch (err) {
+      console.warn(`Unable to clear planned run payload in ${type}`, err);
+    }
   }
 
   clearActiveRunCookie();
 }
 
 export function markPlannedRunStarted() {
-  if (!isBrowser()) return;
-
   const existing = readPlannedRun();
   if (!existing) return;
 
