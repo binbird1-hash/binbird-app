@@ -263,7 +263,7 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-6 py-10">
+    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-6 pb-10 pt-6 sm:pt-10">
       <header className="space-y-2 text-center">
         <h1 className="text-3xl font-bold text-[#ff5757]">Run Complete!</h1>
         <p className="text-gray-300">
