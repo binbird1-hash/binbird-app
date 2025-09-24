@@ -300,7 +300,7 @@ function RoutePageContent() {
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
             <button
               onClick={() => window.open(navigateUrl, "_blank")}
-              className="w-full bg-gray-800 text-[#ff5757] border border-[#ff5757] px-4 py-2 rounded-lg font-semibold transition hover:bg-gray-700 relative z-10"
+              className="w-full bg-black text-[#ff5757] px-4 py-2 rounded-lg font-semibold transition hover:bg-[#111111] relative z-10"
             >
               Navigate
             </button>
