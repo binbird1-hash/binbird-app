@@ -551,7 +551,7 @@ function RunPageContent() {
                     buildRoute();
                   }}
                 >
-                  {isPlanned ? "Start Route" : "Plan Route"}
+                  {isPlanned ? "Start Run" : "Plan Run"}
                 </button>
               )}
             </div>
