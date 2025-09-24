@@ -40,20 +40,34 @@ export default function SettingsDrawer() {
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [endRunError, setEndRunError] = useState<string | null>(null);
   const [hasActiveRun, setHasActiveRun] = useState(false);
+  const [draftNavPref, setDraftNavPref] = useState<NavOptionKey | null>(null);
+  const [draftMapStylePref, setDraftMapStylePref] = useState<MapStyleKey | null>(
+    null
+  );
   const bottomPanelRef = useRef<HTMLDivElement | null>(null);
 
-  const handleNavPrefChange = useCallback(
-    (next: NavOptionKey) => {
-      setNavPref(next);
-    },
-    [setNavPref]
-  );
+  const dismissPanel = useCallback(() => {
+    setActivePanel(null);
+    setDraftNavPref(null);
+    setDraftMapStylePref(null);
+  }, [setActivePanel, setDraftMapStylePref, setDraftNavPref]);
 
-  const handleMapStylePrefChange = useCallback(
-    (next: MapStyleKey) => {
-      setMapStylePref(next);
+  const handlePanelToggle = useCallback(
+    (panel: "nav" | "style") => {
+      if (activePanel === panel) {
+        dismissPanel();
+        return;
+      }
+
+      if (panel === "nav") {
+        setDraftNavPref((current) => current ?? navPref);
+      } else {
+        setDraftMapStylePref((current) => current ?? mapStylePref);
+      }
+
+      setActivePanel(panel);
     },
-    [setMapStylePref]
+    [activePanel, dismissPanel, mapStylePref, navPref]
   );
 
   const syncActiveRunState = useCallback(() => {
@@ -116,7 +130,7 @@ export default function SettingsDrawer() {
       if (!panel) return;
       const target = event.target;
       if (target instanceof Node && !panel.contains(target)) {
-        setActivePanel(null);
+        dismissPanel();
       }
     };
 
@@ -127,22 +141,47 @@ export default function SettingsDrawer() {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("touchstart", handlePointerDown);
     };
-  }, [activePanel]);
+  }, [activePanel, dismissPanel]);
 
   // Save preferences to Supabase
   const saveSettings = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const nextNavPref = draftNavPref ?? navPref;
+    const nextMapStylePref = draftMapStylePref ?? mapStylePref;
+
+    const navChanged = nextNavPref !== navPref;
+    const mapStyleChanged = nextMapStylePref !== mapStylePref;
+
+    if (!navChanged && !mapStyleChanged) {
+      dismissPanel();
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
+
+    if (navChanged) {
+      setNavPref(nextNavPref);
+    }
+
+    if (mapStyleChanged) {
+      setMapStylePref(nextMapStylePref);
+    }
 
     const { error } = await supabase
       .from("user_profile")
       .upsert(
-        { user_id: user.id, map_style_pref: mapStylePref, nav_pref: navPref },
+        {
+          user_id: user.id,
+          map_style_pref: nextMapStylePref,
+          nav_pref: nextNavPref,
+        },
         { onConflict: "user_id" }
       );
 
     if (!error) {
-      setActivePanel(null);
+      dismissPanel();
     }
   };
 
@@ -189,7 +228,7 @@ export default function SettingsDrawer() {
       });
       clearPlannedRun();
       syncActiveRunState();
-      setActivePanel(null);
+      dismissPanel();
       setIsOpen(false);
       router.push("/staff/run/completed");
     } catch (err) {
@@ -208,7 +247,7 @@ export default function SettingsDrawer() {
       setLogoutError("We couldn't sign you out. Please try again.");
       return;
     }
-    setActivePanel(null);
+    dismissPanel();
     setIsOpen(false);
     router.push("/auth/sign-in");
   };
@@ -223,8 +262,8 @@ export default function SettingsDrawer() {
         <button
           onClick={() => {
             syncActiveRunState();
+            dismissPanel();
             setIsOpen(true);
-            setActivePanel(null);
             setEndRunError(null);
             setLogoutError(null);
           }}
@@ -250,7 +289,10 @@ export default function SettingsDrawer() {
           >
             {/* Close X top-left */}
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                dismissPanel();
+                setIsOpen(false);
+              }}
               className="absolute top-4 left-4 text-white text-3xl font-bold z-50"
             >
               &times;
@@ -262,7 +304,7 @@ export default function SettingsDrawer() {
               {/* Navigation & Map Style Buttons */}
               <div className="flex flex-col gap-4">
                 <button
-                  onClick={() => setActivePanel(activePanel === "nav" ? null : "nav")}
+                  onClick={() => handlePanelToggle("nav")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
                     "text-white hover:text-[#ff5757]",
@@ -273,7 +315,7 @@ export default function SettingsDrawer() {
                   <span>Navigation App</span>
                 </button>
                 <button
-                  onClick={() => setActivePanel(activePanel === "style" ? null : "style")}
+                  onClick={() => handlePanelToggle("style")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
                     "text-white hover:text-[#ff5757]",
@@ -338,12 +380,13 @@ export default function SettingsDrawer() {
                         {activePanel === "nav" ? (
                           <div className="grid gap-3 pb-1">
                             {navigationOptions.map((option) => {
-                              const isSelected = navPref === option.key;
+                              const isSelected =
+                                (draftNavPref ?? navPref) === option.key;
                               return (
                                 <button
                                   key={option.key}
                                   type="button"
-                                  onClick={() => handleNavPrefChange(option.key)}
+                                  onClick={() => setDraftNavPref(option.key)}
                                   className={clsx(
                                     "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
                                     isSelected
@@ -365,12 +408,13 @@ export default function SettingsDrawer() {
                         ) : (
                           <div className="grid gap-3 pb-1">
                             {mapStyleOptions.map((option) => {
-                              const isSelected = mapStylePref === option.key;
+                              const isSelected =
+                                (draftMapStylePref ?? mapStylePref) === option.key;
                               return (
                                 <button
                                   key={option.key}
                                   type="button"
-                                  onClick={() => handleMapStylePrefChange(option.key)}
+                                  onClick={() => setDraftMapStylePref(option.key)}
                                   className={clsx(
                                     "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
                                     isSelected
