@@ -18,152 +18,6 @@ type PickerOption<K extends string> = {
   label: string;
 };
 
-type ScrollPickerProps<K extends string> = {
-  options: PickerOption<K>[];
-  value: K;
-  onChange: (value: K) => void;
-  ariaLabel: string;
-};
-
-function ScrollPicker<K extends string>({
-  options,
-  value,
-  onChange,
-  ariaLabel,
-}: ScrollPickerProps<K>) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const itemRefs = useRef<Map<K, HTMLButtonElement | null>>(new Map());
-  const frameRef = useRef<number>();
-  const initializedRef = useRef(false);
-  const currentKeyRef = useRef<K>(value);
-
-  const setItemRef = useCallback(
-    (key: K) => (node: HTMLButtonElement | null) => {
-      if (node) {
-        itemRefs.current.set(key, node);
-      } else {
-        itemRefs.current.delete(key);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    currentKeyRef.current = value;
-  }, [value]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const target = itemRefs.current.get(value);
-    if (!target) return;
-
-    const offset =
-      target.offsetTop - container.offsetHeight / 2 + target.offsetHeight / 2;
-    const behavior = initializedRef.current ? "smooth" : "auto";
-
-    if (Math.abs(container.scrollTop - offset) > 1) {
-      container.scrollTo({ top: offset, behavior });
-    }
-
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-    }
-  }, [value, options]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const updateNearest = () => {
-      const containerNode = containerRef.current;
-      if (!containerNode) return;
-      const containerRect = containerNode.getBoundingClientRect();
-      const containerCenter = containerRect.top + containerRect.height / 2;
-
-      let closestKey: K | null = null;
-      let closestDistance = Number.POSITIVE_INFINITY;
-
-      options.forEach((option) => {
-        const element = itemRefs.current.get(option.key);
-        if (!element) return;
-        const rect = element.getBoundingClientRect();
-        const elementCenter = rect.top + rect.height / 2;
-        const distance = Math.abs(elementCenter - containerCenter);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestKey = option.key;
-        }
-      });
-
-      if (closestKey && closestKey !== currentKeyRef.current) {
-        currentKeyRef.current = closestKey;
-        onChange(closestKey);
-      }
-    };
-
-    const handleScroll = () => {
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-      frameRef.current = requestAnimationFrame(updateNearest);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, [options, onChange]);
-
-  return (
-    <div className="relative">
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-14 -translate-y-1/2 rounded-lg border border-white/25"></div>
-      <div
-        ref={containerRef}
-        className="scroll-picker flex h-48 flex-col gap-3 overflow-y-auto overscroll-y-contain scroll-smooth py-[4.25rem] snap-y snap-mandatory"
-        aria-label={ariaLabel}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {options.map((option) => {
-          const isSelected = value === option.key;
-          return (
-            <button
-              key={option.key}
-              ref={setItemRef(option.key)}
-              type="button"
-              onClick={() => onChange(option.key)}
-              className={clsx(
-                "flex h-14 items-center justify-center snap-center rounded-lg px-4 text-center text-lg font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
-                isSelected
-                  ? "bg-white text-black shadow-lg"
-                  : "text-white/55 hover:text-white"
-              )}
-              aria-pressed={isSelected}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-black to-transparent"></div>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-black to-transparent"></div>
-      <style jsx>{`
-        .scroll-picker {
-          -ms-overflow-style: none;
-        }
-        .scroll-picker::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-    </div>
-  );
-}
-
 const navigationOptions: PickerOption<NavOptionKey>[] = [
   { key: "google", label: "Google Maps" },
   { key: "waze", label: "Waze" },
@@ -480,21 +334,61 @@ export default function SettingsDrawer() {
                       <p className="text-xs uppercase tracking-[0.35em] text-white/60">
                         {activePanel === "nav" ? "Navigation App" : "Map Style"}
                       </p>
-                      <div className="mt-5 flex flex-1 items-center justify-center overflow-hidden">
+                      <div className="mt-5 flex flex-1 flex-col overflow-y-auto">
                         {activePanel === "nav" ? (
-                          <ScrollPicker
-                            options={navigationOptions}
-                            value={navPref}
-                            onChange={handleNavPrefChange}
-                            ariaLabel="Select navigation app"
-                          />
+                          <div className="grid gap-3 pb-1">
+                            {navigationOptions.map((option) => {
+                              const isSelected = navPref === option.key;
+                              return (
+                                <button
+                                  key={option.key}
+                                  type="button"
+                                  onClick={() => handleNavPrefChange(option.key)}
+                                  className={clsx(
+                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
+                                    isSelected
+                                      ? "border-white bg-white text-black shadow-sm"
+                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                  )}
+                                  aria-pressed={isSelected}
+                                >
+                                  <span>{option.label}</span>
+                                  {isSelected && (
+                                    <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/70">
+                                      Selected
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         ) : (
-                          <ScrollPicker
-                            options={mapStyleOptions}
-                            value={mapStylePref}
-                            onChange={handleMapStylePrefChange}
-                            ariaLabel="Select map style"
-                          />
+                          <div className="grid gap-3 pb-1">
+                            {mapStyleOptions.map((option) => {
+                              const isSelected = mapStylePref === option.key;
+                              return (
+                                <button
+                                  key={option.key}
+                                  type="button"
+                                  onClick={() => handleMapStylePrefChange(option.key)}
+                                  className={clsx(
+                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
+                                    isSelected
+                                      ? "border-white bg-white text-black shadow-sm"
+                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                  )}
+                                  aria-pressed={isSelected}
+                                >
+                                  <span>{option.label}</span>
+                                  {isSelected && (
+                                    <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/70">
+                                      Selected
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
                     </div>
