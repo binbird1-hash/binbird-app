@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
@@ -272,7 +271,7 @@ function CompletedRunContent() {
         </p>
       </header>
 
-      <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-2">
+      <div className="mt-6 flex-1">
         <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
@@ -293,91 +292,17 @@ function CompletedRunContent() {
           ) : (
             <div className="space-y-4">
               <div className="divide-y divide-gray-800 text-gray-100">
+                {/* Duration */}
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Duration
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Duration</p>
                   <p className="text-xl font-semibold text-gray-100">
                     {derivedStats.durationLabel}
                   </p>
                 </div>
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Jobs completed
-                  </p>
-                  <p className="text-xl font-semibold text-gray-100">
-                    {derivedStats.jobsCompleted ?? "—"}
-                    {derivedStats.totalJobs !== undefined &&
-                      derivedStats.totalJobs !== derivedStats.jobsCompleted &&
-                      derivedStats.totalJobs !== 0 && (
-                        <span className="ml-1 text-sm font-medium text-gray-400">
-                          / {derivedStats.totalJobs}
-                        </span>
-                      )}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Avg per job
-                  </p>
-                  <p className="text-xl font-semibold text-gray-100">
-                    {derivedStats.avgPerJob}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Started
-                  </p>
-                  <p className="text-sm text-gray-200">
-                    {derivedStats.startLabel ?? "—"}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Wrapped up
-                  </p>
-                  <p className="text-sm text-gray-200">
-                    {derivedStats.endLabel ?? "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
 
-        <div className="flex flex-col gap-6">
-        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
-            {runData === undefined && (
-              <span className="text-sm text-gray-400">Loading…</span>
-            )}
-          </div>
-        
-          {runData === undefined ? (
-            <p className="text-gray-300">
-              Hang tight while we gather the final numbers.
-            </p>
-          ) : runData === null ? (
-            <p className="text-gray-300">
-              We couldn&apos;t find run details for this session, but your proofs
-              were saved successfully.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <div className="divide-y divide-gray-800 text-gray-100">
+                {/* Jobs completed */}
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Duration
-                  </p>
-                  <p className="text-xl font-semibold text-gray-100">
-                    {derivedStats.durationLabel}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Jobs completed
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Jobs completed</p>
                   <p className="text-xl font-semibold text-gray-100">
                     {derivedStats.jobsCompleted ?? "—"}
                     {derivedStats.totalJobs !== undefined &&
@@ -389,34 +314,34 @@ function CompletedRunContent() {
                       )}
                   </p>
                 </div>
+
+                {/* Avg per job */}
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Avg per job
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Avg per job</p>
                   <p className="text-xl font-semibold text-gray-100">
                     {derivedStats.avgPerJob}
                   </p>
                 </div>
+
+                {/* Started */}
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Started
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Started</p>
                   <p className="text-sm text-gray-200">
                     {derivedStats.startLabel ?? "—"}
                   </p>
                 </div>
+
+                {/* Wrapped up */}
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Wrapped up
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Wrapped up</p>
                   <p className="text-sm text-gray-200">
                     {derivedStats.endLabel ?? "—"}
                   </p>
                 </div>
+
+                {/* Next Run */}
                 <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Next Run
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Next Run</p>
                   <p className="text-xl font-semibold text-gray-100">
                     {assignmentStatus === "loading"
                       ? "Loading…"
@@ -436,17 +361,18 @@ function CompletedRunContent() {
             </div>
           )}
         </section>
-            <div className="fixed inset-x-0 bottom-0 z-10">
-              <div className="bg-black w-full p-6">
-                <button
-                  type="button"
-                  onClick={() => router.push("/staff/run")}
-                  className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
-                >
-                  End Run
-                </button>
-              </div>
-            </div>
+      </div>
+
+      {/* Fixed footer button */}
+      <div className="fixed inset-x-0 bottom-0 z-10">
+        <div className="bg-black w-full p-6">
+          <button
+            type="button"
+            onClick={() => router.push("/staff/run")}
+            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
+          >
+            End Run
+          </button>
         </div>
       </div>
     </div>
