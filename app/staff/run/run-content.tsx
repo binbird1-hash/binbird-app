@@ -487,7 +487,7 @@ function RunPageContent() {
                 type="text"
                 value={startAddress}
                 onChange={(e) => setStartAddress(e.target.value)}
-                placeholder="Start Location"
+                placeholder="Where you are right now"
                 className="w-full px-3 py-2 rounded-lg text-black"
                 disabled={isPlanned || plannerLocked}
               />
@@ -498,7 +498,7 @@ function RunPageContent() {
                 type="text"
                 value={endAddress}
                 onChange={(e) => setEndAddress(e.target.value)}
-                placeholder="End Location"
+                placeholder="Where you want to go after run"
                 className="w-full px-3 py-2 rounded-lg text-black"
                 disabled={sameAsStart || isPlanned || plannerLocked}
               />
@@ -512,7 +512,7 @@ function RunPageContent() {
                   onChange={(e) => setSameAsStart(e.target.checked)}
                   disabled={isPlanned || plannerLocked}
                 />
-                End same as Start
+                Finish at same place I started
               </label>
 
               {isPlanned && (
