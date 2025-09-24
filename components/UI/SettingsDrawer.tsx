@@ -287,8 +287,6 @@ export default function SettingsDrawer() {
         </button>
       </div>
 
-      <div className="w-full h-full pt-14">{/* Map goes here */}</div>
-
       {/* Full-Screen Drawer */}
       <AnimatePresence>
         {isOpen && (

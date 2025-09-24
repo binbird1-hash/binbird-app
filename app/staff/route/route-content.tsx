@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
-import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
-import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
+import { useMapSettings } from "@/components/Context/MapSettingsContext";
+import RouteShell from "./route-shell";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readPlannedRun } from "@/lib/planned-run";
@@ -261,8 +261,8 @@ function RoutePageContent() {
       : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <div className="relative h-[150vh]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-black text-white">
+      <div className="relative flex-1 min-h-0">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
@@ -340,27 +340,9 @@ function RoutePageContent() {
 }
 
 export default function RoutePage() {
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const previousHtmlOverflow = html.style.overflow;
-    const previousBodyOverflow = body.style.overflow;
-
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-
-    return () => {
-      html.style.overflow = previousHtmlOverflow;
-      body.style.overflow = previousBodyOverflow;
-    };
-  }, []);
-
   return (
-    <MapSettingsProvider>
-      <div className="relative flex h-screen flex-col overflow-hidden bg-black text-white">
-        <SettingsDrawer />
-        <RoutePageContent />
-      </div>
-    </MapSettingsProvider>
+    <RouteShell>
+      <RoutePageContent />
+    </RouteShell>
   );
 }

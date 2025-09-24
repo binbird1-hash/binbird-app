@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
+import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
-import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
@@ -17,6 +16,7 @@ import {
   markPlannedRunStarted,
 } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import RunShell from "./run-shell";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -44,28 +44,10 @@ const applyVictoriaAutocompleteLimits = (
 };
 
 export default function RunPage() {
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const previousHtmlOverflow = html.style.overflow;
-    const previousBodyOverflow = body.style.overflow;
-
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-
-    return () => {
-      html.style.overflow = previousHtmlOverflow;
-      body.style.overflow = previousBodyOverflow;
-    };
-  }, []);
-
   return (
-    <MapSettingsProvider>
-      <div className="relative flex h-screen flex-col overflow-hidden bg-black text-white">
-        <SettingsDrawer />
-        <RunPageContent />
-      </div>
-    </MapSettingsProvider>
+    <RunShell>
+      <RunPageContent />
+    </RunShell>
   );
 }
 
@@ -489,9 +471,9 @@ function RunPageContent() {
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-black text-white">
 
-      <div className="flex-grow relative">
+      <div className="relative flex-1 min-h-0">
 
         <GoogleMap
           key={resetCounter}
