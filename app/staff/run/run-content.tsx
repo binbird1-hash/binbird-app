@@ -46,7 +46,7 @@ const applyVictoriaAutocompleteLimits = (
 export default function RunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
+      <div className="relative h-screen overflow-hidden bg-black text-white">
         <SettingsDrawer />
         <RunPageContent />
       </div>
@@ -474,13 +474,13 @@ function RunPageContent() {
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <div className="relative h-[150vh]">
+    <div className="flex flex-col h-full w-full max-w-xl mx-auto bg-black text-white">
+      <div className="relative flex-1">
         <GoogleMap
           key={resetCounter}
           mapContainerStyle={{ width: "100%", height: "100%" }}
-          onLoad={(map) => { 
-            console.log("Google Map loaded"); 
+          onLoad={(map) => {
+            console.log("Google Map loaded");
             mapRef.current = map; 
             fitBoundsToMap(); 
           }}
