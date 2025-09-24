@@ -346,31 +346,96 @@ function CompletedRunContent() {
         </section>
 
         <div className="flex flex-col gap-6">
-          {/* Next Run Section */}
-          <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
-            {assignmentStatus === "loading" ? (
-              <p className="text-gray-300">Looking up your next shift…</p>
-            ) : assignmentStatus === "error" ? (
-              <p className="text-gray-300">{assignmentError}</p>
-            ) : nextAssignment ? (
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold text-gray-100">Next Run</h2>
-
-                {/* Bigger + White jobs/date text */}
-                <p className="text-xl font-semibold text-white">
-                  {nextAssignment.totalJobs} job
-                  {nextAssignment.totalJobs === 1 ? "" : "s"} on{" "}
-                  {nextAssignment.day},{" "}
-                  {new Date().toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-            ) : (
-              <p className="text-gray-300">Check again next week.</p>
+        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
+            {runData === undefined && (
+              <span className="text-sm text-gray-400">Loading…</span>
             )}
-          </section>
+          </div>
+        
+          {runData === undefined ? (
+            <p className="text-gray-300">
+              Hang tight while we gather the final numbers.
+            </p>
+          ) : runData === null ? (
+            <p className="text-gray-300">
+              We couldn&apos;t find run details for this session, but your proofs
+              were saved successfully.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <div className="divide-y divide-gray-800 text-gray-100">
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Duration
+                  </p>
+                  <p className="text-xl font-semibold text-gray-100">
+                    {derivedStats.durationLabel}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Jobs completed
+                  </p>
+                  <p className="text-xl font-semibold text-gray-100">
+                    {derivedStats.jobsCompleted ?? "—"}
+                    {derivedStats.totalJobs !== undefined &&
+                      derivedStats.totalJobs !== derivedStats.jobsCompleted &&
+                      derivedStats.totalJobs !== 0 && (
+                        <span className="ml-1 text-sm font-medium text-gray-400">
+                          / {derivedStats.totalJobs}
+                        </span>
+                      )}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Avg per job
+                  </p>
+                  <p className="text-xl font-semibold text-gray-100">
+                    {derivedStats.avgPerJob}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Started
+                  </p>
+                  <p className="text-sm text-gray-200">
+                    {derivedStats.startLabel ?? "—"}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Wrapped up
+                  </p>
+                  <p className="text-sm text-gray-200">
+                    {derivedStats.endLabel ?? "—"}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Next Run
+                  </p>
+                  <p className="text-xl font-semibold text-gray-100">
+                    {assignmentStatus === "loading"
+                      ? "Loading…"
+                      : assignmentStatus === "error"
+                      ? assignmentError
+                      : nextAssignment
+                      ? `${nextAssignment.totalJobs} job${
+                          nextAssignment.totalJobs === 1 ? "" : "s"
+                        } on ${nextAssignment.day}, ${new Date().toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric" }
+                        )}`
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
             <div className="fixed inset-x-0 bottom-0 z-10">
               <div className="bg-black w-full p-6">
                 <button
