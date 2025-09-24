@@ -9,6 +9,7 @@ import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { deriveRunMenuState, type RunMenuState } from "@/lib/run-state";
 
 type NavOptionKey = "google" | "waze" | "apple";
 type MapStyleKey = "Dark" | "Light" | "Satellite";
@@ -39,7 +40,9 @@ export default function SettingsDrawer() {
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [endRunError, setEndRunError] = useState<string | null>(null);
-  const [hasActiveRun, setHasActiveRun] = useState(false);
+  const [runMenuState, setRunMenuState] = useState<RunMenuState>(() =>
+    deriveRunMenuState({ plannedRun: null, runSession: null })
+  );
   const [draftNavPref, setDraftNavPref] = useState<NavOptionKey | null>(null);
   const [draftMapStylePref, setDraftMapStylePref] = useState<MapStyleKey | null>(
     null
@@ -72,22 +75,14 @@ export default function SettingsDrawer() {
 
   const syncActiveRunState = useCallback(() => {
     const existingSession = readRunSession();
-    let hasActiveSession = false;
-
-    if (existingSession) {
-      if (!existingSession.endedAt) {
-        hasActiveSession = true;
-      } else {
-        const endedAtDate = new Date(existingSession.endedAt);
-        if (Number.isNaN(endedAtDate.getTime())) {
-          hasActiveSession = true;
-        }
-      }
-    }
-
     const plannedRun = readPlannedRun();
 
-    setHasActiveRun(hasActiveSession || Boolean(plannedRun));
+    setRunMenuState(
+      deriveRunMenuState({
+        plannedRun,
+        runSession: existingSession,
+      })
+    );
   }, []);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
@@ -190,8 +185,12 @@ export default function SettingsDrawer() {
 
     const existingSession = readRunSession();
     const plannedRun = readPlannedRun();
+    const currentState = deriveRunMenuState({
+      plannedRun,
+      runSession: existingSession,
+    });
 
-    if (!existingSession && (!plannedRun || plannedRun.jobs.length === 0)) {
+    if (!currentState.showEndRun) {
       setEndRunError("No active run to end.");
       return;
     }
@@ -238,8 +237,14 @@ export default function SettingsDrawer() {
   };
 
   const handleSignOut = async () => {
-    setLogoutError(null);
     setEndRunError(null);
+
+    if (runMenuState.lockNavigation) {
+      setLogoutError("End the current run before signing out.");
+      return;
+    }
+
+    setLogoutError(null);
     clearPlannedRun();
     syncActiveRunState();
     const { error } = await supabase.auth.signOut();
@@ -325,12 +330,15 @@ export default function SettingsDrawer() {
                   <Palette className="h-4 w-4" />
                   <span>Map Style</span>
                 </button>
-                {hasActiveRun && (
+                {runMenuState.showEndRun && (
                   <>
                     <button
                       type="button"
                       onClick={handleEndRun}
-                      className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                      className={clsx(
+                        "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition",
+                        "hover:text-[#ff5757]"
+                      )}
                     >
                       <Flag className="h-4 w-4" />
                       <span>End Run</span>
@@ -343,7 +351,13 @@ export default function SettingsDrawer() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                  disabled={runMenuState.lockNavigation}
+                  className={clsx(
+                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition",
+                    runMenuState.lockNavigation
+                      ? "cursor-not-allowed opacity-60"
+                      : "hover:text-[#ff5757]"
+                  )}
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Log Out</span>

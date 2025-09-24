@@ -9,6 +9,7 @@ import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readPlannedRun } from "@/lib/planned-run";
+import { createBackNavigationGuard } from "@/lib/navigation-lock";
 
 function RoutePageContent() {
   const supabase = createClientComponentClient();
@@ -79,25 +80,16 @@ function RoutePageContent() {
   useEffect(() => {
     if (!lockNavigation || typeof window === "undefined") return;
 
-    const enforceRouteFocus = () => {
-      const latest = readPlannedRun();
-      if (latest && latest.hasStarted) {
-        window.history.pushState(null, "", window.location.href);
-      } else {
-        setLockNavigation(false);
-      }
-    };
+    const cleanup = createBackNavigationGuard(
+      window,
+      () => {
+        const latest = readPlannedRun();
+        return Boolean(latest?.hasStarted);
+      },
+      () => setLockNavigation(false)
+    );
 
-    window.history.pushState(null, "", window.location.href);
-    const handlePopState = () => {
-      enforceRouteFocus();
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
+    return cleanup;
   }, [lockNavigation]);
 
   // Pick up nextIdx

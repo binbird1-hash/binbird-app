@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".test-dist",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "lib/run-state.ts",
+    "lib/navigation-lock.ts",
+    "lib/planned-run.ts",
+    "lib/run-session.ts",
+    "lib/active-run-cookie.ts",
+    "lib/jobs.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

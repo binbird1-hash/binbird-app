@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "rm -rf .test-dist && tsc --project tsconfig.test.json && node --test .test-dist/tests"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.1.1",
