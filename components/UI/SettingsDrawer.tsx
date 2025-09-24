@@ -122,11 +122,12 @@ function ScrollPicker<K extends string>({
 
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-14 rounded-lg border border-white/20 z-20"></div>
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-14 -translate-y-1/2 rounded-lg border border-white/25"></div>
       <div
         ref={containerRef}
-        className="flex h-48 flex-col gap-2 overflow-y-auto scroll-smooth py-16 snap-y snap-mandatory"
+        className="scroll-picker flex h-48 flex-col gap-3 overflow-y-auto overscroll-y-contain scroll-smooth py-[4.25rem] snap-y snap-mandatory"
         aria-label={ariaLabel}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {options.map((option) => {
           const isSelected = value === option.key;
@@ -137,10 +138,10 @@ function ScrollPicker<K extends string>({
               type="button"
               onClick={() => onChange(option.key)}
               className={clsx(
-                "snap-center rounded-lg px-4 py-3 text-center text-lg uppercase tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                "flex h-14 items-center justify-center snap-center rounded-lg px-4 text-center text-lg font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
                 isSelected
                   ? "bg-white text-black shadow-lg"
-                  : "text-white/50 hover:text-white/80"
+                  : "text-white/55 hover:text-white"
               )}
               aria-pressed={isSelected}
             >
@@ -149,8 +150,16 @@ function ScrollPicker<K extends string>({
           );
         })}
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black to-transparent z-10"></div>
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent z-10"></div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-black to-transparent"></div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-black to-transparent"></div>
+      <style jsx>{`
+        .scroll-picker {
+          -ms-overflow-style: none;
+        }
+        .scroll-picker::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
@@ -177,6 +186,7 @@ export default function SettingsDrawer() {
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [endRunError, setEndRunError] = useState<string | null>(null);
   const [hasActiveRun, setHasActiveRun] = useState(false);
+  const bottomPanelRef = useRef<HTMLDivElement | null>(null);
 
   const handleNavPrefChange = useCallback(
     (next: NavOptionKey) => {
@@ -243,6 +253,27 @@ export default function SettingsDrawer() {
   useEffect(() => {
     syncActiveRunState();
   }, [syncActiveRunState]);
+
+  useEffect(() => {
+    if (!activePanel) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const panel = bottomPanelRef.current;
+      if (!panel) return;
+      const target = event.target;
+      if (target instanceof Node && !panel.contains(target)) {
+        setActivePanel(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [activePanel]);
 
   // Save preferences to Supabase
   const saveSettings = async () => {
@@ -435,45 +466,47 @@ export default function SettingsDrawer() {
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
                   transition={{ type: "tween", duration: 0.18 }}
-                  className="fixed bottom-0 left-0 z-50 flex w-full max-h-[50%] flex-col gap-6 overflow-hidden bg-black p-6"
-                  style={{ borderTop: "2px solid #ff5757" }}
+                  className="fixed bottom-0 left-0 z-50 w-full"
                 >
-                  <div className="flex flex-1 flex-col gap-6 overflow-hidden">
-                    <div className="space-y-1">
+                  <motion.div
+                    ref={bottomPanelRef}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ type: "tween", duration: 0.18 }}
+                    className="flex max-h-[55vh] flex-col gap-5 overflow-hidden border-t-2 border-[#ff5757] bg-black/95 px-6 pb-6 pt-5 shadow-[0_-18px_40px_rgba(0,0,0,0.55)] backdrop-blur"
+                  >
+                    <div className="flex flex-1 flex-col overflow-hidden">
                       <p className="text-xs uppercase tracking-[0.35em] text-white/60">
                         {activePanel === "nav" ? "Navigation App" : "Map Style"}
                       </p>
-                      <p className="text-sm text-white/50">
-                        {activePanel === "nav"
-                          ? "Scroll to choose the navigation app you prefer."
-                          : "Scroll to choose the map style you prefer."}
-                      </p>
+                      <div className="mt-5 flex flex-1 items-center justify-center overflow-hidden">
+                        {activePanel === "nav" ? (
+                          <ScrollPicker
+                            options={navigationOptions}
+                            value={navPref}
+                            onChange={handleNavPrefChange}
+                            ariaLabel="Select navigation app"
+                          />
+                        ) : (
+                          <ScrollPicker
+                            options={mapStyleOptions}
+                            value={mapStylePref}
+                            onChange={handleMapStylePrefChange}
+                            ariaLabel="Select map style"
+                          />
+                        )}
+                      </div>
                     </div>
 
-                    {activePanel === "nav" ? (
-                      <ScrollPicker
-                        options={navigationOptions}
-                        value={navPref}
-                        onChange={handleNavPrefChange}
-                        ariaLabel="Select navigation app"
-                      />
-                    ) : (
-                      <ScrollPicker
-                        options={mapStyleOptions}
-                        value={mapStylePref}
-                        onChange={handleMapStylePrefChange}
-                        ariaLabel="Select map style"
-                      />
-                    )}
-                  </div>
-
-                  {/* Save Button */}
-                  <button
-                    onClick={saveSettings}
-                    className="rounded-lg bg-[#ff5757] px-4 py-2 font-semibold transition hover:bg-[#ff6b6b]"
-                  >
-                    Save
-                  </button>
+                    {/* Save Button */}
+                    <button
+                      onClick={saveSettings}
+                      className="mt-3 rounded-lg bg-[#ff5757] px-4 py-2 font-semibold transition hover:bg-[#ff6b6b]"
+                    >
+                      Save
+                    </button>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
