@@ -124,65 +124,6 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-
-    const initialise = async () => {
-      const {
-        data: { session: initialSession },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        setError(sessionError.message)
-        setLoading(false)
-        return
-      }
-
-      if (!initialSession?.user) {
-        router.replace('/client/login')
-        return
-      }
-
-      if (!mounted) return
-
-      setSession(initialSession)
-      setUser(initialSession.user)
-
-      const derivedAccounts = await fetchAccounts(initialSession.user)
-      setAccounts(derivedAccounts)
-      const storedAccountId = localStorage.getItem('binbird-selected-account-id')
-      const firstAccountId = derivedAccounts.find((account) => account.id === storedAccountId)?.id ?? derivedAccounts[0]?.id ?? null
-      setSelectedAccountId(firstAccountId)
-
-      await Promise.all([loadProfile(initialSession.user), loadPreferences(initialSession.user, firstAccountId ?? derivedAccounts[0]?.id ?? 'primary')])
-
-      setLoading(false)
-    }
-
-    initialise()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession)
-      setUser(newSession?.user ?? null)
-      if (!newSession) {
-        router.replace('/client/login')
-      }
-    })
-
-    return () => {
-      mounted = false
-      authListener.subscription.unsubscribe()
-    }
-  }, [router])
-
-  useEffect(() => {
-    if (!selectedAccountId || !user) return
-    localStorage.setItem('binbird-selected-account-id', selectedAccountId)
-    refreshProperties()
-    refreshJobs()
-    loadPreferences(user, selectedAccountId)
-  }, [selectedAccountId, user])
 
   const loadProfile = useCallback(async (currentUser: User) => {
     const { data, error: profileError } = await supabase
@@ -242,12 +183,18 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         ]
       }
 
-      return data.map((entry) => ({
-        id: entry.account?.id ?? currentUser.id,
-        name: entry.account?.name ?? 'Property Group',
-        role: entry.role ?? 'viewer',
-        propertyIds: Array.isArray(entry.account?.property_ids) ? entry.account.property_ids.map(String) : [],
-      }))
+      const typedData = Array.isArray(data) ? data : []
+      return typedData.map((entry: any) => {
+        const account = entry.account as { id?: string; name?: string; property_ids?: unknown } | null | undefined
+        const rawPropertyIds = (account as { property_ids?: unknown } | null | undefined)?.property_ids
+        const propertyIds = Array.isArray(rawPropertyIds) ? rawPropertyIds : []
+        return {
+          id: account?.id ?? currentUser.id,
+          name: account?.name ?? 'Property Group',
+          role: entry.role ?? 'viewer',
+          propertyIds: propertyIds.map(String),
+        }
+      })
     } catch (unknownError) {
       console.warn('Falling back to metadata accounts', unknownError)
       if (accountsFromMetadata.length > 0) return accountsFromMetadata
@@ -318,24 +265,28 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       return
     }
 
+    const typedJobs = Array.isArray(data) ? data : []
     setJobs(
-      (data ?? []).map((job) => ({
-        id: String(job.id),
-        accountId: String(job.account_id ?? selectedAccountId),
-        propertyId: String(job.property_id),
-        propertyName: job.property?.name ?? 'Unknown property',
-        status: (job.status as JobStatus) ?? 'scheduled',
-        scheduledAt: job.scheduled_at,
-        etaMinutes: job.eta_minutes,
-        startedAt: job.started_at,
-        completedAt: job.completed_at,
-        crewName: job.crew_name,
-        proofPhotoKeys: job.proof_photo_keys ?? [],
-        routePolyline: job.route_polyline,
-        lastLatitude: job.last_latitude,
-        lastLongitude: job.last_longitude,
-        notes: job.notes,
-      })),
+      typedJobs.map((job: any) => {
+        const propertyRelation = Array.isArray(job.property) ? job.property[0] : job.property
+        return {
+          id: String(job.id),
+          accountId: String(job.account_id ?? selectedAccountId),
+          propertyId: String(job.property_id),
+          propertyName: propertyRelation?.name ?? 'Unknown property',
+          status: (job.status as JobStatus) ?? 'scheduled',
+          scheduledAt: job.scheduled_at,
+          etaMinutes: job.eta_minutes,
+          startedAt: job.started_at,
+          completedAt: job.completed_at,
+          crewName: job.crew_name,
+          proofPhotoKeys: job.proof_photo_keys ?? [],
+          routePolyline: job.route_polyline,
+          lastLatitude: job.last_latitude,
+          lastLongitude: job.last_longitude,
+          notes: job.notes,
+        }
+      }),
     )
 
     setJobsLoading(false)
@@ -391,6 +342,66 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     },
     [],
   )
+
+  useEffect(() => {
+    let mounted = true
+
+    const initialise = async () => {
+      const {
+        data: { session: initialSession },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        setError(sessionError.message)
+        setLoading(false)
+        return
+      }
+
+      if (!initialSession?.user) {
+        router.replace('/client/login')
+        return
+      }
+
+      if (!mounted) return
+
+      setSession(initialSession)
+      setUser(initialSession.user)
+
+      const derivedAccounts = await fetchAccounts(initialSession.user)
+      setAccounts(derivedAccounts)
+      const storedAccountId = localStorage.getItem('binbird-selected-account-id')
+      const firstAccountId = derivedAccounts.find((account) => account.id === storedAccountId)?.id ?? derivedAccounts[0]?.id ?? null
+      setSelectedAccountId(firstAccountId)
+
+      await Promise.all([loadProfile(initialSession.user), loadPreferences(initialSession.user, firstAccountId ?? derivedAccounts[0]?.id ?? 'primary')])
+
+      setLoading(false)
+    }
+
+    initialise()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession)
+      setUser(newSession?.user ?? null)
+      if (!newSession) {
+        router.replace('/client/login')
+      }
+    })
+
+    return () => {
+      mounted = false
+      authListener.subscription.unsubscribe()
+    }
+  }, [router, fetchAccounts, loadPreferences, loadProfile])
+
+  useEffect(() => {
+    if (!selectedAccountId || !user) return
+    localStorage.setItem('binbird-selected-account-id', selectedAccountId)
+    refreshProperties()
+    refreshJobs()
+    loadPreferences(user, selectedAccountId)
+  }, [selectedAccountId, user, refreshProperties, refreshJobs, loadPreferences])
 
   const selectAccount = useCallback((accountId: string) => {
     setSelectedAccountId(accountId)
