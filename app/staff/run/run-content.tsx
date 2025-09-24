@@ -543,29 +543,31 @@ function RunPageContent() {
                 >
                   No Jobs Today
                 </button>
-              ) : (
+              ) : !isPlanned ? (
+                // Plan Run button (grey)
                 <button
-                  className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
-                    isPlanned
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-[#ff5757] hover:opacity-90"
-                  }`}
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
                   onClick={() => {
-                    console.log("Button clicked", {
-                      isPlanned,
-                      plannerLocked,
-                    });
-                    if (plannerLocked) {
-                      redirectExistingPlan();
-                      return;
-                    }
+                    console.log("Planning run…");
                     buildRoute();
                   }}
+                  disabled={plannerLocked}
                 >
-                  {isPlanned ? "Start Run" : "Plan Run"}
+                  Plan Run
+                </button>
+              ) : (
+                // Start Run button (accent red)
+                <button
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
+                  onClick={() => {
+                    console.log("Starting run…");
+                    redirectExistingPlan();
+                  }}
+                >
+                  Start Run
                 </button>
               )}
-            </div>
+            </div>            
           </div>
         </div>
       </div>
