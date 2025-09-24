@@ -273,7 +273,7 @@ function CompletedRunContent() {
       </header>
 
       <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-2">
-        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
+        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
             {runData === undefined && (
@@ -347,7 +347,7 @@ function CompletedRunContent() {
 
         <div className="flex flex-col gap-6">
           {/* Next Run Section */}
-          <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-5">
+          <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
             {assignmentStatus === "loading" ? (
               <p className="text-gray-300">Looking up your next shift…</p>
             ) : assignmentStatus === "error" ? (
