@@ -474,8 +474,8 @@ function RunPageContent() {
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col h-full w-full max-w-xl mx-auto bg-black text-white">
-      <div className="relative flex-1">
+    <div className="mx-auto flex h-full w-full max-w-xl flex-col bg-black text-white">
+      <div className="relative flex-1 min-h-0">
         <GoogleMap
           key={resetCounter}
           mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -502,8 +502,8 @@ function RunPageContent() {
 
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
+          <div className="relative flex w-full max-h-[60vh] flex-col gap-3 overflow-y-auto bg-black p-6">
+            <div className="absolute inset-x-0 top-0 h-[2px] bg-[#ff5757]" />
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
             <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
