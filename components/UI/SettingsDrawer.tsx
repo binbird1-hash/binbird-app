@@ -86,8 +86,9 @@ export default function SettingsDrawer() {
     }
 
     const plannedRun = readPlannedRun();
+    const hasStartedPlan = Boolean(plannedRun?.hasStarted);
 
-    setHasActiveRun(hasActiveSession || Boolean(plannedRun));
+    setHasActiveRun(hasActiveSession || hasStartedPlan);
   }, []);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
@@ -191,7 +192,9 @@ export default function SettingsDrawer() {
     const existingSession = readRunSession();
     const plannedRun = readPlannedRun();
 
-    if (!existingSession && (!plannedRun || plannedRun.jobs.length === 0)) {
+    const hasStartedPlan = Boolean(plannedRun?.hasStarted);
+
+    if (!existingSession && !hasStartedPlan) {
       setEndRunError("No active run to end.");
       return;
     }
