@@ -298,12 +298,12 @@ function RoutePageContent() {
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
-            <button
-              onClick={() => window.open(navigateUrl, "_blank")}
-              className="w-full bg-black text-[#ff5757] px-4 py-2 rounded-lg font-semibold transition hover:bg-[#111111] relative z-10"
-            >
-              Navigate
-            </button>
+              <button
+                onClick={() => window.open(navigateUrl, "_blank")}
+                className="w-full bg-neutral-900 text-[#ff5757] px-4 py-2 rounded-lg font-semibold transition hover:bg-neutral-800 relative z-10"
+              >
+                Navigate
+              </button>
             <button
               onClick={handleArrivedAtLocation}
               className="w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 relative z-10"
