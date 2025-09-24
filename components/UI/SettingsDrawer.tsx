@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Flag, LogOut, Navigation2, Palette } from "lucide-react";
@@ -13,19 +13,155 @@ import { readRunSession, writeRunSession } from "@/lib/run-session";
 type NavOptionKey = "google" | "waze" | "apple";
 type MapStyleKey = "Dark" | "Light" | "Satellite";
 
-const navigationOptions: Array<{
-  key: NavOptionKey;
+type PickerOption<K extends string> = {
+  key: K;
   label: string;
-}> = [
+};
+
+type ScrollPickerProps<K extends string> = {
+  options: PickerOption<K>[];
+  value: K;
+  onChange: (value: K) => void;
+  ariaLabel: string;
+};
+
+function ScrollPicker<K extends string>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+}: ScrollPickerProps<K>) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Map<K, HTMLButtonElement | null>>(new Map());
+  const frameRef = useRef<number>();
+  const initializedRef = useRef(false);
+  const currentKeyRef = useRef<K>(value);
+
+  const setItemRef = useCallback(
+    (key: K) => (node: HTMLButtonElement | null) => {
+      if (node) {
+        itemRefs.current.set(key, node);
+      } else {
+        itemRefs.current.delete(key);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    currentKeyRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const target = itemRefs.current.get(value);
+    if (!target) return;
+
+    const offset =
+      target.offsetTop - container.offsetHeight / 2 + target.offsetHeight / 2;
+    const behavior = initializedRef.current ? "smooth" : "auto";
+
+    if (Math.abs(container.scrollTop - offset) > 1) {
+      container.scrollTo({ top: offset, behavior });
+    }
+
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+    }
+  }, [value, options]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateNearest = () => {
+      const containerNode = containerRef.current;
+      if (!containerNode) return;
+      const containerRect = containerNode.getBoundingClientRect();
+      const containerCenter = containerRect.top + containerRect.height / 2;
+
+      let closestKey: K | null = null;
+      let closestDistance = Number.POSITIVE_INFINITY;
+
+      options.forEach((option) => {
+        const element = itemRefs.current.get(option.key);
+        if (!element) return;
+        const rect = element.getBoundingClientRect();
+        const elementCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(elementCenter - containerCenter);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestKey = option.key;
+        }
+      });
+
+      if (closestKey && closestKey !== currentKeyRef.current) {
+        currentKeyRef.current = closestKey;
+        onChange(closestKey);
+      }
+    };
+
+    const handleScroll = () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+      frameRef.current = requestAnimationFrame(updateNearest);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [options, onChange]);
+
+  return (
+    <div className="relative">
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-14 rounded-lg border border-white/20 z-20"></div>
+      <div
+        ref={containerRef}
+        className="flex h-48 flex-col gap-2 overflow-y-auto scroll-smooth py-16 snap-y snap-mandatory"
+        aria-label={ariaLabel}
+      >
+        {options.map((option) => {
+          const isSelected = value === option.key;
+          return (
+            <button
+              key={option.key}
+              ref={setItemRef(option.key)}
+              type="button"
+              onClick={() => onChange(option.key)}
+              className={clsx(
+                "snap-center rounded-lg px-4 py-3 text-center text-lg uppercase tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                isSelected
+                  ? "bg-white text-black shadow-lg"
+                  : "text-white/50 hover:text-white/80"
+              )}
+              aria-pressed={isSelected}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black to-transparent z-10"></div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent z-10"></div>
+    </div>
+  );
+}
+
+const navigationOptions: PickerOption<NavOptionKey>[] = [
   { key: "google", label: "Google Maps" },
   { key: "waze", label: "Waze" },
   { key: "apple", label: "Apple Maps" },
 ];
 
-const mapStyleOptions: Array<{
-  key: MapStyleKey;
-  label: string;
-}> = [
+const mapStyleOptions: PickerOption<MapStyleKey>[] = [
   { key: "Dark", label: "Dark" },
   { key: "Light", label: "Light" },
   { key: "Satellite", label: "Satellite" },
@@ -41,6 +177,20 @@ export default function SettingsDrawer() {
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [endRunError, setEndRunError] = useState<string | null>(null);
   const [hasActiveRun, setHasActiveRun] = useState(false);
+
+  const handleNavPrefChange = useCallback(
+    (next: NavOptionKey) => {
+      setNavPref(next);
+    },
+    [setNavPref]
+  );
+
+  const handleMapStylePrefChange = useCallback(
+    (next: MapStyleKey) => {
+      setMapStylePref(next);
+    },
+    [setMapStylePref]
+  );
 
   const syncActiveRunState = useCallback(() => {
     const existingSession = readRunSession();
@@ -284,62 +434,43 @@ export default function SettingsDrawer() {
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
-                  transition={{ type: "tween", duration: 0.3 }}
-                  className="fixed bottom-0 left-0 w-full max-h-[50%] bg-black p-6 z-50 flex flex-col"
+                  transition={{ type: "tween", duration: 0.18 }}
+                  className="fixed bottom-0 left-0 z-50 flex w-full max-h-[50%] flex-col gap-6 overflow-hidden bg-black p-6"
                   style={{ borderTop: "2px solid #ff5757" }}
                 >
-                  <div className="overflow-y-auto flex-1 mb-4">
+                  <div className="flex flex-1 flex-col gap-6 overflow-hidden">
+                    <div className="space-y-1">
+                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">
+                        {activePanel === "nav" ? "Navigation App" : "Map Style"}
+                      </p>
+                      <p className="text-sm text-white/50">
+                        {activePanel === "nav"
+                          ? "Scroll to choose the navigation app you prefer."
+                          : "Scroll to choose the map style you prefer."}
+                      </p>
+                    </div>
+
                     {activePanel === "nav" ? (
-                      <ul className="flex flex-col gap-3">
-                        {navigationOptions.map(({ key, label }) => {
-                          const isSelected = navPref === key;
-                          return (
-                            <li key={key}>
-                              <button
-                                type="button"
-                                onClick={() => setNavPref(key)}
-                                className={clsx(
-                                  "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
-                                  isSelected
-                                    ? "border-white bg-white text-black hover:border-white hover:text-black focus:ring-white/40"
-                                    : "border-white/10 bg-white/5 text-white hover:border-[#ff5757]/60 hover:text-[#ff5757] focus:ring-white/40"
-                                )}
-                              >
-                                {label}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      <ScrollPicker
+                        options={navigationOptions}
+                        value={navPref}
+                        onChange={handleNavPrefChange}
+                        ariaLabel="Select navigation app"
+                      />
                     ) : (
-                      <ul className="flex flex-col gap-3">
-                        {mapStyleOptions.map(({ key, label }) => {
-                          const isSelected = mapStylePref === key;
-                          return (
-                            <li key={key}>
-                              <button
-                                type="button"
-                                onClick={() => setMapStylePref(key)}
-                                className={clsx(
-                                  "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black",
-                                  isSelected
-                                    ? "border-white bg-white text-black hover:border-white hover:text-black focus:ring-white/40"
-                                    : "border-white/10 bg-white/5 text-white hover:border-[#ff5757]/60 hover:text-[#ff5757] focus:ring-white/40"
-                                )}
-                              >
-                                {label}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      <ScrollPicker
+                        options={mapStyleOptions}
+                        value={mapStylePref}
+                        onChange={handleMapStylePrefChange}
+                        ariaLabel="Select map style"
+                      />
                     )}
                   </div>
 
                   {/* Save Button */}
                   <button
                     onClick={saveSettings}
-                    className="px-4 py-2 bg-[#ff5757] rounded-lg font-semibold"
+                    className="rounded-lg bg-[#ff5757] px-4 py-2 font-semibold transition hover:bg-[#ff6b6b]"
                   >
                     Save
                   </button>
