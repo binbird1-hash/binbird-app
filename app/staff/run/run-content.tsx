@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
+import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
@@ -44,12 +44,10 @@ const applyVictoriaAutocompleteLimits = (
 
 export default function RunPage() {
   return (
-    <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
-        <SettingsDrawer />
-        <RunPageContent />
-      </div>
-    </MapSettingsProvider>
+    <div className="relative min-h-screen bg-black text-white">
+      <SettingsDrawer />
+      <RunPageContent />
+    </div>
   );
 }
 

@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BrowserCookieAuthStorageAdapter,
-  DEFAULT_COOKIE_OPTIONS,
-  createSupabaseClient,
-} from "@supabase/auth-helpers-shared";
-import type { DefaultCookieOptions } from "@supabase/auth-helpers-shared";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import packageInfo from "@supabase/auth-helpers-nextjs/package.json";
 import AuthLayout from "../layout";
 
 export default function SignInClient() {

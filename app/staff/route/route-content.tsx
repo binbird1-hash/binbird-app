@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
-import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
+import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readPlannedRun } from "@/lib/planned-run";
@@ -341,11 +341,9 @@ function RoutePageContent() {
 
 export default function RoutePage() {
   return (
-    <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
-        <SettingsDrawer />
-        <RoutePageContent />
-      </div>
-    </MapSettingsProvider>
+    <div className="relative min-h-screen bg-black text-white">
+      <SettingsDrawer />
+      <RoutePageContent />
+    </div>
   );
 }

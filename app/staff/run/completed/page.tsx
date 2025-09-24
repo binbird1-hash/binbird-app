@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import {
   clearRunSession,
@@ -387,11 +386,9 @@ function CompletedRunContent() {
 
 export default function CompletedRunPage() {
   return (
-    <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
-        <SettingsDrawer />
-        <CompletedRunContent />
-      </div>
-    </MapSettingsProvider>
+    <div className="relative min-h-screen bg-black text-white">
+      <SettingsDrawer />
+      <CompletedRunContent />
+    </div>
   );
 }
