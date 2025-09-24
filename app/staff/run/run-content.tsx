@@ -16,6 +16,7 @@ import {
   writePlannedRun,
   markPlannedRunStarted,
 } from "@/lib/planned-run";
+import { readRunSession, writeRunSession } from "@/lib/run-session";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -371,6 +372,29 @@ function RunPageContent() {
     return false;
   }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
 
+  const handleStartRun = useCallback(() => {
+    console.log("Starting run…");
+    const existingSession = readRunSession();
+    const nowIso = new Date().toISOString();
+
+    const hasExistingStart =
+      existingSession?.startedAt &&
+      !Number.isNaN(new Date(existingSession.startedAt).getTime()) &&
+      (!existingSession.endedAt ||
+        Number.isNaN(new Date(existingSession.endedAt).getTime()));
+
+    const startedAt = hasExistingStart ? existingSession.startedAt : nowIso;
+
+    writeRunSession({
+      startedAt,
+      endedAt: null,
+      totalJobs: jobs.length,
+      completedJobs: 0,
+    });
+
+    redirectExistingPlan();
+  }, [jobs.length, redirectExistingPlan]);
+
   const handleReset = useCallback(() => {
     console.log("Resetting route");
     clearPlannedRun();
@@ -559,10 +583,7 @@ function RunPageContent() {
                 // Start Run button (accent red)
                 <button
                   className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
-                  onClick={() => {
-                    console.log("Starting run…");
-                    redirectExistingPlan();
-                  }}
+                  onClick={handleStartRun}
                 >
                   Start Run
                 </button>

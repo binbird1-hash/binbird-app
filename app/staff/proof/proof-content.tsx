@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
-import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { clearPlannedRun } from "@/lib/planned-run";
 
 const TRANSPARENT_PIXEL =
@@ -340,20 +340,31 @@ export default function ProofPageContent() {
   
       const nextIdx = idx + 1;
 
-      const activeSession = getActiveRunSession();
+      const existingSession = getActiveRunSession();
       const nowIso = new Date().toISOString();
-      const totalJobs = Math.max(activeSession?.totalJobs ?? 0, jobs.length, nextIdx);
+      const totalJobs = Math.max(existingSession?.totalJobs ?? 0, jobs.length, nextIdx);
       const completedAfterThisJob = Math.min(nextIdx, totalJobs);
 
-      writeRunSession({
-        startedAt:
-          activeSession?.startedAt && !Number.isNaN(new Date(activeSession.startedAt).getTime())
-            ? activeSession.startedAt
-            : nowIso,
-        endedAt: nextIdx >= jobs.length ? nowIso : null,
+      const startedAt =
+        existingSession?.startedAt &&
+        !Number.isNaN(new Date(existingSession.startedAt).getTime())
+          ? existingSession.startedAt
+          : nowIso;
+
+      const updatedSession: RunSessionRecord = {
+        ...(existingSession ?? {}),
+        startedAt,
+        endedAt: null,
         totalJobs,
-        completedJobs: Math.max(activeSession?.completedJobs ?? 0, completedAfterThisJob),
-      });
+        completedJobs: Math.max(existingSession?.completedJobs ?? 0, completedAfterThisJob),
+      };
+
+      const sessionToWrite: RunSessionRecord =
+        nextIdx >= jobs.length
+          ? { ...updatedSession, endedAt: nowIso }
+          : updatedSession;
+
+      writeRunSession(sessionToWrite);
 
       // 👉 Decide where to navigate
       if (nextIdx >= jobs.length) {
