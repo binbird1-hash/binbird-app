@@ -399,11 +399,6 @@ export default function SettingsDrawer() {
                                   aria-pressed={isSelected}
                                 >
                                   <span>{option.label}</span>
-                                  {isSelected && (
-                                    <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/70">
-                                      Selected
-                                    </span>
-                                  )}
                                 </button>
                               );
                             })}
@@ -427,11 +422,6 @@ export default function SettingsDrawer() {
                                   aria-pressed={isSelected}
                                 >
                                   <span>{option.label}</span>
-                                  {isSelected && (
-                                    <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/70">
-                                      Selected
-                                    </span>
-                                  )}
                                 </button>
                               );
                             })}
