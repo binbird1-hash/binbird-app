@@ -1,13 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Flag, LogOut } from "lucide-react";
+import { Flag, LogOut, Navigation2, Palette } from "lucide-react";
+import clsx from "clsx";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+
+type NavOptionKey = "google" | "waze" | "apple";
+type MapStyleKey = "Dark" | "Light" | "Satellite";
+
+type PickerOption<K extends string> = {
+  key: K;
+  label: string;
+};
+
+const navigationOptions: PickerOption<NavOptionKey>[] = [
+  { key: "google", label: "Google Maps" },
+  { key: "waze", label: "Waze" },
+  { key: "apple", label: "Apple Maps" },
+];
+
+const mapStyleOptions: PickerOption<MapStyleKey>[] = [
+  { key: "Dark", label: "Dark" },
+  { key: "Light", label: "Light" },
+  { key: "Satellite", label: "Satellite" },
+];
 
 export default function SettingsDrawer() {
   const supabase = createClientComponentClient();
@@ -18,6 +39,56 @@ export default function SettingsDrawer() {
   const [activePanel, setActivePanel] = useState<"nav" | "style" | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [endRunError, setEndRunError] = useState<string | null>(null);
+  const [hasActiveRun, setHasActiveRun] = useState(false);
+  const [draftNavPref, setDraftNavPref] = useState<NavOptionKey | null>(null);
+  const [draftMapStylePref, setDraftMapStylePref] = useState<MapStyleKey | null>(
+    null
+  );
+  const bottomPanelRef = useRef<HTMLDivElement | null>(null);
+
+  const dismissPanel = useCallback(() => {
+    setActivePanel(null);
+    setDraftNavPref(null);
+    setDraftMapStylePref(null);
+  }, [setActivePanel, setDraftMapStylePref, setDraftNavPref]);
+
+  const handlePanelToggle = useCallback(
+    (panel: "nav" | "style") => {
+      if (activePanel === panel) {
+        dismissPanel();
+        return;
+      }
+
+      if (panel === "nav") {
+        setDraftNavPref((current) => current ?? navPref);
+      } else {
+        setDraftMapStylePref((current) => current ?? mapStylePref);
+      }
+
+      setActivePanel(panel);
+    },
+    [activePanel, dismissPanel, mapStylePref, navPref]
+  );
+
+  const syncActiveRunState = useCallback(() => {
+    const existingSession = readRunSession();
+    let hasActiveSession = false;
+
+    if (existingSession) {
+      if (!existingSession.endedAt) {
+        hasActiveSession = true;
+      } else {
+        const endedAtDate = new Date(existingSession.endedAt);
+        if (Number.isNaN(endedAtDate.getTime())) {
+          hasActiveSession = true;
+        }
+      }
+    }
+
+    const plannedRun = readPlannedRun();
+
+    setHasActiveRun(hasActiveSession || Boolean(plannedRun));
+  }, []);
 
   // Load user preferences from Supabase on mount, create row if it doesn't exist
   useEffect(() => {
@@ -47,20 +118,70 @@ export default function SettingsDrawer() {
     })();
   }, []);
 
+  useEffect(() => {
+    syncActiveRunState();
+  }, [syncActiveRunState]);
+
+  useEffect(() => {
+    if (!activePanel) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const panel = bottomPanelRef.current;
+      if (!panel) return;
+      const target = event.target;
+      if (target instanceof Node && !panel.contains(target)) {
+        dismissPanel();
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [activePanel, dismissPanel]);
+
   // Save preferences to Supabase
   const saveSettings = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const nextNavPref = draftNavPref ?? navPref;
+    const nextMapStylePref = draftMapStylePref ?? mapStylePref;
+
+    const navChanged = nextNavPref !== navPref;
+    const mapStyleChanged = nextMapStylePref !== mapStylePref;
+
+    if (!navChanged && !mapStyleChanged) {
+      dismissPanel();
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
+
+    if (navChanged) {
+      setNavPref(nextNavPref);
+    }
+
+    if (mapStyleChanged) {
+      setMapStylePref(nextMapStylePref);
+    }
 
     const { error } = await supabase
       .from("user_profile")
       .upsert(
-        { user_id: user.id, map_style_pref: mapStylePref, nav_pref: navPref },
+        {
+          user_id: user.id,
+          map_style_pref: nextMapStylePref,
+          nav_pref: nextNavPref,
+        },
         { onConflict: "user_id" }
       );
 
     if (!error) {
-      setActivePanel(null);
+      dismissPanel();
     }
   };
 
@@ -106,7 +227,8 @@ export default function SettingsDrawer() {
         completedJobs,
       });
       clearPlannedRun();
-      setActivePanel(null);
+      syncActiveRunState();
+      dismissPanel();
       setIsOpen(false);
       router.push("/staff/run/completed");
     } catch (err) {
@@ -119,12 +241,13 @@ export default function SettingsDrawer() {
     setLogoutError(null);
     setEndRunError(null);
     clearPlannedRun();
+    syncActiveRunState();
     const { error } = await supabase.auth.signOut();
     if (error) {
       setLogoutError("We couldn't sign you out. Please try again.");
       return;
     }
-    setActivePanel(null);
+    dismissPanel();
     setIsOpen(false);
     router.push("/auth/sign-in");
   };
@@ -138,8 +261,9 @@ export default function SettingsDrawer() {
       >
         <button
           onClick={() => {
+            syncActiveRunState();
+            dismissPanel();
             setIsOpen(true);
-            setActivePanel(null);
             setEndRunError(null);
             setLogoutError(null);
           }}
@@ -165,7 +289,10 @@ export default function SettingsDrawer() {
           >
             {/* Close X top-left */}
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                dismissPanel();
+                setIsOpen(false);
+              }}
               className="absolute top-4 left-4 text-white text-3xl font-bold z-50"
             >
               &times;
@@ -177,27 +304,41 @@ export default function SettingsDrawer() {
               {/* Navigation & Map Style Buttons */}
               <div className="flex flex-col gap-4">
                 <button
-                  onClick={() => setActivePanel(activePanel === "nav" ? null : "nav")}
-                  className="w-full text-left font-semibold text-white uppercase text-sm transition hover:text-[#ff5757]"
+                  onClick={() => handlePanelToggle("nav")}
+                  className={clsx(
+                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
+                    "text-white hover:text-[#ff5757]",
+                    activePanel === "nav" && "text-[#ff5757]"
+                  )}
                 >
-                  Navigation App
+                  <Navigation2 className="h-4 w-4" />
+                  <span>Navigation App</span>
                 </button>
                 <button
-                  onClick={() => setActivePanel(activePanel === "style" ? null : "style")}
-                  className="w-full text-left font-semibold text-white uppercase text-sm transition hover:text-[#ff5757]"
+                  onClick={() => handlePanelToggle("style")}
+                  className={clsx(
+                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
+                    "text-white hover:text-[#ff5757]",
+                    activePanel === "style" && "text-[#ff5757]"
+                  )}
                 >
-                  Map Style
+                  <Palette className="h-4 w-4" />
+                  <span>Map Style</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleEndRun}
-                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
-                >
-                  <Flag className="h-4 w-4" />
-                  <span>End Run</span>
-                </button>
-                {endRunError && (
-                  <p className="text-sm text-red-500">{endRunError}</p>
+                {hasActiveRun && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleEndRun}
+                      className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                    >
+                      <Flag className="h-4 w-4" />
+                      <span>End Run</span>
+                    </button>
+                    {endRunError && (
+                      <p className="text-sm text-red-500">{endRunError}</p>
+                    )}
+                  </>
                 )}
                 <button
                   type="button"
@@ -220,55 +361,90 @@ export default function SettingsDrawer() {
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
-                  transition={{ type: "tween", duration: 0.3 }}
-                  className="fixed bottom-0 left-0 w-full max-h-[50%] bg-black p-6 z-50 flex flex-col"
-                  style={{ borderTop: "2px solid #ff5757" }}
+                  transition={{ type: "tween", duration: 0.18 }}
+                  className="fixed bottom-0 left-0 z-50 w-full"
                 >
-                  <div className="overflow-y-auto flex-1 mb-4">
-                    {activePanel === "nav" ? (
-                      <ul className="flex flex-col gap-2">
-                        {(["google", "waze", "apple"] as const).map((opt) => (
-                          <li
-                            key={opt}
-                            onClick={() => setNavPref(opt)}
-                            className={`px-4 py-2 rounded-lg w-full text-left font-semibold cursor-pointer ${
-                              navPref === opt ? "bg-white text-black" : "bg-black text-white"
-                            }`}
-                            style={{ border: "1px solid white" }}
-                          >
-                            {opt === "google"
-                              ? "Google Maps"
-                              : opt === "waze"
-                              ? "Waze"
-                              : "Apple Maps"}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <ul className="flex flex-col gap-2">
-                        {(["Dark", "Light", "Satellite"] as const).map((style) => (
-                          <li
-                            key={style}
-                            onClick={() => setMapStylePref(style)}
-                            className={`px-4 py-2 rounded-lg w-full text-left font-semibold cursor-pointer ${
-                              mapStylePref === style ? "bg-white text-black" : "bg-black text-white"
-                            }`}
-                            style={{ border: "1px solid white" }}
-                          >
-                            {style}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  {/* Save Button */}
-                  <button
-                    onClick={saveSettings}
-                    className="px-4 py-2 bg-[#ff5757] rounded-lg font-semibold"
+                  <motion.div
+                    ref={bottomPanelRef}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ type: "tween", duration: 0.18 }}
+                    className="flex max-h-[55vh] flex-col gap-5 overflow-hidden border-t-2 border-[#ff5757] bg-black/95 px-6 pb-6 pt-5 shadow-[0_-18px_40px_rgba(0,0,0,0.55)] backdrop-blur"
                   >
-                    Save
-                  </button>
+                    <div className="flex flex-1 flex-col overflow-hidden">
+                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">
+                        {activePanel === "nav" ? "Navigation App" : "Map Style"}
+                      </p>
+                      <div className="mt-5 flex flex-1 flex-col overflow-y-auto">
+                        {activePanel === "nav" ? (
+                          <div className="grid gap-3 pb-1">
+                            {navigationOptions.map((option) => {
+                              const isSelected =
+                                (draftNavPref ?? navPref) === option.key;
+                              return (
+                                <button
+                                  key={option.key}
+                                  type="button"
+                                  onClick={() => setDraftNavPref(option.key)}
+                                  className={clsx(
+                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
+                                    isSelected
+                                      ? "border-white bg-white text-black shadow-sm"
+                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                  )}
+                                  aria-pressed={isSelected}
+                                >
+                                  <span>{option.label}</span>
+                                  {isSelected && (
+                                    <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/70">
+                                      Selected
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="grid gap-3 pb-1">
+                            {mapStyleOptions.map((option) => {
+                              const isSelected =
+                                (draftMapStylePref ?? mapStylePref) === option.key;
+                              return (
+                                <button
+                                  key={option.key}
+                                  type="button"
+                                  onClick={() => setDraftMapStylePref(option.key)}
+                                  className={clsx(
+                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
+                                    isSelected
+                                      ? "border-white bg-white text-black shadow-sm"
+                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                  )}
+                                  aria-pressed={isSelected}
+                                >
+                                  <span>{option.label}</span>
+                                  {isSelected && (
+                                    <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/70">
+                                      Selected
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <button
+                      onClick={saveSettings}
+                      className="mt-3 rounded-lg bg-[#ff5757] px-4 py-2 font-semibold transition hover:bg-[#ff6b6b]"
+                    >
+                      Save
+                    </button>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
