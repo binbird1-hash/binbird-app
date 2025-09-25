@@ -434,16 +434,27 @@ export default function ProofPageContent() {
         primary: "Park bins neatly in the storage area.",
         secondary: "Line them up exactly like this photo.",
       };
-  const finalCheckLines = isPutOutJob
+  const moveStepLines = isPutOutJob
     ? [
-        "Lids down tight.",
-        "Bins lined up neatly at the kerb.",
-        "Paths, doors, and kerbs clear.",
+        "Roll every scheduled bin from the storage area to the kerb.",
+        "Leave the storage area empty when you finish.",
+        "Keep paths, doors, and kerbs clear while you move.",
       ]
     : [
-        "Lids down tight.",
-        "Bins lined up neatly.",
-        "Paths, doors, and kerbs clear.",
+        "Roll every scheduled bin from the kerb back inside.",
+        "Leave the kerb clear when you finish.",
+        "Keep paths, doors, and kerbs clear while you move.",
+      ];
+  const finalCheckLines = isPutOutJob
+    ? [
+        "All bins are on the kerb",
+        "Lids are closed tight",
+        "Kerbside is neat, nothing blocking driveways or footpaths",
+      ]
+    : [
+        "All bins are back inside",
+        "Lids are closed tight",
+        "Storage area is neat, nothing blocking doors or paths",
       ];
   const hasPhoto = Boolean(file);
   const readyToSubmit = hasPhoto;
@@ -514,9 +525,9 @@ export default function ProofPageContent() {
                   Step 3 – Move the Bins
                 </summary>
                 <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
-                  <p className="font-semibold text-gray-100">Move every bin — full or empty.</p>
-                  <p>Keep driveways, doors, and kerbs clear.</p>
-                  <p>Don’t leave any bins behind at the kerb.</p>
+                  {moveStepLines.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
                 </div>
               </details>
 
@@ -547,12 +558,10 @@ export default function ProofPageContent() {
                 <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
                   Step 5 – Final Check
                 </summary>
-                <div className="p-4 bg-neutral-900/60 text-left">
-                  <ul className="list-disc list-inside text-white space-y-2 text-sm">
-                    {finalCheckLines.map((line) => (
-                      <li key={line}>{line}</li>
-                    ))}
-                  </ul>
+                <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
+                  {finalCheckLines.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
                 </div>
               </details>
             </div>
