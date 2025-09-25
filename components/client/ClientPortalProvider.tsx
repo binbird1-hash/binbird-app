@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
@@ -270,7 +270,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
   const [preferencesLoading, setPreferencesLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [allClientRows, setAllClientRows] = useState<ClientListRow[]>([])
+  const allClientRowsRef = useRef<ClientListRow[]>([])
 
   const loadProfile = useCallback(async (currentUser: User) => {
     const { data, error: profileError } = await supabase
@@ -369,7 +369,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     if (!selectedAccountId || !user) return
     setPropertiesLoading(true)
     const rows = await fetchClientRows(user)
-    setAllClientRows(rows)
+    allClientRowsRef.current = rows
     const filtered = rows.filter((row) => deriveAccountId(row) === selectedAccountId)
     setProperties(filtered.map(toProperty))
     setPropertiesLoading(false)
@@ -379,7 +379,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     if (!selectedAccountId || !user) return
     setJobsLoading(true)
     const accountId = selectedAccountId
-    const propertiesForAccount = allClientRows.filter((row) => deriveAccountId(row) === accountId)
+    const allRows = allClientRowsRef.current
+    const propertiesForAccount = allRows.filter((row) => deriveAccountId(row) === accountId)
     const propertyMap = new Map<string, Property>()
     propertiesForAccount.forEach((row) => {
       propertyMap.set(row.id, toProperty(row))
@@ -496,7 +497,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     combinedJobs.sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     setJobs(combinedJobs)
     setJobsLoading(false)
-  }, [allClientRows, selectedAccountId, user])
+  }, [selectedAccountId, user])
 
   const upsertJob = useCallback((job: Job) => {
     setJobs((previousJobs) => {
@@ -548,7 +549,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       setUser(currentUser)
 
       const rows = await fetchClientRows(currentUser)
-      setAllClientRows(rows)
+      allClientRowsRef.current = rows
       const derivedAccounts = deriveAccountsFromRows(rows, currentUser)
       setAccounts(derivedAccounts)
       const storedAccountId = typeof window !== 'undefined' ? localStorage.getItem('binbird-selected-account-id') : null
