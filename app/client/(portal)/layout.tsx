@@ -1,3 +1,5 @@
+'use client'
+
 import '@/app/globals.css'
 import type { ReactNode } from 'react'
 import { ClientPortalProvider, useClientPortal } from '@/components/client/ClientPortalProvider'
