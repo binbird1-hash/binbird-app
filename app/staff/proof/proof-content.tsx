@@ -106,7 +106,6 @@ export default function ProofPageContent() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [showInstructions, setShowInstructions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [referenceUrls, setReferenceUrls] = useState<{
     putOut: string | null;
@@ -429,120 +428,94 @@ export default function ProofPageContent() {
 
         <p className="text-lg font-semibold">{job.address}</p>
 
-        {/* Instructions dropdown */}
-        <div className="border border-gray-800 rounded-lg overflow-hidden">
-          <button
-            onClick={() => setShowInstructions((p) => !p)}
-            className="w-full flex justify-between items-center px-4 py-3 font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
-          >
-            <span>Instructions</span>
-            <span>{showInstructions ? "▲" : "▼"}</span>
-          </button>
-
-          {showInstructions && (
-            <div className="p-4 space-y-6 bg-neutral-800 text-white">
-              <div className="flex justify-center gap-2">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <div
-                    key={n}
-                    className={`w-10 h-10 flex items-center justify-center rounded-full font-bold border-2 ${
-                      n === 1 ? "bg-red-600 text-white border-red-400" : "bg-neutral-900 text-gray-300 border-gray-600"
-                    }`}
-                  >
-                    {n}
-                  </div>
-                ))}
+        <div className="space-y-3">
+          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
+            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+              Step 1 – Start Location
+            </summary>
+            <div className="p-4 bg-neutral-800 space-y-3">
+              <div className="relative">
+                <img
+                  src={startImageSrc}
+                  alt={`${startLocationLabel} example`}
+                  className="w-full aspect-[3/4] object-cover rounded-lg"
+                />
+                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
+                  START HERE
+                </span>
+                <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                  {startLocationLabel}
+                </span>
               </div>
+              <p className="text-sm text-gray-300">Go here first.</p>
+            </div>
+          </details>
 
-              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
-                <h3 className="flex items-center gap-3 text-lg font-semibold">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">1</span>
-                  Step 1 – Identify Today&apos;s Bins
-                </h3>
-                <p className="text-sm text-gray-300">These are the bins you move on this stop:</p>
-                {binCardsForInstructions ? (
-                  <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
-                ) : (
-                  <p className="text-sm text-gray-400">
-                    No bin colors listed. Call dispatch if you need help.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
-                <h3 className="flex items-center gap-3 text-lg font-semibold">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">2</span>
-                  Step 2 – Go to Start Location
-                </h3>
-                <p className="text-sm text-gray-300">
-                  Head straight to the {startLocationLabel.toLowerCase()} shown below.
-                </p>
-                <div className="relative">
-                  <img
-                    src={startImageSrc}
-                    alt={`${startLocationLabel} example`}
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
-                  <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
-                    START HERE
-                  </span>
-                  <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                    {startLocationLabel}
-                  </span>
+          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
+            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+              Step 2 – Which Bins?
+            </summary>
+            <div className="p-4 bg-neutral-800">
+              {binCardsForInstructions ? (
+                <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
+              ) : (
+                <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
+                  All Bins
                 </div>
-              </div>
+              )}
+            </div>
+          </details>
 
-              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
-                <h3 className="flex items-center gap-3 text-lg font-semibold">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">3</span>
-                  Step 3 – Move the Bins
-                </h3>
-                <p className="text-sm text-gray-300">
-                  Roll every listed bin from the {startLocationLabel.toLowerCase()} to the {endLocationLabel.toLowerCase()}.
-                </p>
-                <div className="flex justify-center text-5xl">
-                  <span role="img" aria-label="Move bins">
-                    ➡️
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
-                <h3 className="flex items-center gap-3 text-lg font-semibold">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">4</span>
-                  Step 4 – Place at End Location
-                </h3>
-                <p className="text-sm text-gray-300">
-                  Line up the bins neatly at the {endLocationLabel.toLowerCase()} like the photo.
-                </p>
-                <div className="relative">
-                  <img
-                    src={endImageSrc}
-                    alt={`${endLocationLabel} example`}
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
-                  <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
-                    END HERE
-                  </span>
-                  <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                    {endLocationLabel}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
-                <h3 className="flex items-center gap-3 text-lg font-semibold">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">5</span>
-                  Step 5 – Double-check
-                </h3>
-                <ul className="list-disc list-inside text-white space-y-1 text-sm">
-                  <li>✅ Lids are closed tight.</li>
-                  <li>✅ Bins are lined up straight at the {endLocationLabel.toLowerCase()}.</li>
-                  <li>✅ Nothing is blocking walkways or driveways.</li>
+          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
+            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+              Step 3 – Move the Bins
+            </summary>
+            <div className="p-4 bg-neutral-800 space-y-4">
+              <p className="text-lg font-bold text-center">➡️ Move ALL bins from Start to End.</p>
+              <div className="rounded-lg border border-red-600 bg-red-900/60 p-4">
+                <ul className="list-disc list-inside space-y-2 text-sm">
+                  <li>Don’t leave bins behind (for bring-in jobs).</li>
+                  <li>Don’t skip bins that are full.</li>
+                  <li>Don’t block driveways or walkways.</li>
                 </ul>
               </div>
             </div>
-          )}
+          </details>
+
+          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
+            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+              Step 4 – End Location
+            </summary>
+            <div className="p-4 bg-neutral-800 space-y-3">
+              <div className="relative">
+                <img
+                  src={endImageSrc}
+                  alt={`${endLocationLabel} example`}
+                  className="w-full aspect-[3/4] object-cover rounded-lg"
+                />
+                <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
+                  END HERE
+                </span>
+                <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                  {endLocationLabel}
+                </span>
+              </div>
+              <p className="text-sm text-gray-300">Place bins neatly here.</p>
+            </div>
+          </details>
+
+          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
+            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+              Step 5 – Final Checks
+            </summary>
+            <div className="p-4 bg-neutral-800">
+              <ul className="list-disc list-inside text-white space-y-1 text-sm">
+                <li>Lids closed.</li>
+                <li>Bins lined up neatly.</li>
+                <li>Not blocking walkways or driveways.</li>
+              </ul>
+            </div>
+          </details>
         </div>
 
         {job.notes && (
