@@ -486,7 +486,10 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
           lastLongitude: log.gps_lng ?? undefined,
           notes: log.notes,
           jobType: log.task_type,
-          bins: log.bins ? log.bins.split(',').map((value) => value.trim()) : [],
+          bins:
+            typeof log.bins === 'string'
+              ? log.bins.split(',').map((value: string) => value.trim())
+              : [],
         })
       })
 
