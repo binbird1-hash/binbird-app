@@ -268,28 +268,32 @@ export default function ProofPageContent() {
 
     if (normalized.includes("red")) {
       return {
-        wrapper: "border-red-400/40 bg-red-500/10 text-red-200",
-        text: "text-red-100",
+        wrapper:
+          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white shadow-[0_12px_30px_rgba(255,87,87,0.25)]",
+        text: "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
       };
     }
 
     if (normalized.includes("yellow")) {
       return {
-        wrapper: "border-yellow-300/50 bg-yellow-300/15 text-yellow-200",
-        text: "text-yellow-100",
+        wrapper:
+          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black shadow-[0_12px_30px_rgba(255,213,0,0.25)]",
+        text: "text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.35)]",
       };
     }
 
     if (normalized.includes("green")) {
       return {
-        wrapper: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200",
-        text: "text-emerald-100",
+        wrapper:
+          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white shadow-[0_12px_30px_rgba(16,185,129,0.25)]",
+        text: "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
       };
     }
 
     return {
-      wrapper: "border-neutral-600 bg-neutral-800/60 text-neutral-200",
-      text: "text-neutral-100",
+      wrapper:
+        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white shadow-[0_12px_30px_rgba(0,0,0,0.3)]",
+      text: "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
     };
   }
 
@@ -317,9 +321,11 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin.toLowerCase()}-${idx}`}
-          className={`w-full rounded-lg border px-3 py-2 text-center text-sm font-semibold tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${styles.wrapper}`}
+          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-semibold tracking-tight transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.wrapper}`}
         >
-          <span className={`block font-medium ${styles.text}`}>{getBinLabel(bin)}</span>
+          <span className={`block font-semibold uppercase ${styles.text}`}>
+            {getBinLabel(bin)}
+          </span>
         </div>
       );
     });
@@ -496,7 +502,7 @@ export default function ProofPageContent() {
   const binCardsForInstructions = renderBinCards("instructions");
   const binCardsForQuickReference = renderBinCards("quick-reference");
   const subtleFallbackCard = (
-    <div className="w-full rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-2 text-center text-sm font-semibold text-neutral-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="w-full rounded-xl border border-neutral-700 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 px-4 py-3 text-center text-base font-semibold uppercase text-white">
       All Bins
     </div>
   );
