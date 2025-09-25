@@ -254,23 +254,41 @@ export default function ProofPageContent() {
     return <div className="p-6 text-white">No job found.</div>;
   }
 
-  function renderBins(bins: string | null | undefined) {
-    if (!bins) return <span className="text-gray-400">—</span>;
-    return bins.split(",").map((b) => {
-      const bin = b.trim().toLowerCase();
-      let color = "bg-gray-600";
-      if (bin.includes("red")) color = "bg-red-600";
-      else if (bin.includes("yellow")) color = "bg-yellow-500 text-black";
-      else if (bin.includes("green")) color = "bg-green-600";
-      return (
-        <span
-          key={bin}
-          className={`${color} px-3 py-1 rounded-full text-xs font-semibold`}
-        >
-          {bin.charAt(0).toUpperCase() + bin.slice(1)}
-        </span>
-      );
-    });
+  function getParsedBins(bins: string | null | undefined) {
+    if (!bins) return [] as string[];
+    return bins
+      .split(",")
+      .map((bin) => bin.trim())
+      .filter(Boolean);
+  }
+
+  const parsedBins = getParsedBins(job.bins);
+
+  function getBinColorClasses(bin: string) {
+    const normalized = bin.toLowerCase();
+    if (normalized.includes("red")) return "bg-red-600 text-white";
+    if (normalized.includes("yellow")) return "bg-yellow-400 text-black";
+    if (normalized.includes("green")) return "bg-green-600 text-white";
+    return "bg-gray-600 text-white";
+  }
+
+  function getBinLabel(bin: string) {
+    const upper = bin.toUpperCase();
+    return upper.includes("BIN") ? upper : `${upper} BIN`;
+  }
+
+  function renderBinCards(prefix: string) {
+    if (!parsedBins.length) return null;
+    return parsedBins.map((bin, idx) => (
+      <div
+        key={`${prefix}-${bin.toLowerCase()}-${idx}`}
+        className={`w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase ${getBinColorClasses(
+          bin
+        )}`}
+      >
+        {getBinLabel(bin)}
+      </div>
+    ));
   }
     
   async function handleMarkDone() {
@@ -399,6 +417,8 @@ export default function ProofPageContent() {
   const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
   const startLocationLabel = isPutOutJob ? "Storage Area" : "Curb";
   const endLocationLabel = isPutOutJob ? "Curb" : "Storage Area";
+  const binCardsForInstructions = renderBinCards("instructions");
+  const binCardsForSummary = renderBinCards("summary");
 
   return (
     <div className="relative flex min-h-full flex-col bg-black text-white">
@@ -420,41 +440,107 @@ export default function ProofPageContent() {
           </button>
 
           {showInstructions && (
-            <div className="p-4 space-y-4 bg-neutral-800 text-white">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-400">Start Location: {startLocationLabel}</p>
-                  <div className="relative">
-                    <img
-                      src={startImageSrc}
-                      alt={`${startLocationLabel} example`}
-                      className="w-full aspect-[3/4] object-cover rounded-lg"
-                    />
-                    <span className="absolute top-2 left-2 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                      START HERE
-                    </span>
+            <div className="p-4 space-y-6 bg-neutral-800 text-white">
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div
+                    key={n}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full font-bold border-2 ${
+                      n === 1 ? "bg-red-600 text-white border-red-400" : "bg-neutral-900 text-gray-300 border-gray-600"
+                    }`}
+                  >
+                    {n}
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-400">End Location: {endLocationLabel}</p>
-                  <div className="relative">
-                    <img
-                      src={endImageSrc}
-                      alt={`${endLocationLabel} example`}
-                      className="w-full aspect-[3/4] object-cover rounded-lg"
-                    />
-                    <span className="absolute top-2 left-2 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                      END HERE
-                    </span>
-                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
+                <h3 className="flex items-center gap-3 text-lg font-semibold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">1</span>
+                  Step 1 – Identify Today&apos;s Bins
+                </h3>
+                <p className="text-sm text-gray-300">These are the bins you move on this stop:</p>
+                {binCardsForInstructions ? (
+                  <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    No bin colors listed. Call dispatch if you need help.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
+                <h3 className="flex items-center gap-3 text-lg font-semibold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">2</span>
+                  Step 2 – Go to Start Location
+                </h3>
+                <p className="text-sm text-gray-300">
+                  Head straight to the {startLocationLabel.toLowerCase()} shown below.
+                </p>
+                <div className="relative">
+                  <img
+                    src={startImageSrc}
+                    alt={`${startLocationLabel} example`}
+                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                  />
+                  <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
+                    START HERE
+                  </span>
+                  <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                    {startLocationLabel}
+                  </span>
                 </div>
               </div>
-              <ul className="list-disc list-inside text-white space-y-1 text-sm">
-                <li>{`Step 1: Go to the ${startLocationLabel.toLowerCase()} (see left photo).`}</li>
-                <li>Step 2: Move all scheduled bins.</li>
-                <li>{`Step 3: Place bins neatly at the ${endLocationLabel.toLowerCase()} (see right photo).`}</li>
-                <li>Step 4: Make sure lids are closed and bins are not blocking paths.</li>
-              </ul>
+
+              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
+                <h3 className="flex items-center gap-3 text-lg font-semibold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">3</span>
+                  Step 3 – Move the Bins
+                </h3>
+                <p className="text-sm text-gray-300">
+                  Roll every listed bin from the {startLocationLabel.toLowerCase()} to the {endLocationLabel.toLowerCase()}.
+                </p>
+                <div className="flex justify-center text-5xl">
+                  <span role="img" aria-label="Move bins">
+                    ➡️
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
+                <h3 className="flex items-center gap-3 text-lg font-semibold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">4</span>
+                  Step 4 – Place at End Location
+                </h3>
+                <p className="text-sm text-gray-300">
+                  Line up the bins neatly at the {endLocationLabel.toLowerCase()} like the photo.
+                </p>
+                <div className="relative">
+                  <img
+                    src={endImageSrc}
+                    alt={`${endLocationLabel} example`}
+                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                  />
+                  <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
+                    END HERE
+                  </span>
+                  <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                    {endLocationLabel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg bg-neutral-900 p-4">
+                <h3 className="flex items-center gap-3 text-lg font-semibold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white font-bold">5</span>
+                  Step 5 – Double-check
+                </h3>
+                <ul className="list-disc list-inside text-white space-y-1 text-sm">
+                  <li>✅ Lids are closed tight.</li>
+                  <li>✅ Bins are lined up straight at the {endLocationLabel.toLowerCase()}.</li>
+                  <li>✅ Nothing is blocking walkways or driveways.</li>
+                </ul>
+              </div>
             </div>
           )}
         </div>
@@ -467,8 +553,12 @@ export default function ProofPageContent() {
         )}
 
         <div>
-          <p className="text-sm text-gray-400 mb-1">Bins:</p>
-          <div className="flex flex-wrap gap-2">{renderBins(job.bins)}</div>
+          <p className="text-sm text-gray-400 mb-2">Bins:</p>
+          {binCardsForSummary ? (
+            <div className="flex flex-col gap-3">{binCardsForSummary}</div>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
         </div>
 
         {/* Take photo */}
