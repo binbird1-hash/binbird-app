@@ -1,7 +1,7 @@
 // app/c/[token]/page.tsx
 import BackButton from '@/components/UI/BackButton'
 import { supabaseServer } from '@/lib/supabaseServer'
-import type { ClientTokenRow } from '@/lib/database.types'
+import type { ClientTokenRow, JobRecord, Property } from '@/lib/database.types'
 
 export default async function ClientPortal({
   params: { token },
@@ -12,7 +12,7 @@ export default async function ClientPortal({
 
   const { data, error } = await sb
     .from('client_token')
-    .select('token, client:client_id(id, name, properties(id, address, notes))')
+    .select('token, client:client_id(id, name)')
     .eq('token', token)
     .maybeSingle<ClientTokenRow>()
 
@@ -26,7 +26,33 @@ export default async function ClientPortal({
     )
   }
 
-  const client = data?.client?.[0] // still array, take first
+  const [propertiesResult, jobsResult, logsResult] = await Promise.all([
+    sb.rpc('properties_for_token', { p_token: token }),
+    sb.rpc('jobs_for_token', { p_token: token }),
+    sb.rpc('logs_for_token', { p_token: token }),
+  ])
+
+  const rpcError = propertiesResult.error ?? jobsResult.error ?? logsResult.error
+
+  if (rpcError) {
+    return (
+      <div className="container">
+        <BackButton />
+        <h2>Error loading client portal</h2>
+        <p className="text-red-500">{rpcError.message}</p>
+      </div>
+    )
+  }
+
+  const portalData = {
+    properties: (propertiesResult.data ?? []) as Property[],
+    jobs: (jobsResult.data ?? []) as JobRecord[],
+    logs: logsResult.data ?? [],
+  }
+
+  const baseClient = data?.client?.[0]
+  const client = baseClient ? { ...baseClient, properties: portalData.properties } : baseClient
+  const properties = client?.properties ?? portalData.properties
 
   return (
     <div className="container">
@@ -35,9 +61,9 @@ export default async function ClientPortal({
         Client Portal — {client?.name}
       </h2>
 
-      {client?.properties?.length ? (
+      {properties.length ? (
         <ul className="space-y-2">
-          {client.properties.map((p) => (
+          {properties.map((p) => (
             <li key={p.id} className="p-3 border rounded">
               <p className="font-medium">{p.address}</p>
               <p className="text-sm opacity-70">{p.notes || 'No notes'}</p>
