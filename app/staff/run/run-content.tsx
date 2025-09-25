@@ -46,7 +46,7 @@ const applyVictoriaAutocompleteLimits = (
 export default function RunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-black via-gray-950 to-red-950 text-white">
+      <div className="relative min-h-screen bg-black text-white">
         <SettingsDrawer />
         <RunPageContent />
       </div>
@@ -468,199 +468,129 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
   };
 
-  if (loading)
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/70 px-6 py-5 text-center text-sm font-medium text-white/80 shadow-2xl shadow-black/40 backdrop-blur">
-          Loading today&apos;s jobs…
-        </div>
-      </div>
-    );
-  if (!isLoaded)
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/70 px-6 py-5 text-center text-sm font-medium text-white/80 shadow-2xl shadow-black/40 backdrop-blur">
-          Loading maps experience…
-        </div>
-      </div>
-    );
+  if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
+  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-hidden">
-      <div className="relative flex-1">
-        <div className="absolute inset-0">
-          <GoogleMap
-            key={resetCounter}
-            mapContainerStyle={{ width: "100%", height: "100%" }}
-            onLoad={(map) => {
-              console.log("Google Map loaded");
-              mapRef.current = map;
-              fitBoundsToMap();
-            }}
-            options={{
-              styles: styleMap,
-              disableDefaultUI: true,
-              zoomControl: false,
-            }}
-          >
-            {start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />}
-            {!routePath.length
-              ? jobs.map((j) => {
-                  console.log("Rendering job marker:", j.address, j.lat, j.lng);
-                  return (
-                    <Marker
-                      key={j.id}
-                      position={{ lat: j.lat, lng: j.lng }}
-                      icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png"
-                    />
-                  );
-                })
-              : ordered.map((j) => {
-                  console.log("Rendering ordered marker:", j.address, j.lat, j.lng);
-                  return (
-                    <Marker
-                      key={j.id}
-                      position={{ lat: j.lat, lng: j.lng }}
-                      icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png"
-                    />
-                  );
-                })}
-            {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
-            {routePath.length > 0 && (
-              <Polyline
-                path={routePath}
-                options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }}
+    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+
+      <div className="flex-grow relative">
+
+        <GoogleMap
+          key={resetCounter}
+          mapContainerStyle={{ width: "100%", height: "100%" }}
+          onLoad={(map) => { 
+            console.log("Google Map loaded"); 
+            mapRef.current = map; 
+            fitBoundsToMap(); 
+          }}
+          options={{ styles: styleMap, disableDefaultUI: true, zoomControl: false }}
+        >
+          {start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />}
+          {!routePath.length
+            ? jobs.map((j) => {
+                console.log("Rendering job marker:", j.address, j.lat, j.lng);
+                return <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />;
+              })
+            : ordered.map((j) => {
+                console.log("Rendering ordered marker:", j.address, j.lat, j.lng);
+                return <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />;
+              })}
+          {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
+          {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
+        </GoogleMap>
+
+        {/* Overlay controls */}
+        <div className="fixed inset-x-0 bottom-0 z-10">
+          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
+            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
+            <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
+
+            <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
+              <input
+                type="text"
+                value={startAddress}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setStartAddress(value);
+                  if (!value.trim()) {
+                    setStart(null);
+                    setForceFit(true);
+                    if (sameAsStart) {
+                      setEnd(null);
+                      setEndAddress("");
+                    }
+                  }
+                }}
+                placeholder="Where you are right now"
+                className="w-full px-3 py-2 rounded-lg text-black"
+                disabled={isPlanned || plannerLocked}
               />
-            )}
-          </GoogleMap>
-        </div>
+            </Autocomplete>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black via-black/80 to-transparent" />
-      </div>
+            <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>
+              <input
+                type="text"
+                value={endAddress}
+                onChange={(e) => setEndAddress(e.target.value)}
+                placeholder="Where you want to go after run"
+                className="w-full px-3 py-2 rounded-lg text-black"
+                disabled={sameAsStart || isPlanned || plannerLocked}
+              />
+            </Autocomplete>
 
-      <div className="relative z-10 -mt-32 px-4 pb-16">
-        <div className="mx-auto w-full max-w-4xl rounded-3xl border border-white/10 bg-black/80 p-6 shadow-2xl shadow-black/40 backdrop-blur">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-white/50">Today&apos;s run</p>
-              <h1 className="mt-1 text-2xl font-semibold text-white">Plan your route</h1>
-            </div>
-            {isPlanned && (
-              <button
-                onClick={handleReset}
-                className="rounded-xl border border-white/20 px-3 py-1 text-xs font-semibold text-white/70 transition hover:border-binbird-red hover:text-white"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <div className="space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Start from</p>
-                <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
-                  <input
-                    type="text"
-                    value={startAddress}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setStartAddress(value);
-                      if (!value.trim()) {
-                        setStart(null);
-                        setForceFit(true);
-                        if (sameAsStart) {
-                          setEnd(null);
-                          setEndAddress("");
-                        }
-                      }
-                    }}
-                    placeholder="Where you are right now"
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/60 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40 disabled:opacity-60"
-                    disabled={isPlanned || plannerLocked}
-                  />
-                </Autocomplete>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Finish at</p>
-                <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>
-                  <input
-                    type="text"
-                    value={endAddress}
-                    onChange={(e) => setEndAddress(e.target.value)}
-                    placeholder="Where you want to go after the run"
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/60 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40 disabled:opacity-60"
-                    disabled={sameAsStart || isPlanned || plannerLocked}
-                  />
-                </Autocomplete>
-              </div>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white/80">
+            <div className="flex items-center justify-between text-sm text-gray-300 mt-2">
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={sameAsStart}
                   onChange={(e) => setSameAsStart(e.target.checked)}
                   disabled={isPlanned || plannerLocked}
-                  className="h-4 w-4 rounded border-white/40 bg-black/40 text-binbird-red focus:ring-binbird-red focus:ring-offset-0 disabled:opacity-60"
                 />
-                <span>Finish at the same place I started</span>
+                Finish at same place I started
               </label>
+
+              {isPlanned && (
+                <button
+                  onClick={handleReset}
+                  className="text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition"
+                >
+                  Reset
+                </button>
+              )}
             </div>
-
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 text-sm text-white/70">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Jobs queued</p>
-                <p className="mt-2 text-3xl font-semibold text-white">{jobs.length}</p>
-                <p className="mt-2 text-sm text-white/60">
-                  We&apos;ll optimise your run order and provide turn-by-turn navigation when you start.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 text-sm text-white/70">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Route status</p>
-                <p className="mt-2 text-base font-medium text-white">
-                  {isPlanned ? "Run planned" : plannerLocked ? "Loading run plan" : "Ready to plan"}
-                </p>
-                {startAddress && (
-                  <p className="mt-3 text-xs text-white/60">Start: {startAddress}</p>
-                )}
-                {endAddress && (
-                  <p className="mt-1 text-xs text-white/60">Finish: {endAddress}</p>
-                )}
-              </div>
-
-              <div className="pt-2">
-                {jobs.length === 0 ? (
-                  <button
-                    className="w-full rounded-2xl bg-binbird-red/50 px-4 py-3 text-sm font-semibold text-white/80 cursor-not-allowed"
-                    disabled
-                  >
-                    All jobs completed
-                  </button>
-                ) : !isPlanned ? (
-                  <button
-                    className="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => {
-                      console.log("Planning run…");
-                      buildRoute();
-                    }}
-                    disabled={plannerLocked}
-                  >
-                    Plan run
-                  </button>
-                ) : (
-                  <button
-                    className="w-full rounded-2xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#ff4747] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
-                    onClick={handleStartRun}
-                  >
-                    Start run
-                  </button>
-                )}
-              </div>
-            </div>
+            <div className="mt-4">
+              {jobs.length === 0 ? (
+                <button
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] opacity-60 cursor-not-allowed"
+                  disabled
+                >
+                  All Jobs Completed
+                </button>
+              ) : !isPlanned ? (
+                // Plan Run button (grey)
+                <button
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
+                  onClick={() => {
+                    console.log("Planning run…");
+                    buildRoute();
+                  }}
+                  disabled={plannerLocked}
+                >
+                  Plan Run
+                </button>
+              ) : (
+                // Start Run button (accent red)
+                <button
+                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
+                  onClick={handleStartRun}
+                >
+                  Start Run
+                </button>
+              )}
+            </div>            
           </div>
         </div>
       </div>
