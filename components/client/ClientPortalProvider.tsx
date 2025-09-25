@@ -439,7 +439,10 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
             return 'scheduled'
           })()
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
-      const bins = job.bins ? job.bins.split(',').map((value) => value.trim()) : []
+      const bins =
+        typeof job.bins === 'string'
+          ? job.bins.split(',').map((value: string) => value.trim())
+          : []
       combinedJobs.push({
         id: job.id,
         accountId,
