@@ -394,6 +394,11 @@ export default function ProofPageContent() {
   const bringInImageSrc = referenceLookupComplete
     ? referenceUrls.bringIn ?? BRING_IN_PLACEHOLDER_URL
     : TRANSPARENT_PIXEL;
+  const isPutOutJob = job.job_type === "put_out";
+  const startImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
+  const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
+  const startLocationLabel = isPutOutJob ? "Storage Area" : "Curb";
+  const endLocationLabel = isPutOutJob ? "Curb" : "Storage Area";
 
   return (
     <div className="relative flex min-h-full flex-col bg-black text-white">
@@ -416,32 +421,40 @@ export default function ProofPageContent() {
 
           {showInstructions && (
             <div className="p-4 space-y-4 bg-neutral-800 text-white">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 mb-2">Bins Out:</p>
-                  <img
-                    src={putOutImageSrc}
-                    alt="Bins Out Example"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">Start Location: {startLocationLabel}</p>
+                  <div className="relative">
+                    <img
+                      src={startImageSrc}
+                      alt={`${startLocationLabel} example`}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    <span className="absolute top-2 left-2 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                      START HERE
+                    </span>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 mb-2">Bins In:</p>
-                  <img
-                    src={bringInImageSrc}
-                    alt="Bins In Example"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">End Location: {endLocationLabel}</p>
+                  <div className="relative">
+                    <img
+                      src={endImageSrc}
+                      alt={`${endLocationLabel} example`}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    <span className="absolute top-2 left-2 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                      END HERE
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-gray-400 mb-2">Placement Instructions:</p>
-                <p>
-                  {job.job_type === "bring_in"
-                    ? "Return bins neatly to their storage location. Ensure lids are closed and bins are not left blocking walkways or driveways."
-                    : "Place bins neatly at the edge of the driveway with lids closed. Ensure bins do not block pedestrian walkways or driveways."}
-                </p>
-              </div>
+              <ul className="list-disc list-inside text-white space-y-1 text-sm">
+                <li>{`Step 1: Go to the ${startLocationLabel.toLowerCase()} (see left photo).`}</li>
+                <li>Step 2: Move all scheduled bins.</li>
+                <li>{`Step 3: Place bins neatly at the ${endLocationLabel.toLowerCase()} (see right photo).`}</li>
+                <li>Step 4: Make sure lids are closed and bins are not blocking paths.</li>
+              </ul>
             </div>
           )}
         </div>
