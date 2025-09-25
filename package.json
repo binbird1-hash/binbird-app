@@ -12,8 +12,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.17",
-    "@heroicons/react": "^2.1.5",
+    "@headlessui/react": "^1.7.19",
+    "@heroicons/react": "^2.2.0",
     "@mapbox/polyline": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@react-google-maps/api": "^2.20.3",
