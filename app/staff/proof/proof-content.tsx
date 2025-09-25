@@ -272,8 +272,20 @@ export default function ProofPageContent() {
   }
 
   function getBinLabel(bin: string) {
-    const upper = bin.toUpperCase();
-    return upper.includes("BIN") ? upper : `${upper} BIN`;
+    const normalized = bin.toLowerCase();
+    if (normalized.includes("red")) return "All Red Bins";
+    if (normalized.includes("yellow")) return "All Yellow Bins";
+    if (normalized.includes("green")) return "All Green Bins";
+
+    const cleaned = bin.replace(/bins?/gi, "").trim();
+    if (!cleaned) return "All Bins";
+
+    const titleCase = cleaned
+      .split(/\s+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    return `All ${titleCase} Bins`;
   }
 
   function renderBinCards(prefix: string) {
@@ -524,10 +536,17 @@ export default function ProofPageContent() {
                 <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
                   Step 3 – Move the Bins
                 </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
-                  {moveStepLines.map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
+                <div className="p-4 bg-neutral-900/60 text-left">
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    {moveStepLines.map((line) => (
+                      <li key={line} className="flex items-start gap-2">
+                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                          ✓
+                        </span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </details>
 
@@ -558,10 +577,17 @@ export default function ProofPageContent() {
                 <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
                   Step 5 – Final Check
                 </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
-                  {finalCheckLines.map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
+                <div className="p-4 bg-neutral-900/60 text-left">
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    {finalCheckLines.map((line) => (
+                      <li key={line} className="flex items-start gap-2">
+                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                          ✓
+                        </span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </details>
             </div>
