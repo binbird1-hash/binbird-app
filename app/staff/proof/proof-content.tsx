@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SyntheticEvent } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
@@ -112,6 +113,7 @@ export default function ProofPageContent() {
     bringIn: string | null;
   }>({ putOut: null, bringIn: null });
   const [referenceLookupComplete, setReferenceLookupComplete] = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
 
   const [gpsData, setGpsData] = useState<{
     lat: number | null;
@@ -472,6 +474,23 @@ export default function ProofPageContent() {
   const readyToSubmit = hasPhoto;
   const binCardsForInstructions = renderBinCards("instructions");
   const binCardsForQuickReference = renderBinCards("quick-reference");
+  const quickReferenceContent = binCardsForQuickReference ? (
+    <div className="pt-1">
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+        Bin colours today
+      </p>
+      <div className="flex flex-col gap-3">{binCardsForQuickReference}</div>
+    </div>
+  ) : (
+    <div className="pt-1">
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+        Bin colours today
+      </p>
+      <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
+        All Bins
+      </div>
+    </div>
+  );
 
   return (
     <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
@@ -483,7 +502,12 @@ export default function ProofPageContent() {
         <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
         <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+          <details
+            className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60"
+            onToggle={(event: SyntheticEvent<HTMLDetailsElement>) =>
+              setInstructionsOpen(event.currentTarget.open)
+            }
+          >
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Instructions
             </summary>
@@ -506,7 +530,7 @@ export default function ProofPageContent() {
                       {startLocationLabel}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-200 font-semibold">{startBodyCopy.primary}</p>
+                  <p className="text-sm font-semibold text-[#ff5757]">{startBodyCopy.primary}</p>
                   <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
                 </div>
               </details>
@@ -524,7 +548,7 @@ export default function ProofPageContent() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-200 font-semibold">
+                    <p className="text-sm font-semibold text-[#ff5757]">
                       Roll every bin in the colours shown above.
                     </p>
                     <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
@@ -568,7 +592,7 @@ export default function ProofPageContent() {
                       {endLocationLabel}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-200 font-semibold">{endBodyCopy.primary}</p>
+                  <p className="text-sm font-semibold text-[#ff5757]">{endBodyCopy.primary}</p>
                   <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
                 </div>
               </details>
@@ -593,23 +617,7 @@ export default function ProofPageContent() {
             </div>
           </details>
 
-          {binCardsForQuickReference ? (
-            <div className="pt-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Bin colours today
-              </p>
-              <div className="flex flex-col gap-3">{binCardsForQuickReference}</div>
-            </div>
-          ) : (
-            <div className="pt-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Bin colours today
-              </p>
-              <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
-                All Bins
-              </div>
-            </div>
-          )}
+          {!instructionsOpen && quickReferenceContent}
         </section>
 
         {job.notes && (
