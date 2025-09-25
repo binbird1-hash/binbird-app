@@ -122,19 +122,20 @@ export default function SignUpClient() {
         </div>
 
         {/* Email */}
-        <div className="text-sm font-medium text-white/80">
-          <label className="block" htmlFor="staff-signup-email">
+        <div className="space-y-2 text-sm font-medium text-white/80">
+          <label className="sr-only" htmlFor="staff-signup-email">
             Email
           </label>
           <input
             id="staff-signup-email"
             type="email"
             value={email}
+            placeholder="Email"
             onChange={(e) => {
               setEmail(e.target.value);
               setErrors((prev) => ({ ...prev, email: "" }));
             }}
-            className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             autoComplete="email"
             required
           />
@@ -172,15 +173,16 @@ export default function SignUpClient() {
         </div>
 
         {/* Password */}
-        <div className="text-sm font-medium text-white/80">
-          <label className="block" htmlFor="staff-signup-password">
+        <div className="space-y-2 text-sm font-medium text-white/80">
+          <label className="sr-only" htmlFor="staff-signup-password">
             Password
           </label>
-          <div className="mt-2 flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
+          <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <input
               id="staff-signup-password"
               type={showPassword ? "text" : "password"}
               value={password}
+              placeholder="Password"
               onChange={(e) => {
                 setPassword(e.target.value);
                 setErrors((prev) => ({ ...prev, password: "" }));
@@ -202,15 +204,16 @@ export default function SignUpClient() {
         </div>
 
         {/* Confirm Password */}
-        <div className="text-sm font-medium text-white/80">
-          <label className="block" htmlFor="staff-signup-confirm-password">
+        <div className="space-y-2 text-sm font-medium text-white/80">
+          <label className="sr-only" htmlFor="staff-signup-confirm-password">
             Confirm Password
           </label>
-          <div className="mt-2 flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
+          <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <input
               id="staff-signup-confirm-password"
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
+              placeholder="Confirm Password"
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
                 setErrors((prev) => ({ ...prev, confirmPassword: "" }));
