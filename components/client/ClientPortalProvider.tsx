@@ -14,6 +14,7 @@ import {
   startOfToday,
   subMonths,
 } from 'date-fns'
+import type { Day } from 'date-fns'
 
 export type ClientAccountRole = 'owner' | 'manager' | 'viewer'
 
@@ -152,7 +153,7 @@ const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
   pushPropertyAlerts: true,
 }
 
-const WEEKDAY_LOOKUP: Record<string, number> = {
+const WEEKDAY_LOOKUP = {
   sunday: 0,
   monday: 1,
   tuesday: 2,
@@ -160,7 +161,7 @@ const WEEKDAY_LOOKUP: Record<string, number> = {
   thursday: 4,
   friday: 5,
   saturday: 6,
-}
+} as const satisfies Record<string, Day>
 
 const parseLatLng = (value: string | null): { lat: number | null; lng: number | null } => {
   if (!value) return { lat: null, lng: null }
