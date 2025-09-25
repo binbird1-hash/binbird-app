@@ -19,6 +19,8 @@ export type ClientTokenRow = {
 
 export type JobRecord = {
   id: string
+  account_id: string | null
+  property_id: string | null
   address: string | null
   lat: number | null
   lng: number | null
