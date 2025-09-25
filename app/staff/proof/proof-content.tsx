@@ -263,12 +263,34 @@ export default function ProofPageContent() {
 
   const parsedBins = getParsedBins(job.bins);
 
-  function getBinColorClasses(bin: string) {
+  function getBinColorStyles(bin: string) {
     const normalized = bin.toLowerCase();
-    if (normalized.includes("red")) return "bg-red-600 text-white";
-    if (normalized.includes("yellow")) return "bg-yellow-400 text-black";
-    if (normalized.includes("green")) return "bg-green-600 text-white";
-    return "bg-gray-600 text-white";
+
+    if (normalized.includes("red")) {
+      return {
+        wrapper: "border-red-400/40 bg-red-500/10 text-red-200",
+        text: "text-red-100",
+      };
+    }
+
+    if (normalized.includes("yellow")) {
+      return {
+        wrapper: "border-yellow-300/50 bg-yellow-300/15 text-yellow-200",
+        text: "text-yellow-100",
+      };
+    }
+
+    if (normalized.includes("green")) {
+      return {
+        wrapper: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200",
+        text: "text-emerald-100",
+      };
+    }
+
+    return {
+      wrapper: "border-neutral-600 bg-neutral-800/60 text-neutral-200",
+      text: "text-neutral-100",
+    };
   }
 
   function getBinLabel(bin: string) {
@@ -288,18 +310,19 @@ export default function ProofPageContent() {
     return `All ${titleCase} Bins`;
   }
 
-  function renderBinCards(prefix: string) {
+  function renderBinCards(prefix: "instructions" | "quick-reference") {
     if (!parsedBins.length) return null;
-    return parsedBins.map((bin, idx) => (
-      <div
-        key={`${prefix}-${bin.toLowerCase()}-${idx}`}
-        className={`w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase ${getBinColorClasses(
-          bin
-        )}`}
-      >
-        {getBinLabel(bin)}
-      </div>
-    ));
+    return parsedBins.map((bin, idx) => {
+      const styles = getBinColorStyles(bin);
+      return (
+        <div
+          key={`${prefix}-${bin.toLowerCase()}-${idx}`}
+          className={`w-full rounded-lg border px-3 py-2 text-center text-sm font-semibold tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${styles.wrapper}`}
+        >
+          <span className={`block font-medium ${styles.text}`}>{getBinLabel(bin)}</span>
+        </div>
+      );
+    });
   }
     
   async function handleMarkDone() {
@@ -472,20 +495,19 @@ export default function ProofPageContent() {
   const readyToSubmit = hasPhoto;
   const binCardsForInstructions = renderBinCards("instructions");
   const binCardsForQuickReference = renderBinCards("quick-reference");
-  const quickReferenceContent = binCardsForQuickReference ? (
-    <div className="pt-1">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-        Bin colours today
-      </p>
-      <div className="flex flex-col gap-3">{binCardsForQuickReference}</div>
+  const subtleFallbackCard = (
+    <div className="w-full rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-2 text-center text-sm font-semibold text-neutral-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      All Bins
     </div>
-  ) : (
+  );
+
+  const quickReferenceContent = (
     <div className="pt-1">
       <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
         Bin colours today
       </p>
-      <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
-        All Bins
+      <div className="flex flex-col gap-2">
+        {binCardsForQuickReference ?? subtleFallbackCard}
       </div>
     </div>
   );
@@ -533,13 +555,9 @@ export default function ProofPageContent() {
                   Step 2 – Today’s Bins
                 </summary>
                 <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-                  {binCardsForInstructions ? (
-                    <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
-                  ) : (
-                    <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
-                      All Bins
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    {binCardsForInstructions ?? subtleFallbackCard}
+                  </div>
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-white">
                       Roll every bin in the colours shown above.
