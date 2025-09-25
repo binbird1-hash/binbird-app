@@ -2,7 +2,6 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { SyntheticEvent } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
@@ -113,7 +112,6 @@ export default function ProofPageContent() {
     bringIn: string | null;
   }>({ putOut: null, bringIn: null });
   const [referenceLookupComplete, setReferenceLookupComplete] = useState(false);
-  const [instructionsOpen, setInstructionsOpen] = useState(false);
 
   const [gpsData, setGpsData] = useState<{
     lat: number | null;
@@ -502,12 +500,7 @@ export default function ProofPageContent() {
         <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
         <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <details
-            className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60"
-            onToggle={(event: SyntheticEvent<HTMLDetailsElement>) =>
-              setInstructionsOpen(event.currentTarget.open)
-            }
-          >
+          <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Instructions
             </summary>
@@ -530,7 +523,7 @@ export default function ProofPageContent() {
                       {startLocationLabel}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-[#ff5757]">{startBodyCopy.primary}</p>
+                  <p className="text-sm font-semibold text-white">{startBodyCopy.primary}</p>
                   <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
                 </div>
               </details>
@@ -548,7 +541,7 @@ export default function ProofPageContent() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-[#ff5757]">
+                    <p className="text-sm font-semibold text-white">
                       Roll every bin in the colours shown above.
                     </p>
                     <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
@@ -592,7 +585,7 @@ export default function ProofPageContent() {
                       {endLocationLabel}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-[#ff5757]">{endBodyCopy.primary}</p>
+                  <p className="text-sm font-semibold text-white">{endBodyCopy.primary}</p>
                   <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
                 </div>
               </details>
@@ -617,7 +610,7 @@ export default function ProofPageContent() {
             </div>
           </details>
 
-          {!instructionsOpen && quickReferenceContent}
+          {quickReferenceContent}
         </section>
 
         {job.notes && (
