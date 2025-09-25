@@ -448,6 +448,7 @@ export default function ProofPageContent() {
   const hasPhoto = Boolean(file);
   const readyToSubmit = hasPhoto;
   const binCardsForInstructions = renderBinCards("instructions");
+  const binCardsForQuickReference = renderBinCards("quick-reference");
 
   return (
     <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
@@ -459,96 +460,121 @@ export default function ProofPageContent() {
         <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
         <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
+          <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 1 – Start Spot
+              Instructions
             </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-              <div className="relative">
-                <img
-                  src={startImageSrc}
-                  alt={`${startLocationLabel} example`}
-                  className="w-full aspect-[3/4] object-cover rounded-lg"
-                />
-                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                  START HERE
-                </span>
-                <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                  {startLocationLabel}
-                </span>
-              </div>
-              <p className="text-sm text-gray-200 font-semibold">{startBodyCopy.primary}</p>
-              <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
-            </div>
-          </details>
-
-          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
-            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 2 – Today’s Bins
-            </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-              {binCardsForInstructions ? (
-                <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
-              ) : (
-                <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
-                  All Bins
+            <div className="p-4 bg-neutral-900/60 space-y-3">
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 1 – Start Spot
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                  <div className="relative">
+                    <img
+                      src={startImageSrc}
+                      alt={`${startLocationLabel} example`}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                      START HERE
+                    </span>
+                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                      {startLocationLabel}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-200 font-semibold">{startBodyCopy.primary}</p>
+                  <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
                 </div>
-              )}
-              <div className="space-y-2">
-                <p className="text-sm text-gray-200 font-semibold">
-                  Roll every bin in the colours shown above.
-                </p>
-                <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 2 – Today’s Bins
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                  {binCardsForInstructions ? (
+                    <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
+                  ) : (
+                    <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
+                      All Bins
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-200 font-semibold">
+                      Roll every bin in the colours shown above.
+                    </p>
+                    <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
+                  </div>
+                </div>
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 3 – Move the Bins
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
+                  <p className="font-semibold text-gray-100">Move every bin — full or empty.</p>
+                  <p>Keep driveways, doors, and kerbs clear.</p>
+                  <p>Don’t leave any bins behind at the kerb.</p>
+                </div>
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 4 – Finish Spot
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                  <div className="relative">
+                    <img
+                      src={endImageSrc}
+                      alt={`${endLocationLabel} example`}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                      END HERE
+                    </span>
+                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                      {endLocationLabel}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-200 font-semibold">{endBodyCopy.primary}</p>
+                  <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
+                </div>
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 5 – Final Check
+                </summary>
+                <div className="p-4 bg-neutral-900/60 text-left">
+                  <ul className="list-disc list-inside text-white space-y-2 text-sm">
+                    {finalCheckLines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          {binCardsForQuickReference ? (
+            <div className="pt-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                Bin colours today
+              </p>
+              <div className="flex flex-col gap-3">{binCardsForQuickReference}</div>
+            </div>
+          ) : (
+            <div className="pt-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                Bin colours today
+              </p>
+              <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
+                All Bins
               </div>
             </div>
-          </details>
-
-          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
-            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 3 – Move the Bins
-            </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
-              <p className="font-semibold text-gray-100">Move every bin — full or empty.</p>
-              <p>Keep driveways, doors, and kerbs clear.</p>
-              <p>Don’t leave any bins behind at the kerb.</p>
-            </div>
-          </details>
-
-          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
-            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 4 – Finish Spot
-            </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-              <div className="relative">
-                <img
-                  src={endImageSrc}
-                  alt={`${endLocationLabel} example`}
-                  className="w-full aspect-[3/4] object-cover rounded-lg"
-                />
-                <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                  END HERE
-                </span>
-                <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                  {endLocationLabel}
-                </span>
-              </div>
-              <p className="text-sm text-gray-200 font-semibold">{endBodyCopy.primary}</p>
-              <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
-            </div>
-          </details>
-
-          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
-            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 5 – Final Check
-            </summary>
-            <div className="p-4 bg-neutral-900/60 text-left">
-              <ul className="list-disc list-inside text-white space-y-2 text-sm">
-                {finalCheckLines.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
-          </details>
+          )}
         </section>
 
         {job.notes && (
