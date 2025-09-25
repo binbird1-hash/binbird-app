@@ -417,45 +417,35 @@ export default function ProofPageContent() {
   const startLocationLabel = isPutOutJob ? "Storage Area" : "Kerb";
   const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
   const startCaption = isPutOutJob
-    ? "Start inside the storage area."
-    : "Start out at the kerb.";
+    ? "Find the bins inside this storage area to begin."
+    : "Find the bins waiting out on this kerb to begin.";
   const endCaption = isPutOutJob
-    ? "Park every bin neatly on the kerb."
-    : "Park every bin neatly back inside.";
+    ? "Set every bin out neatly on this kerb."
+    : "Park every bin neatly back inside to match this photo.";
   const binCardsForInstructions = renderBinCards("instructions");
 
   return (
-    <div className="relative flex min-h-full flex-col bg-black text-white">
-      <div className="flex-1 p-6 pb-32 space-y-4">
-        <h1 className="text-2xl font-bold text-[#ff5757]">
+    <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
+      <div className="flex-1 p-6 pb-32 space-y-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
 
-        <p className="text-lg font-semibold">{job.address}</p>
+        <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
-        <div className="space-y-3">
-          <div className="flex justify-center gap-2 mb-1">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <div
-                key={num}
-                className="w-10 h-10 rounded-full border-2 border-gray-700 bg-neutral-900 text-white flex items-center justify-center text-sm font-bold shadow"
-              >
-                {num}
-              </div>
-            ))}
-          </div>
-          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
-            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
-              Step 1 – Start Spot
+        <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
+          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
+            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              Step 1 – Find the Start Spot
             </summary>
-            <div className="p-4 bg-neutral-800 space-y-3">
+            <div className="p-4 bg-neutral-900/60 space-y-3">
               <div className="relative">
                 <img
                   src={startImageSrc}
                   alt={`${startLocationLabel} example`}
                   className="w-full aspect-[3/4] object-cover rounded-lg"
                 />
-                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
+                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
                   START HERE
                 </span>
                 <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
@@ -463,56 +453,59 @@ export default function ProofPageContent() {
                 </span>
               </div>
               <p className="text-sm text-gray-200 font-semibold">{startCaption}</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Look at the left photo. Stand there first.</p>
-            </div>
-          </details>
-
-          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
-            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
-              Step 2 – Today’s Bin Colours
-            </summary>
-            <div className="p-4 bg-neutral-800">
-              {binCardsForInstructions ? (
-                <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
-              ) : (
-                <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
-                  All Bin Colours
-                </div>
-              )}
-              <p className="mt-3 text-sm text-gray-200 font-semibold text-center">
-                Move every bin in these colours. If in doubt, take them all.
+              <p className="text-sm text-gray-300">
+                Find the bins at this start spot. If the tenant has already moved them, jump ahead to Step 4 and match that photo.
               </p>
             </div>
           </details>
 
-          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
-            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
-              Step 3 – Move Every Bin
+          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
+            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              Step 2 – Today’s Bin Colours
             </summary>
-            <div className="p-4 bg-neutral-800 space-y-4">
-              <p className="text-lg font-bold text-center">➡️ Take every bin from the START photo to the END photo.</p>
-              <div className="rounded-lg border border-red-600 bg-red-900/60 p-4">
-                <ul className="list-disc list-inside space-y-2 text-sm">
-                  <li>Do not leave any bin behind.</li>
-                  <li>Do not skip bins that look full.</li>
-                  <li>Keep paths, doors, and kerbs clear.</li>
-                </ul>
-              </div>
+            <div className="p-4 bg-neutral-900/60">
+              {binCardsForInstructions ? (
+                <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
+              ) : (
+                <div className="w-full py-3 rounded-lg text-center font-bold text-lg shadow-md uppercase bg-neutral-700 text-white">
+                  All Bins
+                </div>
+              )}
+              <p className="mt-3 text-sm text-gray-200 font-semibold text-center">
+                Move every bin in the colours shown above. If you’re unsure, take every bin.
+              </p>
             </div>
           </details>
 
-          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
-            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
+            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              Step 3 – Move Every Bin
+            </summary>
+            <div className="p-4 bg-neutral-900/60 space-y-3">
+              <p className="text-base font-semibold text-center text-gray-100">
+                Take every bin you see in the START photo and place it where the END photo shows.
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-300">
+                <li>Keep moving bins until the start spot looks like the photo.</li>
+                <li>Set each bin down so the END spot matches the photo.</li>
+                <li>Don’t leave a bin behind, even if it’s full.</li>
+                <li>Leave paths, doors, and kerbs clear while you move.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
+            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Step 4 – Finish Spot
             </summary>
-            <div className="p-4 bg-neutral-800 space-y-3">
+            <div className="p-4 bg-neutral-900/60 space-y-3">
               <div className="relative">
                 <img
                   src={endImageSrc}
                   alt={`${endLocationLabel} example`}
                   className="w-full aspect-[3/4] object-cover rounded-lg"
                 />
-                <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow">
+                <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
                   END HERE
                 </span>
                 <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
@@ -520,34 +513,34 @@ export default function ProofPageContent() {
                 </span>
               </div>
               <p className="text-sm text-gray-200 font-semibold">{endCaption}</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Match the right photo when you finish.</p>
+              <p className="text-sm text-gray-300">Match this photo when you finish.</p>
             </div>
           </details>
 
-          <details className="border border-gray-800 rounded-lg mb-3 overflow-hidden">
-            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
+          <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
+            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Step 5 – Quick Final Check
             </summary>
-            <div className="p-4 bg-neutral-800">
-              <ul className="list-disc list-inside text-white space-y-1 text-sm">
+            <div className="p-4 bg-neutral-900/60">
+              <ul className="list-disc list-inside text-white space-y-2 text-sm">
                 <li>Push every lid all the way down.</li>
-                <li>Line bins up in a straight row.</li>
+                <li>Line the bins up so they match the END photo layout.</li>
                 <li>Leave paths, doors, and kerbs clear.</li>
                 <li>Take a quick look back. Does it match the END photo?</li>
               </ul>
             </div>
           </details>
-        </div>
+        </section>
 
         {job.notes && (
-          <div className="bg-neutral-900 rounded-lg p-4">
+          <div className="bg-neutral-900/80 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
             <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
             <p className="text-white font-medium">{job.notes}</p>
           </div>
         )}
 
         {/* Take photo */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3 mt-10">
           <input
             type="file"
             accept="image/*"
@@ -566,7 +559,7 @@ export default function ProofPageContent() {
           />
           <label
             htmlFor="photo-upload"
-            className="w-full cursor-pointer bg-neutral-900 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-neutral-800 transition"
+            className="w-full cursor-pointer bg-[#ff5757] text-white px-4 py-3 rounded-lg text-center font-semibold uppercase tracking-wide shadow-lg hover:bg-[#ff6f6f] transition"
           >
             {preview ? "Retake Photo ✓" : "Take Photo"}
           </label>
@@ -575,7 +568,7 @@ export default function ProofPageContent() {
               <img
                 src={preview}
                 alt="preview"
-                className="w-full aspect-[3/4] object-cover rounded-lg border border-gray-600"
+                className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-[0_15px_35px_rgba(0,0,0,0.45)]"
               />
             </div>
           )}
