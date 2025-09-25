@@ -77,12 +77,18 @@ export type NotificationPreferences = {
   pushPropertyAlerts: boolean
 }
 
+export type MapStylePreference = 'Dark' | 'Light' | 'Satellite'
+
+export type NavPreference = 'google' | 'waze' | 'apple'
+
 export type ClientProfile = {
   id: string
   fullName: string
   phone: string | null
   companyName: string | null
   timezone: string | null
+  mapStylePref: MapStylePreference | null
+  navPref: NavPreference | null
 }
 
 type ClientListRow = {
@@ -289,6 +295,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       phone: data?.phone ?? currentUser.user_metadata?.phone ?? null,
       companyName: currentUser.user_metadata?.company ?? null,
       timezone: currentUser.user_metadata?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+      mapStylePref: (data?.map_style_pref as MapStylePreference | null) ?? null,
+      navPref: (data?.nav_pref as NavPreference | null) ?? null,
     })
   }, [])
 

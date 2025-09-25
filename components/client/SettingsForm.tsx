@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabaseClient'
-import { useClientPortal } from './ClientPortalProvider'
+import { useClientPortal, MapStylePreference, NavPreference } from './ClientPortalProvider'
 
 export type SettingsFormValues = {
   fullName: string
@@ -46,17 +46,35 @@ export function SettingsForm() {
 
   const onSubmit = handleSubmit(async (values) => {
     if (!user) return
-    await supabase.from('user_profile').upsert({
+    const updates: {
+      user_id: string
+      full_name: string
+      phone: string
+      email: string | null
+      role: 'client'
+      created_at: string
+      abn: string | null
+      map_style_pref?: MapStylePreference
+      nav_pref?: NavPreference
+    } = {
       user_id: user.id,
       full_name: values.fullName,
       phone: values.phone,
       email: user.email,
       role: 'client',
-      map_style_pref: profile?.timezone ?? null,
-      nav_pref: profile?.companyName ?? null,
       created_at: new Date().toISOString(),
-      ABN: null,
-    })
+      abn: null,
+    }
+
+    if (profile?.mapStylePref) {
+      updates.map_style_pref = profile.mapStylePref
+    }
+
+    if (profile?.navPref) {
+      updates.nav_pref = profile.navPref
+    }
+
+    await supabase.from('user_profile').upsert(updates)
 
     await supabase.auth.updateUser({
       data: {
