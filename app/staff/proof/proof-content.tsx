@@ -416,12 +416,38 @@ export default function ProofPageContent() {
   const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
   const startLocationLabel = isPutOutJob ? "Storage Area" : "Kerb";
   const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
-  const startCaption = isPutOutJob
-    ? "Find the bins inside this storage area to begin."
-    : "Find the bins waiting out on this kerb to begin.";
-  const endCaption = isPutOutJob
-    ? "Set every bin out neatly on this kerb."
-    : "Park every bin neatly back inside to match this photo.";
+  const startBodyCopy = isPutOutJob
+    ? {
+        primary: "Go to the storage area to find the bins.",
+        secondary: "If no bins are there, skip to Step 4.",
+      }
+    : {
+        primary: "Go to the kerb to find the bins waiting.",
+        secondary: "If no bins are there, skip to Step 4.",
+      };
+  const endBodyCopy = isPutOutJob
+    ? {
+        primary: "Park bins neatly on the kerb for collection.",
+        secondary: "Line them up exactly like this photo.",
+      }
+    : {
+        primary: "Park bins neatly in the storage area.",
+        secondary: "Line them up exactly like this photo.",
+      };
+  const moveFinalLine = isPutOutJob
+    ? "Leave the storage area empty when you’re done."
+    : "Leave the kerb empty when you’re done.";
+  const finalCheckLines = isPutOutJob
+    ? [
+        "✅ Lids down tight.",
+        "✅ Bins lined up neatly at the kerb.",
+        "✅ Paths, doors, and kerbs clear.",
+      ]
+    : [
+        "✅ Lids down tight.",
+        "✅ Bins lined up neatly.",
+        "✅ Paths, doors, and kerbs clear.",
+      ];
   const hasPhoto = Boolean(file);
   const readyToSubmit = hasPhoto;
   const binCardsForInstructions = renderBinCards("instructions");
@@ -438,9 +464,13 @@ export default function ProofPageContent() {
         <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 1 – Start spot
+              Step 1 – Start Spot
             </summary>
             <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+              <p className="text-sm font-semibold text-gray-100">
+                <span aria-hidden className="mr-1">📷</span>
+                {startLocationLabel} (START HERE)
+              </p>
               <div className="relative">
                 <img
                   src={startImageSrc}
@@ -454,16 +484,14 @@ export default function ProofPageContent() {
                   {startLocationLabel}
                 </span>
               </div>
-              <p className="text-sm text-gray-200 font-semibold">{startCaption}</p>
-              <p className="text-sm text-gray-300">
-                If the bins are already gone, skip ahead to Step 4.
-              </p>
+              <p className="text-sm text-gray-200 font-semibold">{startBodyCopy.primary}</p>
+              <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
             </div>
           </details>
 
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 2 – Today’s bins
+              Step 2 – Today’s Bins
             </summary>
             <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
               {binCardsForInstructions ? (
@@ -481,23 +509,29 @@ export default function ProofPageContent() {
 
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 3 – Park the bins
+              Step 3 – Move the Bins
             </summary>
             <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+              <div className="text-4xl text-center" aria-hidden>
+                ➡️
+              </div>
               <ul className="list-disc list-inside space-y-2 text-sm text-gray-300">
-                <li>Park each bin like the end photo shows.</li>
-                <li>Keep the start area clear before you leave.</li>
                 <li>Take full bins too — don’t skip any.</li>
                 <li>Keep driveways, doors, and kerbs clear.</li>
+                <li>{moveFinalLine}</li>
               </ul>
             </div>
           </details>
 
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 4 – Finish spot
+              Step 4 – Finish Spot
             </summary>
             <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+              <p className="text-sm font-semibold text-gray-100">
+                <span aria-hidden className="mr-1">📷</span>
+                {endLocationLabel} (END HERE)
+              </p>
               <div className="relative">
                 <img
                   src={endImageSrc}
@@ -511,21 +545,20 @@ export default function ProofPageContent() {
                   {endLocationLabel}
                 </span>
               </div>
-              <p className="text-sm text-gray-200 font-semibold">{endCaption}</p>
-              <p className="text-sm text-gray-300">Match this layout when you finish.</p>
+              <p className="text-sm text-gray-200 font-semibold">{endBodyCopy.primary}</p>
+              <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
             </div>
           </details>
 
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 5 – Quick final check
+              Step 5 – Final Check
             </summary>
             <div className="p-4 bg-neutral-900/60 text-left">
               <ul className="list-disc list-inside text-white space-y-2 text-sm">
-                <li>Lids down tight.</li>
-                <li>Match the end photo layout.</li>
-                <li>Keep paths, doors, and kerbs clear.</li>
-                <li>Double-check the end photo.</li>
+                {finalCheckLines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
               </ul>
             </div>
           </details>
