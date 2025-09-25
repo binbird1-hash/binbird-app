@@ -6,7 +6,15 @@ import { CreditCardIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
 import { useClientPortal } from './ClientPortalProvider'
 
-function toCsv(rows: { property: string; membership: string; trial: string; monthly: string }[]) {
+type BillingRow = {
+  id: string
+  property: string
+  membership: string
+  trial: string
+  monthly: string
+}
+
+function toCsv(rows: BillingRow[]) {
   const header = 'Property,Membership start,Trial start,Monthly fee\n'
   const body = rows
     .map((row) => [row.property, row.membership, row.trial, row.monthly].map((cell) => `"${cell}"`).join(','))
@@ -23,7 +31,7 @@ export function BillingOverview() {
         totalMonthly: 0,
         activeProperties: 0,
         trialProperties: 0,
-        rows: [] as { property: string; membership: string; trial: string; monthly: string }[],
+        rows: [] as BillingRow[],
       }
     }
 
