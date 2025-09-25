@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function SignInClient() {
@@ -12,6 +13,7 @@ export default function SignInClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -67,24 +69,42 @@ export default function SignInClient() {
         <h2 className="text-2xl font-semibold text-white">Welcome to BinBird</h2>
         <p className="text-sm text-white/60">Use your staff credentials to jump into today&apos;s work.</p>
       </div>
-      <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+      <form onSubmit={handleSignIn} className="flex flex-col gap-5">
         {error && <p className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/50 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/50 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
-          required
-        />
+        <label className="block text-left text-sm font-medium text-white/80" htmlFor="staff-email">
+          Email
+          <input
+            id="staff-email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            autoComplete="email"
+            required
+          />
+        </label>
+        <label className="block text-left text-sm font-medium text-white/80" htmlFor="staff-password">
+          Password
+          <div className="mt-2 flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
+            <input
+              id="staff-password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="flex-1 rounded-xl bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="mr-3 rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+              onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={showPassword ? "Hide password" : "Toggle password visibility"}
+            >
+              {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+            </button>
+          </div>
+        </label>
         <div className="flex flex-col gap-3 text-sm text-white/70 sm:flex-row sm:items-center sm:justify-between">
           <label className="inline-flex items-center gap-2">
             <input
