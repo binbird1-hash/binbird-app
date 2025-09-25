@@ -422,6 +422,8 @@ export default function ProofPageContent() {
   const endCaption = isPutOutJob
     ? "Set every bin out neatly on this kerb."
     : "Park every bin neatly back inside to match this photo.";
+  const hasPhoto = Boolean(file);
+  const readyToSubmit = hasPhoto;
   const binCardsForInstructions = renderBinCards("instructions");
 
   return (
@@ -436,9 +438,9 @@ export default function ProofPageContent() {
         <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 1 – Find the Start Spot
+              Step 1 – Start Spot
             </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3">
+            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
               <div className="relative">
                 <img
                   src={startImageSrc}
@@ -454,16 +456,16 @@ export default function ProofPageContent() {
               </div>
               <p className="text-sm text-gray-200 font-semibold">{startCaption}</p>
               <p className="text-sm text-gray-300">
-                Find the bins at this start spot. If the tenant has already moved them, jump ahead to Step 4 and match that photo.
+                If the bins are already gone, skip ahead to Step 4 and copy that finish photo.
               </p>
             </div>
           </details>
 
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 2 – Today’s Bin Colours
+              Step 2 – Today’s Bins
             </summary>
-            <div className="p-4 bg-neutral-900/60">
+            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
               {binCardsForInstructions ? (
                 <div className="flex flex-col gap-3">{binCardsForInstructions}</div>
               ) : (
@@ -471,25 +473,25 @@ export default function ProofPageContent() {
                   All Bins
                 </div>
               )}
-              <p className="mt-3 text-sm text-gray-200 font-semibold text-center">
-                Move every bin in the colours shown above. If you’re unsure, take every bin.
+              <p className="text-sm text-gray-200 font-semibold">
+                Roll every bin in the colours shown above. Not sure? Take every bin.
               </p>
             </div>
           </details>
 
           <details className="border border-gray-800/80 rounded-xl mb-3 overflow-hidden bg-neutral-900/60">
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Step 3 – Move Every Bin
+              Step 3 – Park the Bins
             </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3">
-              <p className="text-base font-semibold text-center text-gray-100">
-                Take every bin you see in the START photo and place it where the END photo shows.
+            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+              <p className="text-base font-semibold text-gray-100">
+                Roll the bins from the START photo over to the END photo.
               </p>
               <ul className="list-disc list-inside space-y-2 text-sm text-gray-300">
-                <li>Keep moving bins until the start spot looks like the photo.</li>
-                <li>Set each bin down so the END spot matches the photo.</li>
-                <li>Don’t leave a bin behind, even if it’s full.</li>
-                <li>Leave paths, doors, and kerbs clear while you move.</li>
+                <li>Park each bin like the END photo shows.</li>
+                <li>Keep the start area clear before you leave.</li>
+                <li>Take full bins too — don’t skip any.</li>
+                <li>Keep driveways, doors, and kerbs clear while you move.</li>
               </ul>
             </div>
           </details>
@@ -498,7 +500,7 @@ export default function ProofPageContent() {
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Step 4 – Finish Spot
             </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3">
+            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
               <div className="relative">
                 <img
                   src={endImageSrc}
@@ -513,7 +515,7 @@ export default function ProofPageContent() {
                 </span>
               </div>
               <p className="text-sm text-gray-200 font-semibold">{endCaption}</p>
-              <p className="text-sm text-gray-300">Match this photo when you finish.</p>
+              <p className="text-sm text-gray-300">Match this layout when you finish.</p>
             </div>
           </details>
 
@@ -521,7 +523,7 @@ export default function ProofPageContent() {
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Step 5 – Quick Final Check
             </summary>
-            <div className="p-4 bg-neutral-900/60">
+            <div className="p-4 bg-neutral-900/60 text-left">
               <ul className="list-disc list-inside text-white space-y-2 text-sm">
                 <li>Push every lid all the way down.</li>
                 <li>Line the bins up so they match the END photo layout.</li>
@@ -557,18 +559,13 @@ export default function ProofPageContent() {
               });
             }}
           />
-          <label
-            htmlFor="photo-upload"
-            className="w-full cursor-pointer bg-[#ff5757] text-white px-4 py-3 rounded-lg text-center font-semibold uppercase tracking-wide shadow-lg hover:bg-[#ff6f6f] transition"
-          >
-            {preview ? "Retake Photo ✓" : "Take Photo"}
-          </label>
           {preview && (
-            <div className="flex justify-center mt-2">
+            <div className="flex justify-center">
               <img
                 src={preview}
                 alt="preview"
                 className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-[0_15px_35px_rgba(0,0,0,0.45)]"
+                onClick={() => fileInputRef.current?.click()}
               />
             </div>
           )}
@@ -595,12 +592,32 @@ export default function ProofPageContent() {
       {/* Mark Done pinned bottom */}
       <div className="absolute bottom-0 inset-x-0 p-4">
         <button
-          onClick={handleMarkDone}
-          disabled={!file || submitting}
-          className="w-full bg-[#ff5757] text-white px-4 py-3 rounded-lg font-bold disabled:opacity-50"
+          onClick={() => {
+            if (submitting) return;
+            if (!file) {
+              fileInputRef.current?.click();
+              return;
+            }
+            void handleMarkDone();
+          }}
+          disabled={submitting}
+          className={`w-full px-4 py-3 rounded-lg font-bold transition ${
+            readyToSubmit
+              ? "bg-[#ff5757] text-white hover:opacity-90"
+              : "bg-neutral-900 text-white hover:bg-neutral-800"
+          } ${submitting ? "opacity-60 cursor-not-allowed" : ""}`}
         >
-          {submitting ? "Saving…" : "Mark Done"}
+          {submitting ? "Saving…" : readyToSubmit ? "Mark Done" : "Take Photo"}
         </button>
+        {hasPhoto && !submitting && (
+          <button
+            type="button"
+            className="mt-2 w-full text-sm text-gray-300 underline"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Need a new photo?
+          </button>
+        )}
       </div>
     </div>
   );
