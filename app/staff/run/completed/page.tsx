@@ -274,7 +274,7 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-6 pb-10 pt-6 sm:pt-10">
+    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-6 pb-32 pt-6 sm:pt-10">
       <header className="space-y-2 text-center">
         <h1 className="text-3xl font-bold text-[#ff5757]">Run Complete!</h1>
         <p className="text-gray-300">
@@ -378,12 +378,12 @@ function CompletedRunContent() {
       </div>
 
       {/* Fixed footer button */}
-      <div className="fixed inset-x-0 bottom-0 z-10">
-        <div className="bg-black w-full p-6">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10">
+        <div className="w-full bg-black/95 p-6 backdrop-blur">
           <button
             type="button"
             onClick={() => router.push("/staff/run")}
-            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
+            className="pointer-events-auto w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
           >
             End Run
           </button>
