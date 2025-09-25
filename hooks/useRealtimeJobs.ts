@@ -4,8 +4,9 @@ import { useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import type { Job } from '@/components/client/ClientPortalProvider'
 import { nextDay, setHours, setMinutes, startOfToday } from 'date-fns'
+import type { Day } from 'date-fns'
 
-const WEEKDAY_LOOKUP: Record<string, number> = {
+const WEEKDAY_LOOKUP: Record<string, Day> = {
   sunday: 0,
   monday: 1,
   tuesday: 2,
@@ -17,7 +18,7 @@ const WEEKDAY_LOOKUP: Record<string, number> = {
 
 const computeNextOccurrence = (dayOfWeek: string | null): string => {
   if (!dayOfWeek) return new Date().toISOString()
-  const key = dayOfWeek.trim().toLowerCase()
+  const key = dayOfWeek.trim().replace(/,/g, '').toLowerCase()
   const weekday = WEEKDAY_LOOKUP[key]
   if (weekday === undefined) return new Date().toISOString()
   const today = startOfToday()

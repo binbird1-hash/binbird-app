@@ -56,25 +56,31 @@ export default function ClientLoginPage() {
       )}
 
       <div className="space-y-4">
-        <label className="block text-left text-sm font-medium text-white/80" htmlFor="email">
-          Email
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="email">
+            Email
+          </label>
           <input
             id="email"
             type="email"
+            placeholder="Email"
             autoComplete="email"
-            className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
-        </label>
+        </div>
 
-        <label className="block text-left text-sm font-medium text-white/80" htmlFor="password">
-          Password
-          <div className="mt-2 flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="password">
+            Password
+          </label>
+          <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
               autoComplete="current-password"
               className="flex-1 rounded-xl bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
               value={password}
@@ -90,7 +96,7 @@ export default function ClientLoginPage() {
               {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
             </button>
           </div>
-        </label>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

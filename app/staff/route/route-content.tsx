@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
+import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -243,7 +244,7 @@ function RoutePageContent() {
     );
   }
 
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
   if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
 
   const navigateUrl =

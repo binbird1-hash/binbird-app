@@ -7,6 +7,7 @@ import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
+import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
@@ -468,8 +469,8 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
   };
 
-  if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (loading) return <PortalLoadingScreen />;
+  if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 

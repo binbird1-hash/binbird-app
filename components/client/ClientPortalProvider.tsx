@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
@@ -153,7 +153,7 @@ const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
   pushPropertyAlerts: true,
 }
 
-const WEEKDAY_LOOKUP = {
+const WEEKDAY_LOOKUP: Record<string, Day> = {
   sunday: 0,
   monday: 1,
   tuesday: 2,
@@ -161,7 +161,7 @@ const WEEKDAY_LOOKUP = {
   thursday: 4,
   friday: 5,
   saturday: 6,
-} as const satisfies Record<string, Day>
+}
 
 const parseLatLng = (value: string | null): { lat: number | null; lng: number | null } => {
   if (!value) return { lat: null, lng: null }
@@ -187,7 +187,7 @@ const nextOccurrenceIso = (dayOfWeek: string | null): string => {
   if (!dayOfWeek) {
     return addMinutes(new Date(), 120).toISOString()
   }
-  const key = dayOfWeek.trim().toLowerCase()
+  const key = dayOfWeek.trim().replace(/,/g, '').toLowerCase()
   const weekday = WEEKDAY_LOOKUP[key]
   if (weekday === undefined) {
     return addMinutes(new Date(), 120).toISOString()
@@ -270,7 +270,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
   const [preferencesLoading, setPreferencesLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [allClientRows, setAllClientRows] = useState<ClientListRow[]>([])
+  const allClientRowsRef = useRef<ClientListRow[]>([])
 
   const loadProfile = useCallback(async (currentUser: User) => {
     const { data, error: profileError } = await supabase
@@ -369,7 +369,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     if (!selectedAccountId || !user) return
     setPropertiesLoading(true)
     const rows = await fetchClientRows(user)
-    setAllClientRows(rows)
+    allClientRowsRef.current = rows
     const filtered = rows.filter((row) => deriveAccountId(row) === selectedAccountId)
     setProperties(filtered.map(toProperty))
     setPropertiesLoading(false)
@@ -379,7 +379,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     if (!selectedAccountId || !user) return
     setJobsLoading(true)
     const accountId = selectedAccountId
-    const propertiesForAccount = allClientRows.filter((row) => deriveAccountId(row) === accountId)
+    const allRows = allClientRowsRef.current
+    const propertiesForAccount = allRows.filter((row) => deriveAccountId(row) === accountId)
     const propertyMap = new Map<string, Property>()
     propertiesForAccount.forEach((row) => {
       propertyMap.set(row.id, toProperty(row))
@@ -410,7 +411,9 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       console.warn('Failed to load logs', logsError)
     }
 
-    const logsByJobId = new Map<string, (typeof logRows)[number]>()
+    type LogRow = NonNullable<typeof logRows>[number]
+
+    const logsByJobId = new Map<string, LogRow>()
     ;(logRows ?? []).forEach((log) => {
       if (log.job_id) {
         const existing = logsByJobId.get(log.job_id)
@@ -437,7 +440,10 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
             return 'scheduled'
           })()
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
-      const bins = job.bins ? job.bins.split(',').map((value) => value.trim()) : []
+      const bins =
+        typeof job.bins === 'string'
+          ? job.bins.split(',').map((value: string) => value.trim())
+          : []
       combinedJobs.push({
         id: job.id,
         accountId,
@@ -481,14 +487,17 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
           lastLongitude: log.gps_lng ?? undefined,
           notes: log.notes,
           jobType: log.task_type,
-          bins: log.bins ? log.bins.split(',').map((value) => value.trim()) : [],
+          bins:
+            typeof log.bins === 'string'
+              ? log.bins.split(',').map((value: string) => value.trim())
+              : [],
         })
       })
 
     combinedJobs.sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     setJobs(combinedJobs)
     setJobsLoading(false)
-  }, [allClientRows, selectedAccountId, user])
+  }, [selectedAccountId, user])
 
   const upsertJob = useCallback((job: Job) => {
     setJobs((previousJobs) => {
@@ -540,7 +549,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       setUser(currentUser)
 
       const rows = await fetchClientRows(currentUser)
-      setAllClientRows(rows)
+      allClientRowsRef.current = rows
       const derivedAccounts = deriveAccountsFromRows(rows, currentUser)
       setAccounts(derivedAccounts)
       const storedAccountId = typeof window !== 'undefined' ? localStorage.getItem('binbird-selected-account-id') : null
