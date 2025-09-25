@@ -12,7 +12,7 @@ export default async function ClientPortal({
 
   const { data, error } = await sb
     .from('client_token')
-    .select('token, client:client_id(id, name)')
+    .select('token, account:account_id(id, name)')
     .eq('token', token)
     .maybeSingle<ClientTokenRow>()
 
@@ -50,15 +50,14 @@ export default async function ClientPortal({
     logs: logsResult.data ?? [],
   }
 
-  const baseClient = data?.client?.[0]
-  const client = baseClient ? { ...baseClient, properties: portalData.properties } : baseClient
-  const properties = client?.properties ?? portalData.properties
+  const account = data?.account
+  const properties = portalData.properties
 
   return (
     <div className="container">
       <BackButton />
       <h2 className="text-xl font-semibold mb-4">
-        Client Portal — {client?.name}
+        Client Portal — {account?.name}
       </h2>
 
       {properties.length ? (
