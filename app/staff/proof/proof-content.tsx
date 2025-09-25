@@ -106,7 +106,6 @@ export default function ProofPageContent() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [showInstructions, setShowInstructions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [referenceUrls, setReferenceUrls] = useState<{
     putOut: string | null;
@@ -254,21 +253,80 @@ export default function ProofPageContent() {
     return <div className="p-6 text-white">No job found.</div>;
   }
 
-  function renderBins(bins: string | null | undefined) {
-    if (!bins) return <span className="text-gray-400">—</span>;
-    return bins.split(",").map((b) => {
-      const bin = b.trim().toLowerCase();
-      let color = "bg-gray-600";
-      if (bin.includes("red")) color = "bg-red-600";
-      else if (bin.includes("yellow")) color = "bg-yellow-500 text-black";
-      else if (bin.includes("green")) color = "bg-green-600";
+  function getParsedBins(bins: string | null | undefined) {
+    if (!bins) return [] as string[];
+    return bins
+      .split(",")
+      .map((bin) => bin.trim())
+      .filter(Boolean);
+  }
+
+  const parsedBins = getParsedBins(job.bins);
+
+  function getBinColorStyles(bin: string) {
+    const normalized = bin.toLowerCase();
+
+    if (normalized.includes("red")) {
+      return {
+        wrapper:
+          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white",
+        text: "text-white",
+      };
+    }
+
+    if (normalized.includes("yellow")) {
+      return {
+        wrapper:
+          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black",
+        text: "text-black",
+      };
+    }
+
+    if (normalized.includes("green")) {
+      return {
+        wrapper:
+          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white",
+        text: "text-white",
+      };
+    }
+
+    return {
+      wrapper:
+        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white",
+      text: "text-white",
+    };
+  }
+
+  function getBinLabel(bin: string) {
+    const normalized = bin.toLowerCase();
+    if (normalized.includes("red")) return "All Red Bins";
+    if (normalized.includes("yellow")) return "All Yellow Bins";
+    if (normalized.includes("green")) return "All Green Bins";
+
+    const cleaned = bin.replace(/bins?/gi, "").trim();
+    if (!cleaned) return "All Bins";
+
+    const titleCase = cleaned
+      .split(/\s+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    return `All ${titleCase} Bins`;
+  }
+
+  function renderBinCards(prefix: "instructions" | "quick-reference") {
+    if (!parsedBins.length) return null;
+    return parsedBins.map((bin, idx) => {
+      const styles = getBinColorStyles(bin);
       return (
-        <span
-          key={bin}
-          className={`${color} px-3 py-1 rounded-full text-xs font-semibold`}
+        <div
+          key={`${prefix}-${bin.toLowerCase()}-${idx}`}
+          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-semibold tracking-tight transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.wrapper}`}
         >
-          {bin.charAt(0).toUpperCase() + bin.slice(1)}
-        </span>
+          <span className={`block font-semibold uppercase ${styles.text}`}>
+            {getBinLabel(bin)}
+          </span>
+        </div>
       );
     });
   }
@@ -394,72 +452,200 @@ export default function ProofPageContent() {
   const bringInImageSrc = referenceLookupComplete
     ? referenceUrls.bringIn ?? BRING_IN_PLACEHOLDER_URL
     : TRANSPARENT_PIXEL;
+  const isPutOutJob = job.job_type === "put_out";
+  const startImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
+  const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
+  const startLocationLabel = isPutOutJob ? "Storage Area" : "Kerb";
+  const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
+  const startBodyCopy = isPutOutJob
+    ? {
+        primary: "Go to the storage area to find the bins.",
+        secondary: "If no bins are there, skip to Step 4.",
+      }
+    : {
+        primary: "Go to the kerb to find the bins waiting.",
+        secondary: "If no bins are there, skip to Step 4.",
+      };
+  const endBodyCopy = isPutOutJob
+    ? {
+        primary: "Park bins neatly on the kerb for collection.",
+        secondary: "Line them up exactly like this photo.",
+      }
+    : {
+        primary: "Park bins neatly in the storage area.",
+        secondary: "Line them up exactly like this photo.",
+      };
+  const moveStepLines = isPutOutJob
+    ? [
+        "Roll every scheduled bin from the storage area to the kerb.",
+        "Leave the storage area empty when you finish.",
+        "Keep paths, doors, and kerbs clear while you move.",
+      ]
+    : [
+        "Roll every scheduled bin from the kerb back inside.",
+        "Leave the kerb clear when you finish.",
+        "Keep paths, doors, and kerbs clear while you move.",
+      ];
+  const finalCheckLines = isPutOutJob
+    ? [
+        "All bins are on the kerb",
+        "Lids are closed tight",
+        "Kerbside is neat, nothing blocking driveways or footpaths",
+      ]
+    : [
+        "All bins are back inside",
+        "Lids are closed tight",
+        "Storage area is neat, nothing blocking doors or paths",
+      ];
+  const hasPhoto = Boolean(file);
+  const readyToSubmit = hasPhoto;
+  const binCardsForInstructions = renderBinCards("instructions");
+  const binCardsForQuickReference = renderBinCards("quick-reference");
+  const subtleFallbackCard = (
+    <div className="w-full rounded-xl border border-neutral-700 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 px-4 py-3 text-center text-base font-semibold uppercase text-white">
+      All Bins
+    </div>
+  );
+
+  const quickReferenceContent = (
+    <div className="pt-1">
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+        Bin colours today
+      </p>
+      <div className="flex flex-col gap-2">
+        {binCardsForQuickReference ?? subtleFallbackCard}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="relative flex min-h-full flex-col bg-black text-white">
-      <div className="flex-1 p-6 pb-32 space-y-4">
-        <h1 className="text-2xl font-bold text-[#ff5757]">
+    <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
+      <div className="flex-1 p-6 pb-32 space-y-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
 
-        <p className="text-lg font-semibold">{job.address}</p>
+        <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
-        {/* Instructions dropdown */}
-        <div className="border border-gray-800 rounded-lg overflow-hidden">
-          <button
-            onClick={() => setShowInstructions((p) => !p)}
-            className="w-full flex justify-between items-center px-4 py-3 font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
-          >
-            <span>Instructions</span>
-            <span>{showInstructions ? "▲" : "▼"}</span>
-          </button>
+        <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
+          <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              Instructions
+            </summary>
+            <div className="p-4 bg-neutral-900/60 space-y-3">
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 1 – Start Spot
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                  <div className="relative">
+                    <img
+                      src={startImageSrc}
+                      alt={`${startLocationLabel} example`}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                      START HERE
+                    </span>
+                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                      {startLocationLabel}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{startBodyCopy.primary}</p>
+                  <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
+                </div>
+              </details>
 
-          {showInstructions && (
-            <div className="p-4 space-y-4 bg-neutral-800 text-white">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 mb-2">Bins Out:</p>
-                  <img
-                    src={putOutImageSrc}
-                    alt="Bins Out Example"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 2 – Today’s Bins
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                  <div className="flex flex-col gap-2">
+                    {binCardsForInstructions ?? subtleFallbackCard}
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-white">
+                      Roll every bin in the colours shown above.
+                    </p>
+                    <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 mb-2">Bins In:</p>
-                  <img
-                    src={bringInImageSrc}
-                    alt="Bins In Example"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 3 – Move the Bins
+                </summary>
+                <div className="p-4 bg-neutral-900/60 text-left">
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    {moveStepLines.map((line) => (
+                      <li key={line} className="flex items-start gap-2">
+                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                          ✓
+                        </span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-sm text-gray-400 mb-2">Placement Instructions:</p>
-                <p>
-                  {job.job_type === "bring_in"
-                    ? "Return bins neatly to their storage location. Ensure lids are closed and bins are not left blocking walkways or driveways."
-                    : "Place bins neatly at the edge of the driveway with lids closed. Ensure bins do not block pedestrian walkways or driveways."}
-                </p>
-              </div>
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 4 – Finish Spot
+                </summary>
+                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                  <div className="relative">
+                    <img
+                      src={endImageSrc}
+                      alt={`${endLocationLabel} example`}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                      END HERE
+                    </span>
+                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                      {endLocationLabel}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{endBodyCopy.primary}</p>
+                  <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
+                </div>
+              </details>
+
+              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
+                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+                  Step 5 – Final Check
+                </summary>
+                <div className="p-4 bg-neutral-900/60 text-left">
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    {finalCheckLines.map((line) => (
+                      <li key={line} className="flex items-start gap-2">
+                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                          ✓
+                        </span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
             </div>
-          )}
-        </div>
+          </details>
+
+          {quickReferenceContent}
+        </section>
 
         {job.notes && (
-          <div className="bg-neutral-900 rounded-lg p-4">
+          <div className="bg-neutral-900/80 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
             <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
             <p className="text-white font-medium">{job.notes}</p>
           </div>
         )}
 
-        <div>
-          <p className="text-sm text-gray-400 mb-1">Bins:</p>
-          <div className="flex flex-wrap gap-2">{renderBins(job.bins)}</div>
-        </div>
-
         {/* Take photo */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3 mt-10">
           <input
             type="file"
             accept="image/*"
@@ -476,19 +662,23 @@ export default function ProofPageContent() {
               });
             }}
           />
-          <label
-            htmlFor="photo-upload"
-            className="w-full cursor-pointer bg-neutral-900 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-neutral-800 transition"
-          >
-            {preview ? "Retake Photo ✓" : "Take Photo"}
-          </label>
           {preview && (
-            <div className="flex justify-center mt-2">
+            <div className="flex flex-col items-center gap-2">
               <img
                 src={preview}
                 alt="preview"
-                className="w-full aspect-[3/4] object-cover rounded-lg border border-gray-600"
+                className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-[0_15px_35px_rgba(0,0,0,0.45)]"
+                onClick={() => fileInputRef.current?.click()}
               />
+              {!submitting && (
+                <button
+                  type="button"
+                  className="text-sm text-gray-300 underline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Need a new photo?
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -514,11 +704,22 @@ export default function ProofPageContent() {
       {/* Mark Done pinned bottom */}
       <div className="absolute bottom-0 inset-x-0 p-4">
         <button
-          onClick={handleMarkDone}
-          disabled={!file || submitting}
-          className="w-full bg-[#ff5757] text-white px-4 py-3 rounded-lg font-bold disabled:opacity-50"
+          onClick={() => {
+            if (submitting) return;
+            if (!file) {
+              fileInputRef.current?.click();
+              return;
+            }
+            void handleMarkDone();
+          }}
+          disabled={submitting}
+          className={`w-full px-4 py-3 rounded-lg font-bold transition shadow-lg border ${
+            readyToSubmit
+              ? "bg-[#ff5757] text-white hover:opacity-90 border-[#ff7575]/60"
+              : "bg-neutral-800 text-white hover:bg-neutral-700 border-white/10"
+          } ${submitting ? "opacity-60 cursor-not-allowed" : ""}`}
         >
-          {submitting ? "Saving…" : "Mark Done"}
+          {submitting ? "Saving…" : readyToSubmit ? "Mark Done" : "Take Photo"}
         </button>
       </div>
     </div>
