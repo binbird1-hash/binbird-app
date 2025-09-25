@@ -187,7 +187,7 @@ const nextOccurrenceIso = (dayOfWeek: string | null): string => {
   if (!dayOfWeek) {
     return addMinutes(new Date(), 120).toISOString()
   }
-  const key = dayOfWeek.trim().toLowerCase()
+  const key = dayOfWeek.trim().replace(/,/g, '').toLowerCase()
   const weekday = WEEKDAY_LOOKUP[key]
   if (weekday === undefined) {
     return addMinutes(new Date(), 120).toISOString()
@@ -410,7 +410,9 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       console.warn('Failed to load logs', logsError)
     }
 
-    const logsByJobId = new Map<string, (typeof logRows)[number]>()
+    type LogRow = NonNullable<typeof logRows>[number]
+
+    const logsByJobId = new Map<string, LogRow>()
     ;(logRows ?? []).forEach((log) => {
       if (log.job_id) {
         const existing = logsByJobId.get(log.job_id)
