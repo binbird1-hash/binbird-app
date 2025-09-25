@@ -1,20 +1,19 @@
 // lib/database.types.ts
 
 export type Property = {
-  id: number
-  address: string
-  notes?: string | null
+  id: string
+  address: string | null
+  notes: string | null
 }
 
 export type Client = {
-  id: number
-  name: string
-  properties: Property[]
+  id: string
+  name: string | null
 }
 
 export type ClientTokenRow = {
   token: string
-  client: Client[]
+  account: Client | null
 }
 
 export type JobRecord = {
