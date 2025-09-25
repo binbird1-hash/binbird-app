@@ -143,12 +143,15 @@ export default function SignUpClient() {
         </div>
 
         {/* Phone with country code */}
-        <div>
-          <div className="flex overflow-hidden rounded-xl border border-white/10 bg-white/5">
+        <div className="space-y-2 text-sm font-medium text-white/80">
+          <label className="sr-only" htmlFor="staff-signup-phone">
+            Phone Number
+          </label>
+          <div className="flex overflow-hidden rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <select
               value={countryCode}
               onChange={(event) => setCountryCode(event.target.value)}
-              className="bg-black/40 px-3 py-3 text-sm text-white focus:outline-none"
+              className="bg-black/40 px-3 py-3 text-sm text-white outline-none focus:outline-none"
             >
               <option value="+61">🇦🇺 +61</option>
               <option value="+1">🇺🇸 +1</option>
@@ -157,6 +160,7 @@ export default function SignUpClient() {
               <option value="+91">🇮🇳 +91</option>
             </select>
             <input
+              id="staff-signup-phone"
               type="tel"
               placeholder="Phone Number"
               value={phone}
@@ -164,7 +168,7 @@ export default function SignUpClient() {
                 setPhone(e.target.value);
                 setErrors((prev) => ({ ...prev, phone: "" }));
               }}
-              className="w-full bg-transparent px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
+              className="flex-1 bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
               autoComplete="tel"
               required
             />
