@@ -114,7 +114,7 @@ export default function SignUpClient() {
               setName(e.target.value);
               setErrors((prev) => ({ ...prev, name: "" }));
             }}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/50 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
             autoComplete="name"
             required
           />
@@ -164,7 +164,7 @@ export default function SignUpClient() {
                 setPhone(e.target.value);
                 setErrors((prev) => ({ ...prev, phone: "" }));
               }}
-              className="w-full bg-transparent px-4 py-3 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
+              className="w-full bg-transparent px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
               autoComplete="tel"
               required
             />
