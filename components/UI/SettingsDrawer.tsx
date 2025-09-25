@@ -268,8 +268,7 @@ export default function SettingsDrawer() {
     <>
       {/* Header Bar */}
       <div
-        className="fixed top-0 left-0 w-full h-14 bg-black z-50 flex items-center px-4 shadow-md"
-        style={{ borderBottom: "2px solid #ff5757" }}
+        className="fixed left-1/2 top-6 z-40 flex w-full max-w-5xl -translate-x-1/2 justify-end px-4"
       >
         <button
           onClick={() => {
@@ -279,15 +278,19 @@ export default function SettingsDrawer() {
             setEndRunError(null);
             setLogoutError(null);
           }}
-          className="flex flex-col justify-center items-center h-10 w-10 p-2"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-black/60 text-white shadow-xl shadow-black/40 backdrop-blur transition hover:border-binbird-red hover:text-binbird-red"
+          aria-label="Open staff settings"
         >
-          <span className="block w-full h-1 bg-white rounded mb-1"></span>
-          <span className="block w-full h-1 bg-white rounded mb-1"></span>
-          <span className="block w-full h-1 bg-white rounded"></span>
+          <span className="sr-only">Open settings</span>
+          <div className="flex flex-col items-center justify-center gap-1.5">
+            <span className="block h-0.5 w-6 rounded-full bg-current"></span>
+            <span className="block h-0.5 w-6 rounded-full bg-current"></span>
+            <span className="block h-0.5 w-6 rounded-full bg-current"></span>
+          </div>
         </button>
       </div>
 
-      <div className="w-full h-full pt-14">{/* Map goes here */}</div>
+      <div className="w-full h-full pt-24">{/* Map placeholder */}</div>
 
       {/* Full-Screen Drawer */}
       <AnimatePresence>
@@ -297,7 +300,7 @@ export default function SettingsDrawer() {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween" }}
-            className="fixed top-0 left-0 w-full h-full bg-black text-white z-50"
+            className="fixed inset-0 z-50 bg-gradient-to-br from-black via-gray-950 to-red-950 text-white backdrop-blur-sm"
           >
             {/* Close X top-left */}
             <button
@@ -305,22 +308,24 @@ export default function SettingsDrawer() {
                 dismissPanel();
                 setIsOpen(false);
               }}
-              className="absolute top-4 left-4 text-white text-3xl font-bold z-50"
+              className="absolute left-6 top-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-black/60 text-2xl font-bold text-white shadow-lg shadow-black/40 transition hover:border-binbird-red hover:text-binbird-red"
+              aria-label="Close settings"
             >
               &times;
             </button>
 
-            <div className="pt-16 px-6">
-              <h2 className="text-2xl font-bold mb-6">Settings</h2>
+            <div className="px-6 pt-24">
+              <h2 className="text-3xl font-semibold">Settings</h2>
 
               {/* Navigation & Map Style Buttons */}
-              <div className="flex flex-col gap-4">
+              <div className="mt-6 grid gap-4">
                 <button
                   onClick={() => handlePanelToggle("nav")}
                   className={clsx(
-                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    navButtonIsActive ? "text-[#ff5757]" : "text-white",
-                    "hover:text-[#ff5757]"
+                    "flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold uppercase tracking-[0.25em] transition",
+                    navButtonIsActive
+                      ? "border-binbird-red/60 bg-binbird-red/20 text-white"
+                      : "text-white/70 hover:border-binbird-red/40 hover:text-white"
                   )}
                 >
                   <Navigation2 className="h-4 w-4" />
@@ -329,9 +334,10 @@ export default function SettingsDrawer() {
                 <button
                   onClick={() => handlePanelToggle("style")}
                   className={clsx(
-                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    mapButtonIsActive ? "text-[#ff5757]" : "text-white",
-                    "hover:text-[#ff5757]"
+                    "flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold uppercase tracking-[0.25em] transition",
+                    mapButtonIsActive
+                      ? "border-binbird-red/60 bg-binbird-red/20 text-white"
+                      : "text-white/70 hover:border-binbird-red/40 hover:text-white"
                   )}
                 >
                   <Palette className="h-4 w-4" />
@@ -342,27 +348,25 @@ export default function SettingsDrawer() {
                     <button
                       type="button"
                       onClick={handleEndRun}
-                      className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold uppercase tracking-[0.25em] text-white/80 transition hover:border-binbird-red hover:text-white"
                     >
                       <Flag className="h-4 w-4" />
                       <span>End Run</span>
                     </button>
                     {endRunError && (
-                      <p className="text-sm text-red-500">{endRunError}</p>
+                      <p className="text-sm text-red-400">{endRunError}</p>
                     )}
                   </>
                 )}
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold uppercase tracking-[0.25em] text-white/80 transition hover:border-binbird-red hover:text-white"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Log Out</span>
                 </button>
-                {logoutError && (
-                  <p className="text-sm text-red-500">{logoutError}</p>
-                )}
+                {logoutError && <p className="text-sm text-red-400">{logoutError}</p>}
               </div>
             </div>
 
@@ -382,7 +386,7 @@ export default function SettingsDrawer() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 16 }}
                     transition={{ type: "tween", duration: 0.18 }}
-                    className="flex max-h-[55vh] flex-col gap-5 overflow-hidden border-t-2 border-[#ff5757] bg-black/95 px-6 pb-6 pt-5 shadow-[0_-18px_40px_rgba(0,0,0,0.55)] backdrop-blur"
+                    className="flex max-h-[55vh] flex-col gap-5 overflow-hidden border-t border-white/10 bg-black/90 px-6 pb-6 pt-5 shadow-[0_-18px_40px_rgba(0,0,0,0.6)] backdrop-blur"
                   >
                     <div className="flex flex-1 flex-col overflow-hidden">
                       <p className="text-xs uppercase tracking-[0.35em] text-white/60">
@@ -400,14 +404,17 @@ export default function SettingsDrawer() {
                                   type="button"
                                   onClick={() => setDraftNavPref(option.key)}
                                   className={clsx(
-                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
+                                    "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition",
                                     isSelected
-                                      ? "border-white bg-white text-black shadow-sm"
-                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                      ? "border-binbird-red/60 bg-binbird-red/20 text-white"
+                                      : "border-white/10 bg-white/5 text-white/70 hover:border-binbird-red/40 hover:text-white"
                                   )}
                                   aria-pressed={isSelected}
                                 >
                                   <span>{option.label}</span>
+                                  {isSelected && (
+                                    <Navigation2 className="h-4 w-4 text-binbird-red" />
+                                  )}
                                 </button>
                               );
                             })}
@@ -423,14 +430,15 @@ export default function SettingsDrawer() {
                                   type="button"
                                   onClick={() => setDraftMapStylePref(option.key)}
                                   className={clsx(
-                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
+                                    "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition",
                                     isSelected
-                                      ? "border-white bg-white text-black shadow-sm"
-                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                      ? "border-binbird-red/60 bg-binbird-red/20 text-white"
+                                      : "border-white/10 bg-white/5 text-white/70 hover:border-binbird-red/40 hover:text-white"
                                   )}
                                   aria-pressed={isSelected}
                                 >
                                   <span>{option.label}</span>
+                                  {isSelected && <Palette className="h-4 w-4 text-binbird-red" />}
                                 </button>
                               );
                             })}
@@ -440,12 +448,20 @@ export default function SettingsDrawer() {
                     </div>
 
                     {/* Save Button */}
-                    <button
-                      onClick={saveSettings}
-                      className="mt-3 rounded-lg bg-[#ff5757] px-4 py-2 font-semibold transition hover:bg-[#ff6b6b]"
-                    >
-                      Save
-                    </button>
+                    <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
+                      <button
+                        onClick={saveSettings}
+                        className="flex items-center justify-center rounded-2xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#ff4747]"
+                      >
+                        Save settings
+                      </button>
+                      <button
+                        onClick={dismissPanel}
+                        className="flex items-center justify-center rounded-2xl border border-white/20 px-4 py-3 text-sm font-semibold text-white/70 transition hover:border-white/40 hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </motion.div>
                 </motion.div>
               )}

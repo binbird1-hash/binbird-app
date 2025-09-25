@@ -243,8 +243,22 @@ function RoutePageContent() {
     );
   }
 
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
-  if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
+  if (!isLoaded)
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/70 px-6 py-5 text-center text-sm font-medium text-white/80 shadow-2xl shadow-black/40 backdrop-blur">
+          Loading maps experience…
+        </div>
+      </div>
+    );
+  if (!activeJob)
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/70 px-6 py-5 text-center text-sm font-medium text-white/80 shadow-2xl shadow-black/40 backdrop-blur">
+          No jobs found for this run.
+        </div>
+      </div>
+    );
 
   const navigateUrl =
     navPref === "google"
@@ -261,80 +275,134 @@ function RoutePageContent() {
       : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <div className="relative h-[150vh]">
-        <GoogleMap
-          mapContainerStyle={{ width: "100%", height: "100%" }}
-          center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
-          zoom={13}
-          options={{
-            styles: styleMap,
-            disableDefaultUI: true,
-            zoomControl: false,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-            keyboardShortcuts: false,
-          }}
-          onLoad={(map) => setMapRef(map)}
-        >
-          {currentLocation && (
-            <Marker position={currentLocation} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />
-          )}
-          <Marker position={{ lat: activeJob.lat, lng: activeJob.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />
-          {directions && (
-            <DirectionsRenderer
-              directions={directions}
-              options={{
-                suppressMarkers: true,
-                preserveViewport: true,
-                polylineOptions: { strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 },
-              }}
+    <div className="flex min-h-screen w-full flex-col overflow-hidden">
+      <div className="relative flex-1">
+        <div className="absolute inset-0">
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "100%" }}
+            center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
+            zoom={13}
+            options={{
+              styles: styleMap,
+              disableDefaultUI: true,
+              zoomControl: false,
+              streetViewControl: false,
+              mapTypeControl: false,
+              fullscreenControl: false,
+              keyboardShortcuts: false,
+            }}
+            onLoad={(map) => setMapRef(map)}
+          >
+            {currentLocation && (
+              <Marker position={currentLocation} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />
+            )}
+            <Marker
+              position={{ lat: activeJob.lat, lng: activeJob.lng }}
+              icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png"
             />
-          )}
-        </GoogleMap>
+            {directions && (
+              <DirectionsRenderer
+                directions={directions}
+                options={{
+                  suppressMarkers: true,
+                  preserveViewport: true,
+                  polylineOptions: {
+                    strokeColor: "#ff5757",
+                    strokeOpacity: 0.9,
+                    strokeWeight: 5,
+                  },
+                }}
+              />
+            )}
+          </GoogleMap>
+        </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
-            <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black via-black/80 to-transparent" />
+      </div>
+
+      <div className="relative z-10 -mt-32 px-4 pb-16">
+        <div className="mx-auto w-full max-w-3xl rounded-3xl border border-white/10 bg-black/80 p-6 shadow-2xl shadow-black/40 backdrop-blur">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-white/50">Current stop</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">{activeJob.address}</h2>
+              <p className="mt-2 text-sm text-white/60">
+                {isEndStop
+                  ? "Wrap up the run and head to your end location."
+                  : `Navigate to the next property and capture proof once you arrive.`}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/50">Job {activeIdx + 1}</p>
+              <p className="mt-1 font-medium text-white">of {jobs.length}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 text-sm text-white/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Navigation preference</p>
+                <p className="mt-2 text-base font-medium text-white">{navPref === "waze" ? "Waze" : navPref === "apple" ? "Apple Maps" : "Google Maps"}</p>
+                <p className="mt-3 text-xs text-white/60">
+                  Launch directions in your preferred app with the button below.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 text-sm text-white/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Job notes</p>
+                <p className="mt-2 text-sm text-white/60">
+                  {activeJob.notes?.length ? activeJob.notes : "No special instructions for this stop."}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
               <button
                 onClick={() => window.open(navigateUrl, "_blank")}
-                className="w-full bg-neutral-900 text-white px-4 py-2 rounded-lg font-semibold transition hover:bg-neutral-800 relative z-10"
+                className="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
               >
-                Navigate
+                Navigate with {navPref === "waze" ? "Waze" : navPref === "apple" ? "Apple Maps" : "Google Maps"}
               </button>
-            <button
-              onClick={handleArrivedAtLocation}
-              className="w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 relative z-10"
-            >
-              Arrived At Location
-            </button>
+
+              <button
+                onClick={handleArrivedAtLocation}
+                className="w-full rounded-2xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#ff4747] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+              >
+                Arrived at location
+              </button>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">What&apos;s next</p>
+                {jobs[activeIdx + 1] ? (
+                  <p className="mt-2 text-sm text-white/60">Upcoming: {jobs[activeIdx + 1].address}</p>
+                ) : (
+                  <p className="mt-2 text-sm text-white/60">You&apos;re on the final stop for today.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      
+
       {popupMsg && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
-          <div className="bg-white text-black p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-            {/* Split into two lines */}
-            <p className="mb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/90 p-6 text-center text-white shadow-2xl shadow-black/40 backdrop-blur">
+            <p className="text-base font-medium">
               {popupMsg.includes("(") ? popupMsg.split("(")[0] : popupMsg}
             </p>
             {popupMsg.includes("(") && (
-              <p className="text-sm text-gray-700">({popupMsg.split("(")[1]}</p>
+              <p className="mt-2 text-sm text-white/60">({popupMsg.split("(")[1]}</p>
             )}
-      
+
             <button
               onClick={() => setPopupMsg(null)}
-              className="mt-4 w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold"
+              className="mt-6 w-full rounded-2xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#ff4747] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
             >
               OK
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }
@@ -342,7 +410,7 @@ function RoutePageContent() {
 export default function RoutePage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-black via-gray-950 to-red-950 text-white">
         <SettingsDrawer />
         <RoutePageContent />
       </div>

@@ -251,21 +251,30 @@ export default function ProofPageContent() {
   const job = jobs[currentIdx];
 
   if (!job) {
-    return <div className="p-6 text-white">No job found.</div>;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/70 px-6 py-5 text-center text-sm font-medium text-white/80 shadow-2xl shadow-black/40 backdrop-blur">
+          No job found.
+        </div>
+      </div>
+    );
   }
 
   function renderBins(bins: string | null | undefined) {
-    if (!bins) return <span className="text-gray-400">—</span>;
+    if (!bins)
+      return (
+        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/50">—</span>
+      );
     return bins.split(",").map((b) => {
       const bin = b.trim().toLowerCase();
-      let color = "bg-gray-600";
-      if (bin.includes("red")) color = "bg-red-600";
-      else if (bin.includes("yellow")) color = "bg-yellow-500 text-black";
-      else if (bin.includes("green")) color = "bg-green-600";
+      let color = "bg-white/15 text-white";
+      if (bin.includes("red")) color = "bg-red-500/80 text-white";
+      else if (bin.includes("yellow")) color = "bg-yellow-400/90 text-black";
+      else if (bin.includes("green")) color = "bg-emerald-500/80 text-white";
       return (
         <span
           key={bin}
-          className={`${color} px-3 py-1 rounded-full text-xs font-semibold`}
+          className={`${color} rounded-full px-3 py-1 text-xs font-semibold shadow-sm shadow-black/30`}
         >
           {bin.charAt(0).toUpperCase() + bin.slice(1)}
         </span>
@@ -396,47 +405,50 @@ export default function ProofPageContent() {
     : TRANSPARENT_PIXEL;
 
   return (
-    <div className="relative flex min-h-full flex-col bg-black text-white">
-      <div className="flex-1 p-6 pb-32 space-y-4">
-        <h1 className="text-2xl font-bold text-[#ff5757]">
-          {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
-        </h1>
+    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 px-4 pb-32 pt-10 text-white">
+      <section className="rounded-3xl border border-white/10 bg-black/75 p-6 shadow-2xl shadow-black/40 backdrop-blur">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/50">Job type</p>
+            <h1 className="mt-1 text-3xl font-semibold text-white">
+              {job.job_type === "put_out" ? "Put bins out" : "Bring bins in"}
+            </h1>
+            <p className="text-sm text-white/60">{job.address}</p>
+          </div>
 
-        <p className="text-lg font-semibold">{job.address}</p>
-
-        {/* Instructions dropdown */}
-        <div className="border border-gray-800 rounded-lg overflow-hidden">
           <button
             onClick={() => setShowInstructions((p) => !p)}
-            className="w-full flex justify-between items-center px-4 py-3 font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
+            className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:border-binbird-red hover:bg-white/10"
           >
-            <span>Instructions</span>
-            <span>{showInstructions ? "▲" : "▼"}</span>
+            <span>Reference guidance</span>
+            <span className="text-xs uppercase tracking-[0.25em] text-white/60">
+              {showInstructions ? "Hide" : "View"}
+            </span>
           </button>
 
           {showInstructions && (
-            <div className="p-4 space-y-4 bg-neutral-800 text-white">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 mb-2">Bins Out:</p>
+            <div className="grid gap-4 rounded-2xl border border-white/10 bg-black/60 p-4 text-sm text-white/70 shadow-inner shadow-black/40">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">Bins out</p>
                   <img
                     src={putOutImageSrc}
-                    alt="Bins Out Example"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                    alt="Bins out example"
+                    className="aspect-[3/4] w-full rounded-2xl border border-white/10 object-cover"
                   />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 mb-2">Bins In:</p>
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">Bins in</p>
                   <img
                     src={bringInImageSrc}
-                    alt="Bins In Example"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                    alt="Bins in example"
+                    className="aspect-[3/4] w-full rounded-2xl border border-white/10 object-cover"
                   />
                 </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-gray-400 mb-2">Placement Instructions:</p>
-                <p>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Placement instructions</p>
+                <p className="mt-2 text-sm text-white/60">
                   {job.job_type === "bring_in"
                     ? "Return bins neatly to their storage location. Ensure lids are closed and bins are not left blocking walkways or driveways."
                     : "Place bins neatly at the edge of the driveway with lids closed. Ensure bins do not block pedestrian walkways or driveways."}
@@ -444,22 +456,25 @@ export default function ProofPageContent() {
               </div>
             </div>
           )}
-        </div>
 
-        {job.notes && (
-          <div className="bg-neutral-900 rounded-lg p-4">
-            <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
-            <p className="text-white font-medium">{job.notes}</p>
+          {job.notes && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/50">Property notes</p>
+              <p className="mt-2 text-sm text-white/60">{job.notes}</p>
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/50">Bins</p>
+            <div className="mt-2 flex flex-wrap gap-2">{renderBins(job.bins)}</div>
           </div>
-        )}
-
-        <div>
-          <p className="text-sm text-gray-400 mb-1">Bins:</p>
-          <div className="flex flex-wrap gap-2">{renderBins(job.bins)}</div>
         </div>
+      </section>
 
-        {/* Take photo */}
-        <div className="flex flex-col gap-2">
+      <section className="rounded-3xl border border-white/10 bg-black/75 p-6 shadow-2xl shadow-black/40 backdrop-blur">
+        <div className="flex flex-col gap-4">
+          <p className="text-xs uppercase tracking-[0.35em] text-white/50">Proof capture</p>
+
           <input
             type="file"
             accept="image/*"
@@ -478,47 +493,47 @@ export default function ProofPageContent() {
           />
           <label
             htmlFor="photo-upload"
-            className="w-full cursor-pointer bg-neutral-900 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-neutral-800 transition"
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:border-binbird-red hover:bg-white/20"
           >
-            {preview ? "Retake Photo ✓" : "Take Photo"}
+            {preview ? "Retake photo" : "Take photo"}
+            {preview && <span className="text-xs uppercase tracking-[0.3em] text-white/60">✓</span>}
           </label>
+
           {preview && (
-            <div className="flex justify-center mt-2">
+            <div className="overflow-hidden rounded-2xl border border-white/10">
               <img
                 src={preview}
                 alt="preview"
-                className="w-full aspect-[3/4] object-cover rounded-lg border border-gray-600"
+                className="aspect-[3/4] w-full object-cover"
               />
             </div>
           )}
-        </div>
 
-        {/* Leave note */}
-        <div>
-          <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add any details..."
-            className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
-          />
-        </div>
-
-        {gpsError && (
-          <div className="text-sm text-red-400">
-            <p>{gpsError}</p>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/50">Leave a note</p>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add any helpful details for the client…"
+              className="mt-2 w-full min-h-[140px] rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/50 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
+            />
           </div>
-        )}
-      </div>
 
-      {/* Mark Done pinned bottom */}
-      <div className="absolute bottom-0 inset-x-0 p-4">
+          {gpsError && (
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {gpsError}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="sticky bottom-8 z-20">
         <button
           onClick={handleMarkDone}
           disabled={!file || submitting}
-          className="w-full bg-[#ff5757] text-white px-4 py-3 rounded-lg font-bold disabled:opacity-50"
+          className="w-full rounded-3xl bg-binbird-red px-6 py-4 text-base font-semibold text-white shadow-2xl shadow-red-900/40 transition hover:bg-[#ff4747] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? "Saving…" : "Mark Done"}
+          {submitting ? "Saving…" : "Mark done"}
         </button>
       </div>
     </div>
