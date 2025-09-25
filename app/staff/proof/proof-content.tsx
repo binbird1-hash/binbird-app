@@ -269,31 +269,31 @@ export default function ProofPageContent() {
     if (normalized.includes("red")) {
       return {
         wrapper:
-          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white shadow-[0_12px_30px_rgba(255,87,87,0.25)]",
-        text: "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
+          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white",
+        text: "text-white",
       };
     }
 
     if (normalized.includes("yellow")) {
       return {
         wrapper:
-          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black shadow-[0_12px_30px_rgba(255,213,0,0.25)]",
-        text: "text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.35)]",
+          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black",
+        text: "text-black",
       };
     }
 
     if (normalized.includes("green")) {
       return {
         wrapper:
-          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white shadow-[0_12px_30px_rgba(16,185,129,0.25)]",
-        text: "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
+          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white",
+        text: "text-white",
       };
     }
 
     return {
       wrapper:
-        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white shadow-[0_12px_30px_rgba(0,0,0,0.3)]",
-      text: "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
+        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white",
+      text: "text-white",
     };
   }
 
