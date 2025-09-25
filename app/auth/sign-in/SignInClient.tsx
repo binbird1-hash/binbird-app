@@ -70,54 +70,57 @@ export default function SignInClient() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl sm:text-[26px] font-bold text-center mb-6 text-[#ff5757]">
-        Welcome to BinBird!
-      </h1>
-      <form onSubmit={handleSignIn} className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
-          required
-        />
-        <label className="flex items-center gap-2 text-sm text-black">
+      <div className="space-y-6">
+        <div className="space-y-2 text-center">
+          <h2 className="text-2xl font-semibold text-white">Welcome to BinBird</h2>
+          <p className="text-sm text-white/60">Use your staff credentials to jump into today&apos;s work.</p>
+        </div>
+        <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+          {error && <p className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
           <input
-            type="checkbox"
-            checked={stayLoggedIn}
-            onChange={(e) => setStayLoggedIn(e.target.checked)}
-            className="h-4 w-4 rounded border border-gray-400 text-[#ff5757] focus:ring-[#ff5757]"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/50 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
+            required
           />
-          Stay logged in
-        </label>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2 rounded-lg bg-[#ff5757] text-white font-semibold hover:opacity-90 transition"
-        >
-          {loading ? "Signing In…" : "Sign In"}
-        </button>
-        <p className="mt-4 flex justify-center items-center text-sm !text-black">
-          <span>Don’t have an account?</span>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/50 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
+            required
+          />
+          <label className="flex items-center gap-2 text-sm text-white/70">
+            <input
+              type="checkbox"
+              checked={stayLoggedIn}
+              onChange={(e) => setStayLoggedIn(e.target.checked)}
+              className="h-4 w-4 rounded border border-white/30 bg-black/40 text-binbird-red focus:ring-binbird-red/60 focus:ring-offset-0"
+            />
+            Stay logged in
+          </label>
           <button
-            type="button"
-            onClick={() => router.push("/auth/sign-up")}
-            className="ml-2 text-[#ff5757] hover:underline"
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
           >
-            Sign Up
+            {loading ? "Signing in…" : "Sign In"}
           </button>
-        </p>
-      </form>
+          <p className="mt-2 flex justify-center text-sm text-white/60">
+            <span>Don’t have an account?</span>
+            <button
+              type="button"
+              onClick={() => router.push("/auth/sign-up")}
+              className="ml-2 font-medium text-binbird-red hover:underline"
+            >
+              Sign Up
+            </button>
+          </p>
+        </form>
+      </div>
     </AuthLayout>
   );
 }
