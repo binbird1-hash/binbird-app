@@ -434,19 +434,16 @@ export default function ProofPageContent() {
         primary: "Park bins neatly in the storage area.",
         secondary: "Line them up exactly like this photo.",
       };
-  const moveFinalLine = isPutOutJob
-    ? "Leave the storage area empty when you’re done."
-    : "Leave the kerb empty when you’re done.";
   const finalCheckLines = isPutOutJob
     ? [
-        "✅ Lids down tight.",
-        "✅ Bins lined up neatly at the kerb.",
-        "✅ Paths, doors, and kerbs clear.",
+        "Lids down tight.",
+        "Bins lined up neatly at the kerb.",
+        "Paths, doors, and kerbs clear.",
       ]
     : [
-        "✅ Lids down tight.",
-        "✅ Bins lined up neatly.",
-        "✅ Paths, doors, and kerbs clear.",
+        "Lids down tight.",
+        "Bins lined up neatly.",
+        "Paths, doors, and kerbs clear.",
       ];
   const hasPhoto = Boolean(file);
   const readyToSubmit = hasPhoto;
@@ -467,10 +464,6 @@ export default function ProofPageContent() {
               Step 1 – Start Spot
             </summary>
             <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-              <p className="text-sm font-semibold text-gray-100">
-                <span aria-hidden className="mr-1">📷</span>
-                {startLocationLabel} (START HERE)
-              </p>
               <div className="relative">
                 <img
                   src={startImageSrc}
@@ -501,9 +494,12 @@ export default function ProofPageContent() {
                   All Bins
                 </div>
               )}
-              <p className="text-sm text-gray-200 font-semibold whitespace-pre-line">
-                {"Roll every bin in the colours shown above.\nNot sure? Take every bin."}
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-200 font-semibold">
+                  Roll every bin in the colours shown above.
+                </p>
+                <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
+              </div>
             </div>
           </details>
 
@@ -511,15 +507,10 @@ export default function ProofPageContent() {
             <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
               Step 3 – Move the Bins
             </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-              <div className="text-4xl text-center" aria-hidden>
-                ➡️
-              </div>
-              <ul className="list-disc list-inside space-y-2 text-sm text-gray-300">
-                <li>Take full bins too — don’t skip any.</li>
-                <li>Keep driveways, doors, and kerbs clear.</li>
-                <li>{moveFinalLine}</li>
-              </ul>
+            <div className="p-4 bg-neutral-900/60 space-y-2 text-left text-sm text-gray-300">
+              <p className="font-semibold text-gray-100">Move every bin — full or empty.</p>
+              <p>Keep driveways, doors, and kerbs clear.</p>
+              <p>Don’t leave any bins behind at the kerb.</p>
             </div>
           </details>
 
@@ -528,10 +519,6 @@ export default function ProofPageContent() {
               Step 4 – Finish Spot
             </summary>
             <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-              <p className="text-sm font-semibold text-gray-100">
-                <span aria-hidden className="mr-1">📷</span>
-                {endLocationLabel} (END HERE)
-              </p>
               <div className="relative">
                 <img
                   src={endImageSrc}
