@@ -74,14 +74,13 @@ function CompletedRunContent() {
   const router = useRouter();
   const supabase = useMemo(() => createClientComponentClient(), []);
   const [runData, setRunData] = useState<RunSessionRecord | null | undefined>(
-    undefined
+    undefined,
   );
-  const [assignmentStatus, setAssignmentStatus] = useState<AssignmentState>(
-    "loading"
-  );
+  const [assignmentStatus, setAssignmentStatus] =
+    useState<AssignmentState>("loading");
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
   const [nextAssignment, setNextAssignment] = useState<NextAssignment | null>(
-    null
+    null,
   );
 
   const todayName = useMemo(() => {
@@ -145,8 +144,8 @@ function CompletedRunContent() {
                   typeof clientValue === "string" && clientValue.trim().length
                     ? clientValue.trim()
                     : typeof clientValue === "number"
-                    ? String(clientValue)
-                    : null;
+                      ? String(clientValue)
+                      : null;
 
                 return {
                   day,
@@ -212,7 +211,7 @@ function CompletedRunContent() {
         if (!isActive) return;
         setAssignmentStatus("error");
         setAssignmentError(
-          "We couldn't load your upcoming assignments right now."
+          "We couldn't load your upcoming assignments right now.",
         );
       }
     }
@@ -256,7 +255,7 @@ function CompletedRunContent() {
       : runData.completedJobs;
     const jobsCompleted = Math.min(
       Number.isFinite(runData.completedJobs) ? runData.completedJobs : 0,
-      totalJobs
+      totalJobs,
     );
 
     const durationLabel =
@@ -292,169 +291,179 @@ function CompletedRunContent() {
   }, [derivedStats.jobsCompleted, derivedStats.totalJobs]);
 
   return (
-    <div className="relative flex min-h-full flex-col bg-black text-white">
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-32 pt-8 sm:pt-12">
-        <header className="space-y-3 text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
-            Run Complete!
-          </h1>
-          <p className="text-base text-gray-200 sm:text-lg">
-            <span className="block">Nice work there.</span>
-            <span className="block">
-              Here&apos;s a quick recap of your shift.
-            </span>
-          </p>
-        </header>
+    <div className="relative flex flex-1 flex-col bg-black text-white">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-4xl px-6 pt-8 pb-32 sm:pt-12">
+          <header className="space-y-3 text-center sm:text-left">
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
+              Run Complete!
+            </h1>
+            <p className="text-base text-gray-200 sm:text-lg">
+              <span className="block">Nice work there.</span>
+              <span className="block">
+                Here&apos;s a quick recap of your shift.
+              </span>
+            </p>
+          </header>
 
-        <div className="mt-8 flex-1">
-          <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-lg">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-white">Run Summary</h2>
-              {runData === undefined && (
-                <span className="text-sm text-gray-400">Loading…</span>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              {runData === undefined ? (
-                <div className="space-y-4">
-                  <div className="h-12 w-full animate-pulse rounded-xl bg-white/5" />
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
-                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
-                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
-                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
-                  </div>
-                </div>
-              ) : runData === null ? (
-                <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-sm text-gray-300">
-                  <p>We couldn&apos;t find any details from your most recent run.</p>
-                  <p className="mt-2 text-gray-400">
-                    Start a new run to see a full summary here once you&apos;re
-                    finished.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                      <div>
-                        <p className="text-sm uppercase tracking-wide text-gray-400">
-                          Jobs Completed
-                        </p>
-                        <p className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-                          {typeof derivedStats.jobsCompleted === "number"
-                            ? derivedStats.jobsCompleted
-                            : "—"}
-                          {typeof derivedStats.totalJobs === "number" && (
-                            <span className="ml-2 text-lg font-semibold text-gray-400">
-                              / {derivedStats.totalJobs}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      {completionPercent !== null && (
-                        <span className="rounded-full border border-white/10 px-3 py-1 text-sm font-medium text-gray-200">
-                          {completionPercent}% complete
-                        </span>
-                      )}
-                    </div>
-                    {completionPercent !== null && (
-                      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full bg-[#ff5757]"
-                          style={{
-                            width: `${Math.min(Math.max(completionPercent, 0), 100)}%`,
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                      <dt className="text-sm text-gray-400">Run Duration</dt>
-                      <dd className="mt-2 text-lg font-semibold text-white">
-                        {derivedStats.durationLabel}
-                      </dd>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                      <dt className="text-sm text-gray-400">Average per Job</dt>
-                      <dd className="mt-2 text-lg font-semibold text-white">
-                        {derivedStats.avgPerJob}
-                      </dd>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                      <dt className="text-sm text-gray-400">Started</dt>
-                      <dd className="mt-2 text-lg font-semibold text-white">
-                        {derivedStats.startLabel ?? "—"}
-                      </dd>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                      <dt className="text-sm text-gray-400">Finished</dt>
-                      <dd className="mt-2 text-lg font-semibold text-white">
-                        {derivedStats.endLabel ?? "—"}
-                      </dd>
-                    </div>
-                  </dl>
-                </>
-              )}
-
-              <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
-                    Next Assignment
-                  </h3>
-                  {assignmentStatus === "loading" && (
-                    <span className="text-xs text-gray-400">Loading…</span>
-                  )}
-                </div>
-
-                {assignmentStatus === "error" ? (
-                  <p className="text-sm text-gray-300">{assignmentError}</p>
-                ) : nextAssignment ? (
-                  <div className="space-y-2">
-                    <p className="text-xl font-semibold text-white">
-                      {nextAssignment.day}
-                    </p>
-                    <p className="text-sm text-gray-300">
-                      {nextAssignment.address}
-                    </p>
-                    {nextAssignment.clientName && (
-                      <p className="text-sm text-gray-400">
-                        Client: {nextAssignment.clientName}
-                      </p>
-                    )}
-                    <p className="text-sm font-medium text-gray-200">
-                      {nextAssignment.totalJobs} job
-                      {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled
-                    </p>
-                  </div>
-                ) : assignmentStatus === "loading" ? (
-                  <div className="space-y-2">
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
-                    <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-300">
-                    You&apos;re all caught up. No upcoming assignments were found.
-                  </p>
+          <div className="mt-8 pb-32">
+            <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-lg">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold text-white">
+                  Run Summary
+                </h2>
+                {runData === undefined && (
+                  <span className="text-sm text-gray-400">Loading…</span>
                 )}
               </div>
-            </div>
-          </section>
-        </div>
-      </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10">
-        <div className="w-full bg-black/95 p-6 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => router.push("/staff/run")}
-            className="pointer-events-auto w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
-          >
-            End Run
-          </button>
+              <div className="space-y-6">
+                {runData === undefined ? (
+                  <div className="space-y-4">
+                    <div className="h-12 w-full animate-pulse rounded-xl bg-white/5" />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                      <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                      <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                      <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                    </div>
+                  </div>
+                ) : runData === null ? (
+                  <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-sm text-gray-300">
+                    <p>
+                      We couldn&apos;t find any details from your most recent
+                      run.
+                    </p>
+                    <p className="mt-2 text-gray-400">
+                      Start a new run to see a full summary here once
+                      you&apos;re finished.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                          <p className="text-sm uppercase tracking-wide text-gray-400">
+                            Jobs Completed
+                          </p>
+                          <p className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+                            {typeof derivedStats.jobsCompleted === "number"
+                              ? derivedStats.jobsCompleted
+                              : "—"}
+                            {typeof derivedStats.totalJobs === "number" && (
+                              <span className="ml-2 text-lg font-semibold text-gray-400">
+                                / {derivedStats.totalJobs}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {completionPercent !== null && (
+                          <span className="rounded-full border border-white/10 px-3 py-1 text-sm font-medium text-gray-200">
+                            {completionPercent}% complete
+                          </span>
+                        )}
+                      </div>
+                      {completionPercent !== null && (
+                        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-[#ff5757]"
+                            style={{
+                              width: `${Math.min(Math.max(completionPercent, 0), 100)}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                        <dt className="text-sm text-gray-400">Run Duration</dt>
+                        <dd className="mt-2 text-lg font-semibold text-white">
+                          {derivedStats.durationLabel}
+                        </dd>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                        <dt className="text-sm text-gray-400">
+                          Average per Job
+                        </dt>
+                        <dd className="mt-2 text-lg font-semibold text-white">
+                          {derivedStats.avgPerJob}
+                        </dd>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                        <dt className="text-sm text-gray-400">Started</dt>
+                        <dd className="mt-2 text-lg font-semibold text-white">
+                          {derivedStats.startLabel ?? "—"}
+                        </dd>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                        <dt className="text-sm text-gray-400">Finished</dt>
+                        <dd className="mt-2 text-lg font-semibold text-white">
+                          {derivedStats.endLabel ?? "—"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </>
+                )}
+
+                <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
+                      Next Assignment
+                    </h3>
+                    {assignmentStatus === "loading" && (
+                      <span className="text-xs text-gray-400">Loading…</span>
+                    )}
+                  </div>
+
+                  {assignmentStatus === "error" ? (
+                    <p className="text-sm text-gray-300">{assignmentError}</p>
+                  ) : nextAssignment ? (
+                    <div className="space-y-2">
+                      <p className="text-xl font-semibold text-white">
+                        {nextAssignment.day}
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        {nextAssignment.address}
+                      </p>
+                      {nextAssignment.clientName && (
+                        <p className="text-sm text-gray-400">
+                          Client: {nextAssignment.clientName}
+                        </p>
+                      )}
+                      <p className="text-sm font-medium text-gray-200">
+                        {nextAssignment.totalJobs} job
+                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled
+                      </p>
+                    </div>
+                  ) : assignmentStatus === "loading" ? (
+                    <div className="space-y-2">
+                      <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
+                      <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-300">
+                      You&apos;re all caught up. No upcoming assignments were
+                      found.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 z-10 border-t border-white/10 bg-black/95 px-6 py-6 backdrop-blur">
+          <div className="mx-auto w-full max-w-4xl">
+            <button
+              type="button"
+              onClick={() => router.push("/staff/run")}
+              className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
+            >
+              End Run
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -464,7 +473,7 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen overflow-y-auto bg-black text-white pb-6">
+      <div className="relative flex min-h-screen flex-1 flex-col bg-black text-white">
         <SettingsDrawer />
         <CompletedRunContent />
       </div>
