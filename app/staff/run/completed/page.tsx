@@ -230,8 +230,8 @@ function CompletedRunContent() {
         durationLabel: runData === undefined ? "" : "—",
         startLabel: null as string | null,
         endLabel: null as string | null,
-        jobsCompleted: runData === undefined ? undefined : 0,
-        totalJobs: runData === undefined ? undefined : 0,
+        jobsCompleted: 0,
+        totalJobs: 0,
         avgPerJob: runData === undefined ? "" : "—",
       };
     }
