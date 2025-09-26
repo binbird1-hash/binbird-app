@@ -274,10 +274,10 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
+    <div className="relative flex min-h-full flex-col bg-black text-white">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-32 pt-8 sm:pt-12">
         <header className="space-y-3 text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_8px_24px_rgba(255,87,87,0.45)]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
             Run Complete!
           </h1>
           <p className="text-base text-gray-200 sm:text-lg">
@@ -287,7 +287,7 @@ function CompletedRunContent() {
         </header>
 
         <div className="mt-8 flex-1">
-          <section className="flex flex-col gap-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.55)] backdrop-blur">
+          <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-lg">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-semibold text-white">Run Summary</h2>
               {runData === undefined && (
