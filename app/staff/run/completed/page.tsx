@@ -222,7 +222,7 @@ function CompletedRunContent() {
     return () => {
       isActive = false;
     };
-  }, [supabase, todayIndex]);
+  }, [supabase, todayIndex, todayName]);
 
   const derivedStats = useMemo(() => {
     if (!runData) {
@@ -230,8 +230,8 @@ function CompletedRunContent() {
         durationLabel: runData === undefined ? "" : "—",
         startLabel: null as string | null,
         endLabel: null as string | null,
-        jobsCompleted: runData === undefined ? undefined : 0,
-        totalJobs: runData === undefined ? undefined : 0,
+        jobsCompleted: 0,
+        totalJobs: 0,
         avgPerJob: runData === undefined ? "" : "—",
       };
     }
@@ -292,7 +292,7 @@ function CompletedRunContent() {
         </header>
 
         <div className="mt-8 flex-1">
-          <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-lg">
+          <section className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-lg">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-semibold text-white">Run Summary</h2>
               {runData === undefined && (
@@ -300,7 +300,110 @@ function CompletedRunContent() {
               )}
             </div>
 
-            {/* …rest unchanged… */}
+            {runData === undefined ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {[0, 1, 2, 3].map((key) => (
+                  <div
+                    key={key}
+                    className="h-24 rounded-xl bg-white/5 p-4 animate-pulse"
+                  >
+                    <div className="mb-3 h-4 w-1/3 rounded bg-white/10" />
+                    <div className="h-6 w-2/3 rounded bg-white/10" />
+                  </div>
+                ))}
+              </div>
+            ) : runData === null ? (
+              <p className="text-sm text-gray-300">
+                We couldn&apos;t find any details about your most recent run. Try
+                starting a new run to see summary information here.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Duration
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {derivedStats.durationLabel}
+                  </p>
+                  {(derivedStats.startLabel || derivedStats.endLabel) && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      {derivedStats.startLabel ? `Started ${derivedStats.startLabel}` : "Start time unavailable"}
+                      <br />
+                      {derivedStats.endLabel ? `Ended ${derivedStats.endLabel}` : "End time unavailable"}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Jobs Completed
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {derivedStats.jobsCompleted} / {derivedStats.totalJobs}
+                  </p>
+                  <div className="mt-3 h-2 rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-[#ff5757] transition-all"
+                      style={{
+                        width:
+                          derivedStats.totalJobs && derivedStats.totalJobs > 0
+                            ? `${Math.min(
+                                100,
+                                Math.round(
+                                  (derivedStats.jobsCompleted /
+                                    derivedStats.totalJobs) *
+                                    100
+                                )
+                              )}%`
+                            : "0%",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Average Time / Job
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {derivedStats.avgPerJob}
+                  </p>
+                  <p className="mt-2 text-xs text-gray-400">
+                    Based on completed jobs during this run.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Next Assignment
+                  </p>
+                  {assignmentStatus === "loading" ? (
+                    <p className="mt-2 text-sm text-gray-400">Checking…</p>
+                  ) : assignmentStatus === "error" ? (
+                    <p className="mt-2 text-sm text-red-300">
+                      {assignmentError ?? "Unable to load assignments."}
+                    </p>
+                  ) : nextAssignment ? (
+                    <div className="mt-2 space-y-1 text-sm text-gray-200">
+                      <p className="font-semibold text-white">
+                        {nextAssignment.day} · {nextAssignment.address}
+                      </p>
+                      {nextAssignment.clientName && (
+                        <p className="text-xs text-gray-400">
+                          Client: {nextAssignment.clientName}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400">
+                        {nextAssignment.totalJobs} job
+                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-400">
+                      You&apos;re all caught up. No upcoming assignments found.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </div>
@@ -323,10 +426,9 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white pb-6">
+      <div className="relative flex min-h-screen flex-col bg-black text-white pb-6">
         <SettingsDrawer />
-        {/* scrollable container */}
-        <div className="h-full overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           <CompletedRunContent />
         </div>
       </div>
