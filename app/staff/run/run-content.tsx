@@ -87,6 +87,7 @@ function RunPageContent() {
 
   const [startAddress, setStartAddress] = useState("");
   const [endAddress, setEndAddress] = useState("");
+  const [locationWarning, setLocationWarning] = useState<string | null>(null);
 
   const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
   const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
@@ -269,23 +270,35 @@ function RunPageContent() {
 
   // Autofill current location
   useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      console.log("Got browser geolocation:", coords);
-      setStart(coords);
-      setForceFit(true);
-      try {
-        const resp = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-        );
-        const data = await resp.json();
-        console.log("Reverse geocode result:", data);
-        if (data.results?.[0]?.formatted_address) setStartAddress(data.results[0].formatted_address);
-      } catch (err) {
-        console.error("Reverse geocoding failed:", err);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      console.warn("Geolocation API unavailable. Unable to auto-fill start location.");
+      setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        console.log("Got browser geolocation:", coords);
+        setLocationWarning(null);
+        setStart(coords);
+        setForceFit(true);
+        try {
+          const resp = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+          );
+          const data = await resp.json();
+          console.log("Reverse geocode result:", data);
+          if (data.results?.[0]?.formatted_address) setStartAddress(data.results[0].formatted_address);
+        } catch (err) {
+          console.error("Reverse geocoding failed:", err);
+        }
+      },
+      (err) => {
+        console.warn("Unable to read current location for planner:", err);
+        setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
       }
-    });
+    );
   }, []);
 
   // Handle "End same as Start"
@@ -410,9 +423,19 @@ function RunPageContent() {
     setUserMoved(false);
     setForceFit(true);
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) =>
-        setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setLocationWarning(null);
+        },
+        (err) => {
+          console.warn("Unable to refresh current location on reset:", err);
+          setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
+        }
       );
+    } else {
+      console.warn("Geolocation API unavailable during reset.");
+      setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
     }
   }, []);
 
@@ -529,6 +552,11 @@ function RunPageContent() {
                 disabled={isPlanned || plannerLocked}
               />
             </Autocomplete>
+            {locationWarning && (
+              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2">
+                {locationWarning}
+              </p>
+            )}
 
             <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>
               <input
