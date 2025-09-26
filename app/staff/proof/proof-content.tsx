@@ -227,7 +227,7 @@ export default function ProofPageContent() {
   function getBinColorStyles(bin: string) {
     const normalized = bin.toLowerCase();
     if (normalized.includes("red")) return { background: "bg-red-600", border: "border-red-500/70", text: "text-white" };
-    if (normalized.includes("yellow")) return { background: "bg-amber-300", border: "border-amber-300/80", text: "text-black" };
+    if (normalized.includes("yellow")) return { background: "bg-amber-300", border: "border-amber-300/70", text: "text-black" };
     if (normalized.includes("green")) return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
     return { background: "bg-neutral-800", border: "border-neutral-600/70", text: "text-white" };
   }
@@ -248,7 +248,7 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin}-${idx}`}
-          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-bold ${styles.border} ${styles.background}`}
+          className={`w-full rounded-xl border px-4 py-2 text-center text-base font-bold ${styles.border} ${styles.background}`}
         >
           <span className={`block font-bold ${styles.text}`}>{getBinLabel(bin)}</span>
         </div>
@@ -493,7 +493,7 @@ export default function ProofPageContent() {
         {/* note box */}
         <div>
           <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add any details..."
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add any notes about this job property..."
             className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
           />
         </div>
@@ -502,7 +502,7 @@ export default function ProofPageContent() {
       </div>
 
       {/* bottom button */}
-      <div className="absolute bottom-0 inset-x-0 p-4">
+      <div className="absolute bottom-2 inset-x-0 p-4">
         <button
           onClick={() => { if (submitting) return; if (!file) { fileInputRef.current?.click(); return; } void handleMarkDone(); }}
           disabled={submitting}

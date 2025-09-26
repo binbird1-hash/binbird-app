@@ -413,7 +413,7 @@ function CompletedRunContent() {
           <button
             type="button"
             onClick={() => router.push("/staff/run")}
-            className="pointer-events-auto w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
+            className="pointer-events-auto w-full rounded-lg bg-[#ff5757] px-4 py-2 font-bold text-white transition hover:opacity-90"
           >
             End Run
           </button>
@@ -428,7 +428,10 @@ export default function CompletedRunPage() {
     <MapSettingsProvider>
       <div className="relative flex min-h-screen flex-col bg-black text-white pb-6">
         <SettingsDrawer />
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className="flex-1 overflow-y-auto min-h-0"
+          style={{ maxHeight: "calc(100vh - 3.5rem)" }}
+        >
           <CompletedRunContent />
         </div>
       </div>
