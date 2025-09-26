@@ -268,31 +268,31 @@ export default function ProofPageContent() {
 
     if (normalized.includes("red")) {
       return {
-        wrapper:
-          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white",
+        background: "bg-red-600",
+        border: "border-red-500/70",
         text: "text-white",
       };
     }
 
     if (normalized.includes("yellow")) {
       return {
-        wrapper:
-          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black",
+        background: "bg-amber-300",
+        border: "border-amber-300/80",
         text: "text-black",
       };
     }
 
     if (normalized.includes("green")) {
       return {
-        wrapper:
-          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white",
+        background: "bg-emerald-600",
+        border: "border-emerald-500/70",
         text: "text-white",
       };
     }
 
     return {
-      wrapper:
-        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white",
+      background: "bg-neutral-800",
+      border: "border-neutral-600/70",
       text: "text-white",
     };
   }
@@ -321,16 +321,16 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin.toLowerCase()}-${idx}`}
-          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-semibold tracking-tight transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.wrapper}`}
+          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-bold transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.border} ${styles.background}`}
         >
-          <span className={`block font-semibold uppercase ${styles.text}`}>
+          <span className={`block font-bold ${styles.text}`}>
             {getBinLabel(bin)}
           </span>
         </div>
       );
     });
   }
-    
+
   async function handleMarkDone() {
     if (!file) {
       alert("Please take a photo before marking the job done.");
