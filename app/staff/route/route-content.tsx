@@ -23,6 +23,7 @@ function RoutePageContent() {
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
+  const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
 
   const { isLoaded } = useLoadScript({
@@ -118,7 +119,14 @@ function RoutePageContent() {
 
   // Update current location
   useEffect(() => {
-    if (!activeJob || !navigator.geolocation) return;
+    if (!activeJob) return;
+
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      console.warn("Geolocation API unavailable. Falling back to stored coordinates.");
+      setCurrentLocation(null);
+      setLocationWarning("Enable location sharing/HTTPS to see live position.");
+      return;
+    }
 
     let isCancelled = false;
 
@@ -129,10 +137,13 @@ function RoutePageContent() {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
+        setLocationWarning(null);
       },
       (err) => {
         console.warn("Unable to read current location:", err);
-        if (!isCancelled) setCurrentLocation(null);
+        if (isCancelled) return;
+        setCurrentLocation(null);
+        setLocationWarning("Enable location sharing/HTTPS to see live position.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -298,6 +309,11 @@ function RoutePageContent() {
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
+            {locationWarning && (
+              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2 relative z-10">
+                {locationWarning}
+              </p>
+            )}
               <button
                 onClick={() => window.open(navigateUrl, "_blank")}
                 className="w-full bg-neutral-900 text-white px-4 py-2 rounded-lg font-semibold transition hover:bg-neutral-800 relative z-10"
