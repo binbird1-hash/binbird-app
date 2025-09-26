@@ -268,31 +268,31 @@ export default function ProofPageContent() {
 
     if (normalized.includes("red")) {
       return {
-        wrapper:
-          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white",
+        background: "bg-red-600",
+        border: "border-red-500/70",
         text: "text-white",
       };
     }
 
     if (normalized.includes("yellow")) {
       return {
-        wrapper:
-          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black",
+        background: "bg-amber-300",
+        border: "border-amber-300/80",
         text: "text-black",
       };
     }
 
     if (normalized.includes("green")) {
       return {
-        wrapper:
-          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white",
+        background: "bg-emerald-600",
+        border: "border-emerald-500/70",
         text: "text-white",
       };
     }
 
     return {
-      wrapper:
-        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white",
+      background: "bg-neutral-800",
+      border: "border-neutral-600/70",
       text: "text-white",
     };
   }
@@ -321,9 +321,9 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin.toLowerCase()}-${idx}`}
-          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-semibold tracking-tight transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.wrapper}`}
+          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-bold transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.border} ${styles.background}`}
         >
-          <span className={`block font-semibold uppercase ${styles.text}`}>
+          <span className={`block font-bold ${styles.text}`}>
             {getBinLabel(bin)}
           </span>
         </div>
@@ -502,7 +502,7 @@ export default function ProofPageContent() {
   const binCardsForInstructions = renderBinCards("instructions");
   const binCardsForQuickReference = renderBinCards("quick-reference");
   const subtleFallbackCard = (
-    <div className="w-full rounded-xl border border-neutral-700 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 px-4 py-3 text-center text-base font-semibold uppercase text-white">
+    <div className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 text-center text-base font-bold text-white">
       All Bins
     </div>
   );
@@ -519,25 +519,25 @@ export default function ProofPageContent() {
   );
 
   return (
-    <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
+    <div className="relative flex min-h-full flex-col bg-black text-white">
       <div className="flex-1 p-6 pb-32 space-y-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
 
         <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
-        <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+        <section className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900 p-4 shadow-lg">
+          <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+            <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
               Instructions
             </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3">
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+            <div className="p-4 bg-neutral-950 space-y-3">
+              <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+                <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
                   Step 1 – Start Spot
                 </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                <div className="p-4 bg-neutral-950 space-y-3 text-left">
                   <div className="relative">
                     <img
                       src={startImageSrc}
@@ -556,11 +556,11 @@ export default function ProofPageContent() {
                 </div>
               </details>
 
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+                <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
                   Step 2 – Today’s Bins
                 </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                <div className="p-4 bg-neutral-950 space-y-3 text-left">
                   <div className="flex flex-col gap-2">
                     {binCardsForInstructions ?? subtleFallbackCard}
                   </div>
@@ -573,11 +573,11 @@ export default function ProofPageContent() {
                 </div>
               </details>
 
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+                <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
                   Step 3 – Move the Bins
                 </summary>
-                <div className="p-4 bg-neutral-900/60 text-left">
+                <div className="p-4 bg-neutral-950 text-left">
                   <ul className="space-y-2 text-sm text-gray-300">
                     {moveStepLines.map((line) => (
                       <li key={line} className="flex items-start gap-2">
@@ -591,11 +591,11 @@ export default function ProofPageContent() {
                 </div>
               </details>
 
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+                <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
                   Step 4 – Finish Spot
                 </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
+                <div className="p-4 bg-neutral-950 space-y-3 text-left">
                   <div className="relative">
                     <img
                       src={endImageSrc}
@@ -614,11 +614,11 @@ export default function ProofPageContent() {
                 </div>
               </details>
 
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
+              <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+                <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
                   Step 5 – Final Check
                 </summary>
-                <div className="p-4 bg-neutral-900/60 text-left">
+                <div className="p-4 bg-neutral-950 text-left">
                   <ul className="space-y-2 text-sm text-gray-300">
                     {finalCheckLines.map((line) => (
                       <li key={line} className="flex items-start gap-2">
@@ -634,11 +634,15 @@ export default function ProofPageContent() {
             </div>
           </details>
 
-          {quickReferenceContent}
+            <div className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+              <div className="p-4 bg-neutral-950 space-y-2">
+                {quickReferenceContent}
+              </div>
+            </div>
         </section>
 
         {job.notes && (
-          <div className="bg-neutral-900/80 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
+          <div className="rounded-xl border border-white/10 bg-neutral-900 p-4 shadow-lg">
             <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
             <p className="text-white font-medium">{job.notes}</p>
           </div>
@@ -667,7 +671,7 @@ export default function ProofPageContent() {
               <img
                 src={preview}
                 alt="preview"
-                className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-[0_15px_35px_rgba(0,0,0,0.45)]"
+                className="w-full aspect-[3/4] object-cover rounded-xl border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.45)]"
                 onClick={() => fileInputRef.current?.click()}
               />
               {!submitting && (
@@ -713,10 +717,10 @@ export default function ProofPageContent() {
             void handleMarkDone();
           }}
           disabled={submitting}
-          className={`w-full px-4 py-3 rounded-lg font-bold transition shadow-lg border ${
+          className={`w-full px-4 py-3 rounded-lg font-bold transition shadow-lg ${
             readyToSubmit
-              ? "bg-[#ff5757] text-white hover:opacity-90 border-[#ff7575]/60"
-              : "bg-neutral-800 text-white hover:bg-neutral-700 border-white/10"
+              ? "bg-[#ff5757] text-white hover:opacity-90"
+              : "bg-neutral-800 text-white hover:bg-neutral-700"
           } ${submitting ? "opacity-60 cursor-not-allowed" : ""}`}
         >
           {submitting ? "Saving…" : readyToSubmit ? "Mark Done" : "Take Photo"}
