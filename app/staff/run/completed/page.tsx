@@ -373,7 +373,7 @@ function CompletedRunContent() {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                   <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Next Assignment
+                    Next Run
                   </p>
                   {assignmentStatus === "loading" ? (
                     <p className="mt-2 text-sm text-gray-400">Checking…</p>
@@ -384,16 +384,10 @@ function CompletedRunContent() {
                   ) : nextAssignment ? (
                     <div className="mt-2 space-y-1 text-sm text-gray-200">
                       <p className="font-semibold text-white">
-                        {nextAssignment.day} · {nextAssignment.address}
-                      </p>
-                      {nextAssignment.clientName && (
-                        <p className="text-xs text-gray-400">
-                          Client: {nextAssignment.clientName}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400">
                         {nextAssignment.totalJobs} job
-                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled.
+                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled on
+                        {" "}
+                        {nextAssignment.day}.
                       </p>
                     </div>
                   ) : (
