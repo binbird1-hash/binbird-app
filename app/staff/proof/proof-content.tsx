@@ -276,7 +276,9 @@ export default function ProofPageContent() {
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
-      const { error: uploadErr } = await supabase.storage.from("proofs").upload(path, uploadFile, { upsert: true });
+      const { error: uploadErr } = await supabase.storage
+        .from("proofs")
+        .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
@@ -297,9 +299,6 @@ export default function ProofPageContent() {
       });
       if (logErr) throw logErr;
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
-      // cleanup
-      setNote(""); setFile(null); if (preview) URL.revokeObjectURL(preview); setPreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
       const nowIso = new Date().toISOString();
@@ -331,9 +330,8 @@ export default function ProofPageContent() {
         router.push(`/staff/route?${paramsObj.toString()}`);
       }
     } catch (err: any) {
-      alert(err?.message || "Unable to save proof. Please try again.");
-    } finally {
       setSubmitting(false);
+      alert(err?.message || "Unable to save proof. Please try again.");
     }
   }
 
