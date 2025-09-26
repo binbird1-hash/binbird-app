@@ -276,6 +276,21 @@ function CompletedRunContent() {
     };
   }, [runData]);
 
+  const completionPercent = useMemo(() => {
+    if (
+      typeof derivedStats.totalJobs === "number" &&
+      derivedStats.totalJobs > 0 &&
+      typeof derivedStats.jobsCompleted === "number"
+    ) {
+      const ratio =
+        (Math.min(derivedStats.jobsCompleted, derivedStats.totalJobs) /
+          derivedStats.totalJobs) *
+        100;
+      return Math.round(ratio);
+    }
+    return null;
+  }, [derivedStats.jobsCompleted, derivedStats.totalJobs]);
+
   return (
     <div className="relative flex min-h-full flex-col bg-black text-white">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-32 pt-8 sm:pt-12">
@@ -300,7 +315,133 @@ function CompletedRunContent() {
               )}
             </div>
 
-            {/* …rest unchanged… */}
+            <div className="space-y-6">
+              {runData === undefined ? (
+                <div className="space-y-4">
+                  <div className="h-12 w-full animate-pulse rounded-xl bg-white/5" />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                    <div className="h-20 animate-pulse rounded-xl bg-white/5" />
+                  </div>
+                </div>
+              ) : runData === null ? (
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-sm text-gray-300">
+                  <p>We couldn&apos;t find any details from your most recent run.</p>
+                  <p className="mt-2 text-gray-400">
+                    Start a new run to see a full summary here once you&apos;re
+                    finished.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-sm uppercase tracking-wide text-gray-400">
+                          Jobs Completed
+                        </p>
+                        <p className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+                          {typeof derivedStats.jobsCompleted === "number"
+                            ? derivedStats.jobsCompleted
+                            : "—"}
+                          {typeof derivedStats.totalJobs === "number" && (
+                            <span className="ml-2 text-lg font-semibold text-gray-400">
+                              / {derivedStats.totalJobs}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {completionPercent !== null && (
+                        <span className="rounded-full border border-white/10 px-3 py-1 text-sm font-medium text-gray-200">
+                          {completionPercent}% complete
+                        </span>
+                      )}
+                    </div>
+                    {completionPercent !== null && (
+                      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-[#ff5757]"
+                          style={{
+                            width: `${Math.min(Math.max(completionPercent, 0), 100)}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                      <dt className="text-sm text-gray-400">Run Duration</dt>
+                      <dd className="mt-2 text-lg font-semibold text-white">
+                        {derivedStats.durationLabel}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                      <dt className="text-sm text-gray-400">Average per Job</dt>
+                      <dd className="mt-2 text-lg font-semibold text-white">
+                        {derivedStats.avgPerJob}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                      <dt className="text-sm text-gray-400">Started</dt>
+                      <dd className="mt-2 text-lg font-semibold text-white">
+                        {derivedStats.startLabel ?? "—"}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                      <dt className="text-sm text-gray-400">Finished</dt>
+                      <dd className="mt-2 text-lg font-semibold text-white">
+                        {derivedStats.endLabel ?? "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                </>
+              )}
+
+              <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
+                    Next Assignment
+                  </h3>
+                  {assignmentStatus === "loading" && (
+                    <span className="text-xs text-gray-400">Loading…</span>
+                  )}
+                </div>
+
+                {assignmentStatus === "error" ? (
+                  <p className="text-sm text-gray-300">{assignmentError}</p>
+                ) : nextAssignment ? (
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold text-white">
+                      {nextAssignment.day}
+                    </p>
+                    <p className="text-sm text-gray-300">
+                      {nextAssignment.address}
+                    </p>
+                    {nextAssignment.clientName && (
+                      <p className="text-sm text-gray-400">
+                        Client: {nextAssignment.clientName}
+                      </p>
+                    )}
+                    <p className="text-sm font-medium text-gray-200">
+                      {nextAssignment.totalJobs} job
+                      {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled
+                    </p>
+                  </div>
+                ) : assignmentStatus === "loading" ? (
+                  <div className="space-y-2">
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
+                    <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-300">
+                    You&apos;re all caught up. No upcoming assignments were found.
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
         </div>
       </div>
