@@ -323,10 +323,14 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen overflow-y-auto bg-black text-white pb-6">
+      <div className="relative min-h-screen bg-black text-white pb-6">
         <SettingsDrawer />
-        <CompletedRunContent />
+        {/* scrollable container */}
+        <div className="h-full overflow-y-auto">
+          <CompletedRunContent />
+        </div>
       </div>
     </MapSettingsProvider>
   );
 }
+
