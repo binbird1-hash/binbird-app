@@ -268,31 +268,27 @@ export default function ProofPageContent() {
 
     if (normalized.includes("red")) {
       return {
-        wrapper:
-          "border-red-500/80 bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white",
+        background: "bg-red-600",
         text: "text-white",
       };
     }
 
     if (normalized.includes("yellow")) {
       return {
-        wrapper:
-          "border-yellow-400/80 bg-gradient-to-br from-yellow-300 via-yellow-300 to-amber-400 text-black",
+        background: "bg-amber-300",
         text: "text-black",
       };
     }
 
     if (normalized.includes("green")) {
       return {
-        wrapper:
-          "border-emerald-500/80 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 text-white",
+        background: "bg-emerald-600",
         text: "text-white",
       };
     }
 
     return {
-      wrapper:
-        "border-neutral-500/70 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 text-white",
+      background: "bg-neutral-800",
       text: "text-white",
     };
   }
@@ -321,9 +317,9 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin.toLowerCase()}-${idx}`}
-          className={`w-full rounded-xl border px-4 py-3 text-center text-base font-semibold tracking-tight transition-transform duration-150 ease-out hover:scale-[1.01] ${styles.wrapper}`}
+          className={`w-full rounded-lg px-4 py-3 text-center text-base font-semibold ${styles.background}`}
         >
-          <span className={`block font-semibold uppercase ${styles.text}`}>
+          <span className={`block font-semibold tracking-tight ${styles.text}`}>
             {getBinLabel(bin)}
           </span>
         </div>
@@ -502,16 +498,21 @@ export default function ProofPageContent() {
   const binCardsForInstructions = renderBinCards("instructions");
   const binCardsForQuickReference = renderBinCards("quick-reference");
   const subtleFallbackCard = (
-    <div className="w-full rounded-xl border border-neutral-700 bg-gradient-to-br from-neutral-700 via-neutral-700 to-neutral-800 px-4 py-3 text-center text-base font-semibold uppercase text-white">
+    <div className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-center text-base font-semibold text-white">
       All Bins
     </div>
   );
 
   const quickReferenceContent = (
-    <div className="pt-1">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-        Bin colours today
-      </p>
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+          Bin colours today
+        </p>
+        <p className="text-sm text-gray-400">
+          Match these colours when you roll the bins.
+        </p>
+      </div>
       <div className="flex flex-col gap-2">
         {binCardsForQuickReference ?? subtleFallbackCard}
       </div>
@@ -519,208 +520,236 @@ export default function ProofPageContent() {
   );
 
   return (
-    <div className="relative flex min-h-full flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-white">
-      <div className="flex-1 p-6 pb-32 space-y-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
-          {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
-        </h1>
-
-        <p className="text-lg font-semibold text-gray-200">{job.address}</p>
-
-        <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-            <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-              Instructions
-            </summary>
-            <div className="p-4 bg-neutral-900/60 space-y-3">
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-                  Step 1 – Start Spot
-                </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-                  <div className="relative">
-                    <img
-                      src={startImageSrc}
-                      alt={`${startLocationLabel} example`}
-                      className="w-full aspect-[3/4] object-cover rounded-lg"
-                    />
-                    <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                      START HERE
-                    </span>
-                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                      {startLocationLabel}
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-white">{startBodyCopy.primary}</p>
-                  <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
-                </div>
-              </details>
-
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-                  Step 2 – Today’s Bins
-                </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-                  <div className="flex flex-col gap-2">
-                    {binCardsForInstructions ?? subtleFallbackCard}
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-white">
-                      Roll every bin in the colours shown above.
-                    </p>
-                    <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
-                  </div>
-                </div>
-              </details>
-
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-                  Step 3 – Move the Bins
-                </summary>
-                <div className="p-4 bg-neutral-900/60 text-left">
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    {moveStepLines.map((line) => (
-                      <li key={line} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
-                          ✓
-                        </span>
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
-
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-                  Step 4 – Finish Spot
-                </summary>
-                <div className="p-4 bg-neutral-900/60 space-y-3 text-left">
-                  <div className="relative">
-                    <img
-                      src={endImageSrc}
-                      alt={`${endLocationLabel} example`}
-                      className="w-full aspect-[3/4] object-cover rounded-lg"
-                    />
-                    <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                      END HERE
-                    </span>
-                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                      {endLocationLabel}
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-white">{endBodyCopy.primary}</p>
-                  <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
-                </div>
-              </details>
-
-              <details className="border border-gray-800/80 rounded-xl overflow-hidden bg-neutral-900/60">
-                <summary className="px-4 py-3 font-bold bg-neutral-900/80 cursor-pointer">
-                  Step 5 – Final Check
-                </summary>
-                <div className="p-4 bg-neutral-900/60 text-left">
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    {finalCheckLines.map((line) => (
-                      <li key={line} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
-                          ✓
-                        </span>
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
-            </div>
-          </details>
-
-          {quickReferenceContent}
-        </section>
-
-        {job.notes && (
-          <div className="bg-neutral-900/80 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
-            <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
-            <p className="text-white font-medium">{job.notes}</p>
-          </div>
-        )}
-
-        {/* Take photo */}
-        <div className="flex flex-col gap-3 mt-10">
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            id="photo-upload"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              setFile(f);
-              setPreview((prev) => {
-                if (prev) URL.revokeObjectURL(prev);
-                return f ? URL.createObjectURL(f) : null;
-              });
-            }}
+    <div className="flex min-h-screen flex-col bg-black text-white">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col px-6 pb-40 pt-12">
+        <div className="relative mb-8">
+          <div
+            className="absolute left-0 top-0 w-screen bg-[#ff5757]"
+            style={{ height: "2px" }}
           />
-          {preview && (
-            <div className="flex flex-col items-center gap-2">
-              <img
-                src={preview}
-                alt="preview"
-                className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-[0_15px_35px_rgba(0,0,0,0.45)]"
-                onClick={() => fileInputRef.current?.click()}
-              />
-              {!submitting && (
-                <button
-                  type="button"
-                  className="text-sm text-gray-300 underline"
+          <div className="space-y-2">
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
+              {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
+            </h1>
+            <p className="text-lg font-semibold text-gray-200">{job.address}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col gap-6">
+          <section className="space-y-4 rounded-2xl border border-white/10 bg-neutral-950/70 p-5">
+            <details className="overflow-hidden rounded-xl border border-white/10 bg-black/40">
+              <summary className="cursor-pointer px-4 py-3 text-base font-semibold text-white">
+                Instructions
+              </summary>
+              <div className="space-y-3 border-t border-white/10 bg-black/60 p-4">
+                <details className="overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+                    Step 1 – Start Spot
+                  </summary>
+                  <div className="space-y-3 border-t border-white/10 bg-black/70 px-4 py-4 text-left">
+                    <div className="relative">
+                      <img
+                        src={startImageSrc}
+                        alt={`${startLocationLabel} example`}
+                        className="aspect-[3/4] w-full rounded-lg object-cover"
+                      />
+                      <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                        START HERE
+                      </span>
+                      <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                        {startLocationLabel}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-white">
+                      {startBodyCopy.primary}
+                    </p>
+                    <p className="text-sm text-gray-300">
+                      {startBodyCopy.secondary}
+                    </p>
+                  </div>
+                </details>
+
+                <details className="overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+                    Step 2 – Today’s Bins
+                  </summary>
+                  <div className="space-y-3 border-t border-white/10 bg-black/70 px-4 py-4 text-left">
+                    <div className="flex flex-col gap-2">
+                      {binCardsForInstructions ?? subtleFallbackCard}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-white">
+                        Roll every bin in the colours shown above.
+                      </p>
+                      <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
+                    </div>
+                  </div>
+                </details>
+
+                <details className="overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+                    Step 3 – Move the Bins
+                  </summary>
+                  <div className="border-t border-white/10 bg-black/70 px-4 py-4 text-left">
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      {moveStepLines.map((line) => (
+                        <li key={line} className="flex items-start gap-2">
+                          <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                            ✓
+                          </span>
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </details>
+
+                <details className="overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+                    Step 4 – Finish Spot
+                  </summary>
+                  <div className="space-y-3 border-t border-white/10 bg-black/70 px-4 py-4 text-left">
+                    <div className="relative">
+                      <img
+                        src={endImageSrc}
+                        alt={`${endLocationLabel} example`}
+                        className="aspect-[3/4] w-full rounded-lg object-cover"
+                      />
+                      <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                        END HERE
+                      </span>
+                      <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
+                        {endLocationLabel}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-white">
+                      {endBodyCopy.primary}
+                    </p>
+                    <p className="text-sm text-gray-300">
+                      {endBodyCopy.secondary}
+                    </p>
+                  </div>
+                </details>
+
+                <details className="overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+                    Step 5 – Final Check
+                  </summary>
+                  <div className="border-t border-white/10 bg-black/70 px-4 py-4 text-left">
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      {finalCheckLines.map((line) => (
+                        <li key={line} className="flex items-start gap-2">
+                          <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                            ✓
+                          </span>
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </details>
+              </div>
+            </details>
+          </section>
+
+          <div className="rounded-2xl border border-white/10 bg-neutral-950/70 p-5">
+            {quickReferenceContent}
+          </div>
+
+          {job.notes && (
+            <div className="rounded-2xl border border-white/10 bg-neutral-950/70 p-5">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Property notes
+              </p>
+              <p className="text-sm text-gray-200">{job.notes}</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              id="photo-upload"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                setFile(f);
+                setPreview((prev) => {
+                  if (prev) URL.revokeObjectURL(prev);
+                  return f ? URL.createObjectURL(f) : null;
+                });
+              }}
+            />
+            {preview && (
+              <div className="flex flex-col items-center gap-2">
+                <img
+                  src={preview}
+                  alt="preview"
+                  className="aspect-[3/4] w-full rounded-xl object-cover"
                   onClick={() => fileInputRef.current?.click()}
-                >
-                  Need a new photo?
-                </button>
-              )}
+                />
+                {!submitting && (
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-gray-300 underline underline-offset-4"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Need a new photo?
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-neutral-950/70 p-4">
+            <p className="mb-2 text-sm font-semibold text-gray-300">Leave a note</p>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add any details..."
+              className="w-full min-h-[110px] rounded-lg bg-black/60 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#ff5757]/70"
+            />
+          </div>
+
+          {gpsError && (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+              <p>{gpsError}</p>
             </div>
           )}
         </div>
-
-        {/* Leave note */}
-        <div>
-          <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add any details..."
-            className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
-          />
-        </div>
-
-        {gpsError && (
-          <div className="text-sm text-red-400">
-            <p>{gpsError}</p>
-          </div>
-        )}
       </div>
 
-      {/* Mark Done pinned bottom */}
-      <div className="absolute bottom-0 inset-x-0 p-4">
-        <button
-          onClick={() => {
-            if (submitting) return;
-            if (!file) {
-              fileInputRef.current?.click();
-              return;
-            }
-            void handleMarkDone();
-          }}
-          disabled={submitting}
-          className={`w-full px-4 py-3 rounded-lg font-bold transition shadow-lg border ${
-            readyToSubmit
-              ? "bg-[#ff5757] text-white hover:opacity-90 border-[#ff7575]/60"
-              : "bg-neutral-800 text-white hover:bg-neutral-700 border-white/10"
-          } ${submitting ? "opacity-60 cursor-not-allowed" : ""}`}
-        >
-          {submitting ? "Saving…" : readyToSubmit ? "Mark Done" : "Take Photo"}
-        </button>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20">
+        <div className="bg-black">
+          <div className="mx-auto w-full max-w-xl px-6 pb-6 pt-4">
+            <div className="relative">
+              <div
+                className="absolute left-0 top-0 w-screen bg-[#ff5757]"
+                style={{ height: "2px" }}
+              />
+              <button
+                onClick={() => {
+                  if (submitting) return;
+                  if (!file) {
+                    fileInputRef.current?.click();
+                    return;
+                  }
+                  void handleMarkDone();
+                }}
+                disabled={submitting}
+                className={`pointer-events-auto w-full rounded-lg px-4 py-3 font-bold transition ${
+                  readyToSubmit
+                    ? "bg-[#ff5757] text-white hover:opacity-90"
+                    : "bg-neutral-900 text-white/70 hover:text-white hover:bg-neutral-800"
+                } ${submitting ? "cursor-not-allowed opacity-60" : ""}`}
+              >
+                {submitting ? "Saving…" : readyToSubmit ? "Mark Done" : "Take Photo"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
