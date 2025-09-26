@@ -634,14 +634,12 @@ export default function ProofPageContent() {
             </div>
           </details>
 
-            <details className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
-              <summary className="px-4 py-3 font-bold bg-neutral-900 cursor-pointer">
-                Quick Reference
-              </summary>
+            <div className="border border-white/10 rounded-xl overflow-hidden bg-neutral-900">
+              <div className="px-4 py-3 font-bold bg-neutral-900">Quick Reference</div>
               <div className="p-4 bg-neutral-950 space-y-2">
                 {quickReferenceContent}
               </div>
-            </details>
+            </div>
         </section>
 
         {job.notes && (
