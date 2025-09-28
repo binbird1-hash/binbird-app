@@ -278,7 +278,7 @@ function CompletedRunContent() {
 
   return (
     <div className="relative flex min-h-full flex-col bg-black text-white">
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-32 pt-8 sm:pt-12">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-48 pt-8 sm:pt-12">
         <header className="space-y-3 text-center sm:text-left">
           <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
             Run Complete!
