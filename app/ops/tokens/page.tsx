@@ -10,7 +10,7 @@ type ClientListRow = {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
+  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'Client Account'

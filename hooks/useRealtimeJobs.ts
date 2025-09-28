@@ -35,16 +35,18 @@ export function useRealtimeJobs(accountId: string | null, onChange: (job: Job) =
       .channel(`jobs-client-${accountId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'jobs', filter: `client_name=eq.${accountId}` },
+        { event: '*', schema: 'public', table: 'jobs', filter: `account_id=eq.${accountId}` },
         (payload) => {
           const newJob = payload.new as any
           if (!newJob) return
           const scheduledAt = computeNextOccurrence(newJob.day_of_week ?? null)
           const bins = typeof newJob.bins === 'string' ? newJob.bins.split(',').map((value: string) => value.trim()) : []
+          const propertyId =
+            typeof newJob.property_id === 'string' && newJob.property_id.trim().length ? newJob.property_id.trim() : null
           const job: Job = {
             id: String(newJob.id),
             accountId,
-            propertyId: null,
+            propertyId,
             propertyName: newJob.address ?? 'Property',
             status: 'scheduled',
             scheduledAt,

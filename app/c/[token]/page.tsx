@@ -13,7 +13,7 @@ type ClientListRow = {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
+  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'Client Account'
@@ -29,48 +29,21 @@ const fetchClientRowsForToken = async (
   sb: ReturnType<typeof supabaseServer>,
 ) => {
   const selectColumns = 'id, account_id, client_name, company, address, notes'
+
+  const { data, error } = await sb
+    .from('client_list')
+    .select(selectColumns)
+    .or(`account_id.eq.${accountId},id.eq.${accountId}`)
+
+  if (error) {
+    console.warn('Failed to fetch client_list for portal token', error)
+    return [] as ClientListRow[]
+  }
+
   const deduped = new Map<string, ClientListRow>()
-  const queryColumns: Array<keyof ClientListRow> = [
-    'account_id',
-    'id',
-    'client_name',
-    'company',
-  ]
-
-  for (const column of queryColumns) {
-    const { data, error } = await sb
-      .from('client_list')
-      .select(selectColumns)
-      .eq(column as string, accountId)
-
-    if (error) {
-      console.warn(`Failed to query client_list by ${column}`, error)
-      continue
-    }
-
-    if (data?.length) {
-      data.forEach((row) => deduped.set(row.id, row as ClientListRow))
-      break
-    }
-  }
-
-  if (!deduped.size) {
-    const { data, error } = await sb
-      .from('client_list')
-      .select(selectColumns)
-
-    if (error) {
-      console.warn('Failed to fetch client_list for portal fallback', error)
-      return [] as ClientListRow[]
-    }
-
-    data?.forEach((row) => {
-      const typed = row as ClientListRow
-      if (deriveAccountId(typed) === accountId) {
-        deduped.set(typed.id, typed)
-      }
-    })
-  }
+  ;(data ?? []).forEach((row) => {
+    deduped.set(row.id, row as ClientListRow)
+  })
 
   return Array.from(deduped.values()) as ClientListRow[]
 }
@@ -101,8 +74,11 @@ export default async function ClientPortal({
   }
 
   const clientRows = await fetchClientRowsForToken(accountToken, sb)
+  const canonicalAccountId =
+    clientRows.find((row) => row.account_id && row.account_id.trim() === accountToken)?.account_id?.trim() ?? accountToken
+
   const matchingRows = clientRows.filter(
-    (row) => deriveAccountId(row) === accountToken,
+    (row) => deriveAccountId(row) === canonicalAccountId,
   )
 
   if (!matchingRows.length) {
@@ -123,13 +99,13 @@ export default async function ClientPortal({
       .select(
         'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week',
       )
-      .or(`account_id.eq.${accountToken},client_name.eq.${accountToken}`),
+      .or(`account_id.eq.${canonicalAccountId},property_id.eq.${canonicalAccountId}`),
     sb
       .from('logs')
       .select(
         'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
       )
-      .or(`account_id.eq.${accountToken},client_name.eq.${accountToken}`)
+      .eq('account_id', canonicalAccountId)
       .order('done_on', { ascending: false }),
   ])
 
