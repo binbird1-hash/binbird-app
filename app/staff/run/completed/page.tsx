@@ -277,6 +277,7 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
+
     <div className="flex flex-1 flex-col bg-black text-white">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-16 pt-8 sm:pt-12">
         <header className="space-y-3 text-center sm:text-left">
