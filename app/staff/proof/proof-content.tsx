@@ -25,14 +25,27 @@ function toKebab(value: string | null | undefined, fallback: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// month-year-week helper
-function getMonthAndWeek(date: Date) {
-  const month = date.toLocaleString("en-US", { month: "long" });
-  const year = date.getFullYear();
-  const monthYear = `${month}, ${year}`;
-  const day = date.getDate();
-  const week = `Week ${Math.ceil(day / 7)}`;
-  return { monthYear, week };
+// custom week helper (Monday-Saturday cycle, Sunday joins next week)
+function getCustomWeek(date: Date) {
+  const d = new Date(date);
+
+  // If Sunday, push to Monday (next cycle)
+  if (d.getDay() === 0) {
+    d.setDate(d.getDate() + 1);
+  }
+
+  // ISO week calc
+  const target = new Date(d.valueOf());
+  const dayNr = (target.getDay() + 6) % 7; // Monday=0 … Sunday=6
+  target.setDate(target.getDate() - dayNr + 3); // Thursday of current week
+  const firstThursday = new Date(target.getFullYear(), 0, 4);
+  const diff = target.valueOf() - firstThursday.valueOf();
+  const week = 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
+
+  return {
+    year: target.getFullYear(),
+    week: `Week-${week}`,
+  };
 }
 
 async function prepareFileAsJpeg(originalFile: File, desiredName: string): Promise<File> {
@@ -269,10 +282,10 @@ export default function ProofPageContent() {
       if (!user) throw new Error("You must be signed in to submit proof.");
       const now = new Date();
       const dateStr = getLocalISODate(now);
-      const { monthYear, week } = getMonthAndWeek(now);
+      const { year, week } = getCustomWeek(now);
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
-      const folderPath = `${safeClient}/${safeAddress}/${monthYear}/${week}`;
+      const folderPath = `${safeClient}/${safeAddress}/${year}/${week}`;
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
