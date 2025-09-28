@@ -386,7 +386,7 @@ function CompletedRunContent() {
                     <div className="mt-2 space-y-1 text-sm text-gray-200">
                       <p className="font-semibold text-white">
                         {nextAssignment.totalJobs} job
-                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled on
+                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled for
                         {" "}
                         {nextAssignment.day}.
                       </p>
