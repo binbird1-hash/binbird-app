@@ -1,7 +1,6 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+// app/ops/clients/page.tsx
+import BackButton from '@/components/UI/BackButton'
+import { supabaseServer } from '@/lib/supabaseServer'
 
 type ClientListRow = {
   id: string
@@ -55,57 +54,56 @@ const deriveName = (row: ClientListRow): string =>
 
 const deriveAddress = (row: ClientListRow): string => row.address?.trim() || '—'
 
-export default function ClientsPage() {
-  const [rows, setRows] = useState<TableRow[]>([])
-  const [loading, setLoading] = useState(true)
+async function fetchClientRows(): Promise<TableRow[]> {
+  const sb = supabaseServer()
+  const { data, error } = await sb
+    .from('client_list')
+    .select(
+      'id, client_name, company, address, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip',
+    )
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('client_list')
-        .select(
-          'id, client_name, company, address, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip',
-        )
+  if (error) {
+    console.warn('Failed to load client list', error)
+    return []
+  }
 
-      const formatted = (data ?? []).map((row) => {
-        const typed = row as ClientListRow
-        return {
-          id: typed.id,
-          name: deriveName(typed),
-          address: deriveAddress(typed),
-          binsThisWeek: deriveBinsThisWeek(typed),
-        }
-      })
+  return ((data ?? []) as ClientListRow[]).map((row) => ({
+    id: row.id,
+    name: deriveName(row),
+    address: deriveAddress(row),
+    binsThisWeek: deriveBinsThisWeek(row),
+  }))
+}
 
-      setRows(formatted)
-      setLoading(false)
-    }
-    load()
-  }, [])
-
-  if (loading) return <div className="container">Loading…</div>
+export default async function ClientsPage() {
+  const rows = await fetchClientRows()
 
   return (
     <div className="container">
+      <BackButton />
       <h2 className="text-xl font-bold mb-4">Client List</h2>
-      <table className="table-auto w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">Client</th>
-            <th className="p-2 border">Address</th>
-            <th className="p-2 border">Bins</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <td className="p-2 border">{row.name}</td>
-              <td className="p-2 border">{row.address}</td>
-              <td className="p-2 border">{row.binsThisWeek}</td>
+      {rows.length === 0 ? (
+        <p className="text-sm text-gray-600">No client records found.</p>
+      ) : (
+        <table className="table-auto w-full border">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="p-2 border text-left">Client</th>
+              <th className="p-2 border text-left">Address</th>
+              <th className="p-2 border text-left">Bins</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td className="p-2 border align-top">{row.name}</td>
+                <td className="p-2 border align-top">{row.address}</td>
+                <td className="p-2 border align-top">{row.binsThisWeek}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }
