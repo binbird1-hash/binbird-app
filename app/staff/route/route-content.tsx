@@ -272,8 +272,8 @@ function RoutePageContent() {
       : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <div className="relative h-[150vh]">
+  <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+    <div className="flex-grow relative">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
