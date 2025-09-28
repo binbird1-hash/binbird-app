@@ -5,8 +5,8 @@ import clsx from 'clsx'
 import type { LucideIcon } from 'lucide-react'
 import { Users, BriefcaseBusiness, ShieldCheck } from 'lucide-react'
 
-type PortalRole = 'guest' | 'client' | 'staff' | 'admin' | null
-type AccessRole = Exclude<PortalRole, 'guest' | null>
+export type PortalRole = 'guest' | 'client' | 'staff' | 'admin'
+type AccessRole = Exclude<PortalRole, 'guest'>
 
 type PortalOption = {
   id: string
@@ -49,7 +49,7 @@ const portalOptions: PortalOption[] = [
 ]
 
 type PortalPickerProps = {
-  role: PortalRole
+  role: PortalRole | null
 }
 
 export default function PortalPicker({ role }: PortalPickerProps) {

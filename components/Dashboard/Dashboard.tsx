@@ -5,11 +5,19 @@ import { supabase } from '@/lib/supabaseClient'
 import GuestDashboard from './GuestDashboard'
 import StaffDashboard from './StaffDashboard'
 import AdminDashboard from './AdminDashboard'
-import PortalPicker from './PortalPicker'
+import PortalPicker, { type PortalRole } from './PortalPicker'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
-  const [role, setRole] = useState<string | null>(null)
+  const [role, setRole] = useState<PortalRole | null>(null)
+
+  const normalizeRole = (value: string | null | undefined): PortalRole => {
+    if (value === 'client' || value === 'staff' || value === 'admin') {
+      return value
+    }
+
+    return 'staff'
+  }
 
   useEffect(() => {
     async function load() {
@@ -26,7 +34,7 @@ export default function Dashboard() {
         .eq('id', user.id)
         .maybeSingle()
 
-      setRole(profile?.role || 'staff')
+      setRole(normalizeRole(profile?.role))
       setLoading(false)
     }
     load()
