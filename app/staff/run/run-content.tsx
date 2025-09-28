@@ -46,7 +46,7 @@ const applyVictoriaAutocompleteLimits = (
 export default function RunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
+      <div className="relative min-h-screen overflow-hidden bg-black text-white">
         <SettingsDrawer />
         <RunPageContent />
       </div>
