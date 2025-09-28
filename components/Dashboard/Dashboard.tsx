@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import GuestDashboard from './GuestDashboard'
 import StaffDashboard from './StaffDashboard'
 import AdminDashboard from './AdminDashboard'
+import PortalPicker from './PortalPicker'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
@@ -39,14 +40,17 @@ export default function Dashboard() {
     )
   }
 
+  if (role === 'guest') {
+    return <GuestDashboard />
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
       {/* Sticky header */}
       <header className="sticky top-0 z-10 bg-black border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-bold text-[#ff5757]">BinBird</h1>
 
-        {/* Show sign out only if logged in */}
-        {(role === 'staff' || role === 'admin') && (
+        {(role === 'staff' || role === 'admin' || role === 'client') && (
           <button
             onClick={async () => {
               await supabase.auth.signOut()
@@ -60,8 +64,8 @@ export default function Dashboard() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-6 py-8">
-        {role === 'guest' && <GuestDashboard />}
+      <main className="flex-1 overflow-y-auto px-6 py-8 space-y-10">
+        <PortalPicker role={role} />
         {role === 'admin' && <AdminDashboard />}
         {role === 'staff' && <StaffDashboard />}
       </main>
