@@ -215,7 +215,7 @@ function RoutePageContent() {
       if (activeJob) bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
     if (!bounds.isEmpty())
-      mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
+      mapRef.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
   }, [mapRef, directions, currentLocation, activeJob]);
 
   // Distance calculation
