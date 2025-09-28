@@ -2,85 +2,94 @@
 import BackButton from '@/components/UI/BackButton'
 import { supabaseServer } from '@/lib/supabaseServer'
 
-export default async function TokensPage() {
-  async function createToken(formData: FormData) {
-    'use server'
-    const sb = supabaseServer()
-    const accountId = formData.get('accountId') as string
-    const token = crypto.randomUUID().replace(/-/g, '')
-    await sb
-      .from('client_token')
-      .insert({ account_id: accountId, token })
-  }
+type ClientListRow = {
+  id: string
+  client_name: string | null
+  company: string | null
+}
 
+const deriveAccountId = (row: ClientListRow): string =>
+  row.client_name?.trim() || row.company?.trim() || row.id
+
+const deriveAccountName = (row: ClientListRow): string =>
+  row.company?.trim() || row.client_name?.trim() || 'Client Account'
+
+export default async function TokensPage() {
   const sb = supabaseServer()
 
-  // Fetch all client accounts
-  const { data: accounts, error: accountErr } = await sb
-    .from('client_accounts')
-    .select('id, name')
-    .order('name')
+  const { data: clientRows, error: clientError } = await sb
+    .from('client_list')
+    .select('id, client_name, company')
 
-  if (accountErr) {
+  if (clientError) {
     return (
       <div className="container">
         <BackButton />
-        <h2>Error loading accounts</h2>
-        <p className="text-red-500">{accountErr.message}</p>
+        <h2>Error loading client accounts</h2>
+        <p className="text-red-500">{clientError.message}</p>
       </div>
     )
   }
 
-  // Fetch all tokens
-  const { data: tokens, error: tokenErr } = await sb
-    .from('client_token')
-    .select('token, account:account_id(name)')
-    .order('created_at', { ascending: false })
+  const accountsMap = new Map<
+    string,
+    {
+      id: string
+      name: string
+      propertyCount: number
+    }
+  >()
 
-  if (tokenErr) {
-    return (
-      <div className="container">
-        <BackButton />
-        <h2>Error loading tokens</h2>
-        <p className="text-red-500">{tokenErr.message}</p>
-      </div>
-    )
-  }
+  ;((clientRows ?? []) as ClientListRow[]).forEach((row) => {
+    const accountId = deriveAccountId(row)
+    const accountName = deriveAccountName(row)
+    const existing = accountsMap.get(accountId)
+    if (existing) {
+      existing.propertyCount += 1
+    } else {
+      accountsMap.set(accountId, {
+        id: accountId,
+        name: accountName,
+        propertyCount: 1,
+      })
+    }
+  })
+
+  const accounts = Array.from(accountsMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )
 
   return (
     <div className="container">
       <BackButton />
-      <h2 className="text-xl font-semibold mb-4">Client Tokens</h2>
+      <h2 className="text-xl font-semibold mb-4">Client Portal Links</h2>
 
-      {/* Token generator */}
-      <form action={createToken} className="mb-6 space-x-2">
-        <select
-          name="accountId"
-          className="border p-2 rounded"
-          required
-        >
-          {accounts?.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button className="btn" type="submit">
-          Generate
-        </button>
-      </form>
+      <p className="mb-4 text-sm text-gray-600">
+        Client portal links are generated from existing client records. Share a
+        link below to grant access to the related properties. New link
+        generation will be re-enabled once backend support is available.
+      </p>
 
-      {/* Existing tokens */}
-      <h3 className="font-medium mb-2">Existing</h3>
-      <ul className="list-disc list-inside space-y-1">
-        {tokens?.map((t: any) => (
-          <li key={t.token}>
-            <a target="_blank" href={`/c/${t.token}`}>
-              {t.account?.name} — /c/{t.token}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <h3 className="font-medium mb-2">Available links</h3>
+      {accounts.length === 0 ? (
+        <p className="text-sm text-gray-600">No client records found.</p>
+      ) : (
+        <ul className="list-disc list-inside space-y-1">
+          {accounts.map((account) => {
+            const href = `/c/${encodeURIComponent(account.id)}`
+            return (
+              <li key={account.id}>
+                <a target="_blank" href={href} rel="noreferrer">
+                  {account.name} — {href}
+                </a>
+                <span className="ml-2 text-xs text-gray-500">
+                  ({account.propertyCount} properties)
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }
