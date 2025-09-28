@@ -6,12 +6,13 @@ import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 
 type ClientListRow = {
   id: string
+  account_id: string | null
   client_name: string | null
   company: string | null
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.client_name?.trim() || row.company?.trim() || row.id
+  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -80,9 +81,14 @@ export async function middleware(req: NextRequest) {
   }
 
   const fetchClientRowsForToken = async (accountId: string): Promise<ClientListRow[]> => {
-    const selectColumns = 'id, client_name, company'
+    const selectColumns = 'id, account_id, client_name, company'
     const deduped = new Map<string, ClientListRow>()
-    const queryColumns: Array<keyof ClientListRow> = ['id', 'client_name', 'company']
+    const queryColumns: Array<keyof ClientListRow> = [
+      'account_id',
+      'id',
+      'client_name',
+      'company',
+    ]
 
     for (const column of queryColumns) {
       const { data, error } = await supabase

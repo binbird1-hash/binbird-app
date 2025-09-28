@@ -4,12 +4,13 @@ import { supabaseServer } from '@/lib/supabaseServer'
 
 type ClientListRow = {
   id: string
+  account_id: string | null
   client_name: string | null
   company: string | null
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.client_name?.trim() || row.company?.trim() || row.id
+  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'Client Account'
@@ -19,7 +20,7 @@ export default async function TokensPage() {
 
   const { data: clientRows, error: clientError } = await sb
     .from('client_list')
-    .select('id, client_name, company')
+    .select('id, account_id, client_name, company')
 
   if (clientError) {
     return (
