@@ -2,9 +2,9 @@ import { ReactNode } from "react";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-black via-gray-900 to-red-900 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-black text-white [background-image:radial-gradient(circle_at_top,_#161616,_#000000)]">
       <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,87,87,0.12),_transparent_55%)]"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_55%)]"
         aria-hidden="true"
       />
       <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 py-12">
