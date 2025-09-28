@@ -279,7 +279,7 @@ function CompletedRunContent() {
   return (
 
     <div className="flex flex-1 flex-col bg-black text-white">
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-16 pt-8 sm:pt-12">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pt-8 sm:pt-12">
         <header className="space-y-3 text-center sm:text-left">
           <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
             Run Complete!
@@ -403,7 +403,7 @@ function CompletedRunContent() {
         </div>
       </div>
 
-      <div className="mt-auto border-t border-white/10 bg-black/95 p-6 backdrop-blur">
+      <div className="mt-auto bg-black/95 p-6 backdrop-blur">
         <button
           type="button"
           onClick={() => router.push("/staff/run")}
