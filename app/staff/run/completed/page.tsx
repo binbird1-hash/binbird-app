@@ -277,8 +277,9 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <div className="relative flex min-h-full flex-col bg-black text-white">
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-46 pt-8 sm:pt-12">
+
+    <div className="flex flex-1 flex-col bg-black text-white">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pb-16 pt-8 sm:pt-12">
         <header className="space-y-3 text-center sm:text-left">
           <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
             Run Complete!
@@ -402,16 +403,14 @@ function CompletedRunContent() {
         </div>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10">
-        <div className="w-full bg-black/95 p-6 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => router.push("/staff/run")}
-            className="pointer-events-auto w-full rounded-lg bg-[#ff5757] px-4 py-2 font-bold text-white transition hover:opacity-90"
-          >
-            End Run
-          </button>
-        </div>
+      <div className="mt-auto border-t border-white/10 bg-black/95 p-6 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => router.push("/staff/run")}
+          className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-bold text-white transition hover:opacity-90"
+        >
+          End Run
+        </button>
       </div>
     </div>
   );
@@ -420,12 +419,9 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative flex min-h-screen flex-col bg-black text-white pb-6">
+      <div className="relative flex min-h-screen flex-col bg-black text-white">
         <SettingsDrawer />
-        <div
-          className="flex-1 overflow-y-auto min-h-0"
-          style={{ maxHeight: "calc(100vh - 3.5rem)" }}
-        >
+        <div className="flex-1 overflow-y-auto min-h-0">
           <CompletedRunContent />
         </div>
       </div>
