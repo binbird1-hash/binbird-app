@@ -420,7 +420,9 @@ export default function CompletedRunPage() {
     <MapSettingsProvider>
       <div className="relative flex min-h-screen flex-col bg-black text-white">
         <SettingsDrawer />
-        <CompletedRunContent />
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <CompletedRunContent />
+        </div>
       </div>
     </MapSettingsProvider>
   );
