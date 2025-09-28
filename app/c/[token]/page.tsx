@@ -1,7 +1,6 @@
 // app/c/[token]/page.tsx
 import BackButton from '@/components/UI/BackButton'
 import { supabaseServer } from '@/lib/supabaseServer'
-import type { ClientTokenRow } from '@/lib/database.types'
 
 export default async function ClientPortal({
   params: { token },
@@ -14,7 +13,14 @@ export default async function ClientPortal({
     .from('client_token')
     .select('token, client:client_id(id, name, properties(id, address, notes))')
     .eq('token', token)
-    .maybeSingle<ClientTokenRow>()
+    .maybeSingle<{
+      token: string
+      client: {
+        id: string
+        name: string | null
+        properties: { id: string; address: string | null; notes: string | null }[]
+      }[]
+    }>()
 
   if (error) {
     return (

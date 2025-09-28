@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
-import type { JobRecord } from "@/lib/database.types";
+import type { Tables } from "@/lib/database.types";
 import {
   clearPlannedRun,
   readPlannedRun,
@@ -191,7 +191,7 @@ function RunPageContent() {
         console.log("Jobs raw result:", data, "Error:", error);
 
         if (!error && data) {
-          const normalized = normalizeJobs<JobRecord>(data);
+          const normalized = normalizeJobs<Tables<"jobs">>(data);
 
           // ✅ log jobs in detail
           console.log("Normalized jobs:", normalized);

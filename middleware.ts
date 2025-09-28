@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
-import type { Database } from '@/lib/database.types'
+import type { Database, Tables } from '@/lib/database.types'
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -48,7 +48,7 @@ export async function middleware(req: NextRequest) {
       .from('user_profile')
       .select('role')
       .eq('user_id', session.user.id)
-      .maybeSingle()
+      .maybeSingle<Pick<Tables<'user_profile'>, 'role'>>()
 
     const userRole = profile?.role
 

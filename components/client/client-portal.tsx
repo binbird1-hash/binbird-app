@@ -83,6 +83,12 @@ type FeedbackFormState = {
   defaultNotes: string
 }
 
+const recordHasId = (
+  record: Record<string, unknown> | null | undefined
+): record is { id: string | number } => {
+  return !!record && typeof record.id !== 'undefined'
+}
+
 export function ClientPortal({ data }: { data: ClientPortalData }) {
   const [jobs, setJobs] = useState(() => enrichJobs(data.jobs, data.logs))
   const [logs, setLogs] = useState<ClientLog[]>(data.logs)
@@ -118,14 +124,19 @@ export function ClientPortal({ data }: { data: ClientPortalData }) {
         (payload) => {
           setLogs((current) => {
             let next = current
-            if (payload.eventType === 'DELETE' && payload.old) {
+            if (payload.eventType === 'DELETE' && recordHasId(payload.old)) {
               next = current.filter((log) => log.id !== payload.old.id)
-            } else if (payload.new) {
-              const existing = current.find((log) => log.id === payload.new.id)
-              if (existing) {
-                next = current.map((log) => (log.id === payload.new.id ? (payload.new as ClientLog) : log))
+            } else {
+              const newLog = recordHasId(payload.new) ? (payload.new as ClientLog) : null
+              if (newLog) {
+                const existing = current.find((log) => log.id === newLog.id)
+                if (existing) {
+                  next = current.map((log) => (log.id === newLog.id ? newLog : log))
+                } else {
+                  next = [...current, newLog]
+                }
               } else {
-                next = [...current, payload.new as ClientLog]
+                next = current
               }
             }
             setJobs((prev) => enrichJobs(prev, next))
@@ -148,16 +159,17 @@ export function ClientPortal({ data }: { data: ClientPortalData }) {
         (payload) => {
           setJobs((current) => {
             const next = [...current]
-            if (payload.eventType === 'DELETE' && payload.old) {
+            if (payload.eventType === 'DELETE' && recordHasId(payload.old)) {
               return next.filter((job) => job.id !== payload.old.id)
             }
-            if (payload.new) {
-              const existingIndex = next.findIndex((job) => job.id === payload.new.id)
+            if (recordHasId(payload.new)) {
+              const newJob = payload.new as ClientJob
+              const existingIndex = next.findIndex((job) => job.id === newJob.id)
               const existingLogs = existingIndex === -1 ? [] : next[existingIndex].logs
               const normalizedJob = {
-                ...(payload.new as ClientJob),
+                ...newJob,
                 logs: existingLogs,
-                status: computeStatus(payload.new as ClientJob, existingLogs),
+                status: computeStatus(newJob, existingLogs),
               }
               if (existingIndex === -1) {
                 next.push(normalizedJob)
@@ -620,7 +632,7 @@ export function ClientPortal({ data }: { data: ClientPortalData }) {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleUpdateSettings} disabled={isPending} className="flex items-center gap-2">
-                  <RefreshCcw className="h-4 w-4 animate-spin" hidden={!isPending} />
+                  {isPending && <RefreshCcw className="h-4 w-4 animate-spin" />}
                   Save preferences
                 </Button>
               </CardFooter>

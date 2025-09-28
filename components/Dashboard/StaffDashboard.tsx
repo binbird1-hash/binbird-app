@@ -1,6 +1,6 @@
 'use client'
 import Header from '../UI/Header'
-import Card from '../UI/Card'
+import Card from '../UI/LegacyCard'
 import { Users, Cog, FileText, KeyRound, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 

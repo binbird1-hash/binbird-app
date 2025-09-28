@@ -725,7 +725,7 @@ export function AdminPortal({ data }: { data: AdminPortalData }) {
             <div>
               <p className="text-sm text-white/70">Enable nightly summary email</p>
             </div>
-            <Switch checked readOnly />
+            <Switch checked disabled aria-readonly="true" />
           </CardContent>
           <CardFooter className="text-xs text-white/50">
             TODO: Wire into notification microservice.

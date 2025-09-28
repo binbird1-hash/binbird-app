@@ -1,4 +1,4 @@
-import type { JobRecord } from "./database.types";
+import type { Tables } from "./database.types";
 
 export type Job = {
   id: string;
@@ -88,7 +88,7 @@ function normalizeJobType(value: unknown): "put_out" | "bring_in" {
   return "put_out";
 }
 
-export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
+export function normalizeJob<T extends Partial<Tables<"jobs">>>(record: T): Job {
   return {
     id: normalizeString(record.id),
     address: normalizeString(record.address),
@@ -108,7 +108,7 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
 }
 
 
-export function normalizeJobs<T extends Partial<JobRecord>>(
+export function normalizeJobs<T extends Partial<Tables<"jobs">>>(
   records: T[] | null | undefined
 ): Job[] {
   if (!records) return [];

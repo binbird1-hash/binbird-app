@@ -4,6 +4,8 @@ import { ReactNode } from "react";
 import "./globals.css";
 import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
     title: "BinBird",
     description: "Bin management made simple",
