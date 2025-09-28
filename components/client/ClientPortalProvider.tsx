@@ -200,7 +200,7 @@ const nextOccurrenceIso = (dayOfWeek: string | null): string => {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
+  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'My Properties'
@@ -396,8 +396,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const { data: jobRows, error: jobsError } = await supabase
       .from('jobs')
-      .select('id, account_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type')
-      .or(`account_id.eq.${accountId},client_name.eq.${accountId}`)
+      .select('id, account_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type, property_id')
+      .or(`account_id.eq.${accountId},property_id.eq.${accountId}`)
 
     if (jobsError) {
       console.warn('Failed to load jobs', jobsError)
@@ -406,7 +406,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     const { data: logRows, error: logsError } = await supabase
       .from('logs')
       .select('id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at')
-      .or(`account_id.eq.${accountId},client_name.eq.${accountId}`)
+      .eq('account_id', accountId)
       .gte('done_on', formatISO(twoMonthsAgo, { representation: 'date' }))
 
     if (logsError) {
@@ -428,7 +428,9 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     const combinedJobs: Job[] = []
 
     ;(jobRows ?? []).forEach((job) => {
-      const propertyId = addressLookup.get(normaliseAddress(job.address)) ?? null
+      const explicitPropertyId =
+        typeof job.property_id === 'string' && job.property_id.trim().length ? job.property_id.trim() : null
+      const propertyId = explicitPropertyId ?? addressLookup.get(normaliseAddress(job.address)) ?? null
       const propertyName = propertyId ? propertyMap.get(propertyId)?.name ?? job.address ?? 'Property' : job.address ?? 'Property'
       const scheduledAt = nextOccurrenceIso(job.day_of_week)
       const latestLog = job.id ? logsByJobId.get(job.id) : undefined

@@ -47,7 +47,7 @@ type ClientListRow = {
 }
 
 type NewJobRow = {
-  account_id: string | null
+  account_id: string
   property_id: string | null
   address: string
   lat: number | null
@@ -101,7 +101,10 @@ const describeBinFrequency = (color: string, frequency: string | null, flip: str
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
+  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
+
+const deriveClientName = (row: ClientListRow): string =>
+  row.client_name?.trim() || row.company?.trim() || 'Client'
 
 const buildBinsSummary = (row: ClientListRow): string | null => {
   const bins = [
@@ -145,6 +148,7 @@ async function generateJobs() {
   const jobs: NewJobRow[] = []
   for (const client of rows) {
     const accountId = deriveAccountId(client)
+    const clientName = deriveClientName(client)
     const { lat, lng } = parseLatLng(client.lat_lng)
     const bins = buildBinsSummary(client)
     const address = client.address?.trim() ?? ''
@@ -159,7 +163,7 @@ async function generateJobs() {
         job_type: 'put_out',
         bins,
         notes: client.notes,
-        client_name: accountId,
+        client_name: clientName,
         photo_path: client.photo_path,
         assigned_to: client.assigned_to,
         day_of_week: dayName,
@@ -177,7 +181,7 @@ async function generateJobs() {
         job_type: 'bring_in',
         bins,
         notes: client.notes,
-        client_name: accountId,
+        client_name: clientName,
         photo_path: client.photo_path,
         assigned_to: client.assigned_to,
         day_of_week: dayName,

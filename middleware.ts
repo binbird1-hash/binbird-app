@@ -12,7 +12,7 @@ type ClientListRow = {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
+  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -82,48 +82,18 @@ export async function middleware(req: NextRequest) {
 
   const fetchClientRowsForToken = async (accountId: string): Promise<ClientListRow[]> => {
     const selectColumns = 'id, account_id, client_name, company'
+    const { data, error } = await supabase
+      .from('client_list')
+      .select(selectColumns)
+      .or(`account_id.eq.${accountId},id.eq.${accountId}`)
+
+    if (error) {
+      console.warn('Failed to fetch client_list for token middleware check', error)
+      return []
+    }
+
     const deduped = new Map<string, ClientListRow>()
-    const queryColumns: Array<keyof ClientListRow> = [
-      'account_id',
-      'id',
-      'client_name',
-      'company',
-    ]
-
-    for (const column of queryColumns) {
-      const { data, error } = await supabase
-        .from('client_list')
-        .select(selectColumns)
-        .eq(column as string, accountId)
-
-      if (error) {
-        console.warn(`Failed to query client_list by ${column}`, error)
-        continue
-      }
-
-      if (data?.length) {
-        data.forEach((row) => deduped.set(row.id, row as ClientListRow))
-        break
-      }
-    }
-
-    if (!deduped.size) {
-      const { data, error } = await supabase
-        .from('client_list')
-        .select(selectColumns)
-
-      if (error) {
-        console.warn('Failed to fetch client_list for token fallback', error)
-        return []
-      }
-
-      data?.forEach((row) => {
-        const typed = row as ClientListRow
-        if (deriveAccountId(typed) === accountId) {
-          deduped.set(typed.id, typed)
-        }
-      })
-    }
+    ;(data ?? []).forEach((row) => deduped.set(row.id, row as ClientListRow))
 
     return Array.from(deduped.values())
   }
@@ -145,7 +115,9 @@ export async function middleware(req: NextRequest) {
       }
 
       const rows = await fetchClientRowsForToken(decodedToken)
-      const hasMatch = rows.some((row) => deriveAccountId(row) === decodedToken)
+      const canonicalAccountId =
+        rows.find((row) => row.account_id && row.account_id.trim() === decodedToken)?.account_id?.trim() ?? decodedToken
+      const hasMatch = rows.some((row) => deriveAccountId(row) === canonicalAccountId)
 
       if (!hasMatch) {
         return NextResponse.redirect(new URL('/c/error', req.url))
