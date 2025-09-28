@@ -28,6 +28,9 @@ export default async function Ops() {
         <li>
           <a href="/ops/dashboard">Dashboard</a>
         </li>
+        <li>
+          <a href="/ops/admin">Admin Control</a>
+        </li>
       </ul>
     </div>
   )
