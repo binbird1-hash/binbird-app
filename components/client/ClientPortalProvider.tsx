@@ -87,6 +87,7 @@ export type ClientProfile = {
 
 type ClientListRow = {
   id: string
+  account_id: string | null
   client_name: string | null
   company: string | null
   address: string | null
@@ -199,7 +200,7 @@ const nextOccurrenceIso = (dayOfWeek: string | null): string => {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.client_name?.trim() || row.company?.trim() || row.id
+  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'My Properties'
@@ -299,7 +300,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     const { data, error: rowsError } = await supabase
       .from('client_list')
       .select(
-        `id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
+        `id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
       )
       .or(`email.eq.${email},email.eq.${emailLower}`)
 
@@ -310,6 +311,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     return (data ?? []).map((row) => ({
       id: row.id,
+      account_id: typeof row.account_id === 'string' ? row.account_id.trim() : null,
       client_name: row.client_name,
       company: row.company,
       address: row.address,
@@ -394,8 +396,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const { data: jobRows, error: jobsError } = await supabase
       .from('jobs')
-      .select('id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type')
-      .eq('client_name', accountId)
+      .select('id, account_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type')
+      .or(`account_id.eq.${accountId},client_name.eq.${accountId}`)
 
     if (jobsError) {
       console.warn('Failed to load jobs', jobsError)
@@ -403,8 +405,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const { data: logRows, error: logsError } = await supabase
       .from('logs')
-      .select('id, job_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at')
-      .eq('client_name', accountId)
+      .select('id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at')
+      .or(`account_id.eq.${accountId},client_name.eq.${accountId}`)
       .gte('done_on', formatISO(twoMonthsAgo, { representation: 'date' }))
 
     if (logsError) {

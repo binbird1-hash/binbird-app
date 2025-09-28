@@ -15,6 +15,7 @@ type ClientListRow = {
   green_flip: string | null
 }
 
+
 type TableRow = {
   id: string
   name: string
@@ -35,12 +36,15 @@ const describeBinFrequency = (
   return base
 }
 
+
 const deriveBinsThisWeek = (row: ClientListRow): string => {
   const bins = [
+
     describeBinFrequency('Red', row.red_freq, row.red_flip),
     describeBinFrequency('Yellow', row.yellow_freq, row.yellow_flip),
     describeBinFrequency('Green', row.green_freq, row.green_flip),
   ].filter(Boolean) as string[]
+
 
   if (!bins.length) {
     return '—'
@@ -75,6 +79,7 @@ async function fetchClientRows(): Promise<TableRow[]> {
   }))
 }
 
+
 export default async function ClientsPage() {
   const rows = await fetchClientRows()
 
@@ -91,6 +96,7 @@ export default async function ClientsPage() {
               <th className="p-2 border text-left">Client</th>
               <th className="p-2 border text-left">Address</th>
               <th className="p-2 border text-left">Bins</th>
+
             </tr>
           </thead>
           <tbody>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabaseClient'
 import { useClientPortal } from './ClientPortalProvider'
@@ -17,6 +17,7 @@ const TIMEZONES = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : 
 
 export function SettingsForm() {
   const { profile, user, selectedAccount, refreshProperties } = useClientPortal()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -46,7 +47,9 @@ export function SettingsForm() {
 
   const onSubmit = handleSubmit(async (values) => {
     if (!user) return
-    await supabase.from('user_profile').upsert({
+    setSubmitError(null)
+
+    const { error: upsertError } = await supabase.from('user_profile').upsert({
       user_id: user.id,
       full_name: values.fullName,
       phone: values.phone,
@@ -55,10 +58,15 @@ export function SettingsForm() {
       map_style_pref: profile?.timezone ?? null,
       nav_pref: profile?.companyName ?? null,
       created_at: new Date().toISOString(),
-      ABN: null,
+      abn: null,
     })
 
-    await supabase.auth.updateUser({
+    if (upsertError) {
+      setSubmitError(upsertError.message ?? 'Failed to save profile details.')
+      throw new Error(upsertError.message ?? 'Failed to save profile details.')
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
       data: {
         full_name: values.fullName,
         phone: values.phone,
@@ -67,7 +75,18 @@ export function SettingsForm() {
         emergency_contact: values.emergencyContact,
       },
     })
-    await refreshProperties()
+    if (updateError) {
+      setSubmitError(updateError.message ?? 'Failed to update account settings.')
+      throw new Error(updateError.message ?? 'Failed to update account settings.')
+    }
+
+    try {
+      await refreshProperties()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to refresh account data.'
+      setSubmitError(message)
+      throw error instanceof Error ? error : new Error(message)
+    }
   })
 
   return (
@@ -126,6 +145,7 @@ export function SettingsForm() {
           Changes apply to <strong className="text-white">{selectedAccount.name}</strong>. Contact support to manage billing-level access.
         </p>
       )}
+      {submitError && <p className="text-sm text-red-300" role="alert">{submitError}</p>}
       <button
         type="submit"
         disabled={isSubmitting}

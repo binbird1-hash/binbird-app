@@ -5,6 +5,7 @@ import type { JobRecord, Property } from '@/lib/database.types'
 
 type ClientListRow = {
   id: string
+  account_id: string | null
   client_name: string | null
   company: string | null
   address: string | null
@@ -12,7 +13,7 @@ type ClientListRow = {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  row.client_name?.trim() || row.company?.trim() || row.id
+  row.account_id?.trim() || row.client_name?.trim() || row.company?.trim() || row.id
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'Client Account'
@@ -27,9 +28,14 @@ const fetchClientRowsForToken = async (
   accountId: string,
   sb: ReturnType<typeof supabaseServer>,
 ) => {
-  const selectColumns = 'id, client_name, company, address, notes'
+  const selectColumns = 'id, account_id, client_name, company, address, notes'
   const deduped = new Map<string, ClientListRow>()
-  const queryColumns: Array<keyof ClientListRow> = ['id', 'client_name', 'company']
+  const queryColumns: Array<keyof ClientListRow> = [
+    'account_id',
+    'id',
+    'client_name',
+    'company',
+  ]
 
   for (const column of queryColumns) {
     const { data, error } = await sb
@@ -117,13 +123,13 @@ export default async function ClientPortal({
       .select(
         'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week',
       )
-      .eq('client_name', accountToken),
+      .or(`account_id.eq.${accountToken},client_name.eq.${accountToken}`),
     sb
       .from('logs')
       .select(
-        'id, job_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
+        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
       )
-      .eq('client_name', accountToken)
+      .or(`account_id.eq.${accountToken},client_name.eq.${accountToken}`)
       .order('done_on', { ascending: false }),
   ])
 
