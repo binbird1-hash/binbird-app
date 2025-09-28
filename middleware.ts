@@ -4,6 +4,15 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 
+type ClientListRow = {
+  id: string
+  client_name: string | null
+  company: string | null
+}
+
+const deriveAccountId = (row: ClientListRow): string =>
+  row.client_name?.trim() || row.company?.trim() || row.id
+
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
@@ -70,17 +79,69 @@ export async function middleware(req: NextRequest) {
     res.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
   }
 
+  const fetchClientRowsForToken = async (accountId: string): Promise<ClientListRow[]> => {
+    const selectColumns = 'id, client_name, company'
+    const deduped = new Map<string, ClientListRow>()
+    const queryColumns: Array<keyof ClientListRow> = ['id', 'client_name', 'company']
+
+    for (const column of queryColumns) {
+      const { data, error } = await supabase
+        .from('client_list')
+        .select(selectColumns)
+        .eq(column as string, accountId)
+
+      if (error) {
+        console.warn(`Failed to query client_list by ${column}`, error)
+        continue
+      }
+
+      if (data?.length) {
+        data.forEach((row) => deduped.set(row.id, row as ClientListRow))
+        break
+      }
+    }
+
+    if (!deduped.size) {
+      const { data, error } = await supabase
+        .from('client_list')
+        .select(selectColumns)
+
+      if (error) {
+        console.warn('Failed to fetch client_list for token fallback', error)
+        return []
+      }
+
+      data?.forEach((row) => {
+        const typed = row as ClientListRow
+        if (deriveAccountId(typed) === accountId) {
+          deduped.set(typed.id, typed)
+        }
+      })
+    }
+
+    return Array.from(deduped.values())
+  }
+
   // Check client portal tokens
   if (pathname.startsWith('/c/') && !pathname.startsWith('/c/error')) {
     const token = pathname.split('/c/')[1]
     if (token) {
-      const { data } = await supabase
-        .from('client_token')
-        .select('token')
-        .eq('token', token)
-        .maybeSingle()
+      let decodedToken = token
+      try {
+        decodedToken = decodeURIComponent(token).trim()
+      } catch (error) {
+        console.warn('Failed to decode client portal token', error)
+        return NextResponse.redirect(new URL('/c/error', req.url))
+      }
 
-      if (!data) {
+      if (!decodedToken) {
+        return NextResponse.redirect(new URL('/c/error', req.url))
+      }
+
+      const rows = await fetchClientRowsForToken(decodedToken)
+      const hasMatch = rows.some((row) => deriveAccountId(row) === decodedToken)
+
+      if (!hasMatch) {
         return NextResponse.redirect(new URL('/c/error', req.url))
       }
     } else {
