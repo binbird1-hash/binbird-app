@@ -17,11 +17,7 @@ const portals = [
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-black via-gray-950 to-red-950 text-white">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,87,87,0.12),_transparent_55%)]"
-        aria-hidden="true"
-      />
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center px-6 py-16">
         <div className="w-full space-y-6 text-center">
           <p className="text-xs font-medium uppercase tracking-[0.4em] text-white/60">BinBird Portals</p>
