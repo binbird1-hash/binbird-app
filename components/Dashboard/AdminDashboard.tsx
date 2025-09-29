@@ -1,7 +1,7 @@
 'use client'
 import Header from '../UI/Header'
 import Card from '../UI/Card'
-import { Users, Cog, FileText, KeyRound, LogOut } from 'lucide-react'
+import { Users, Cog, FileText, KeyRound, LogOut, UserCog } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function AdminDashboard() {
@@ -16,6 +16,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 mt-6">
         <Card title="Ops Console" icon={Cog} href="/ops" />
         <Card title="Client List" icon={Users} href="/ops/clients" />
+        <Card title="Manage Clients & Staff" icon={UserCog} href="/ops/manage" />
         <Card title="Logs & Proofs" icon={FileText} href="/ops/logs" />
         <Card title="Client Tokens" icon={KeyRound} href="/ops/tokens" />
         <Card title="Sign Out" icon={LogOut} onClick={signOut} />
