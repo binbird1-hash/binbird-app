@@ -3,11 +3,7 @@ import type { ReactNode } from 'react'
 
 export default function ClientAuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#12131a] text-white [background-image:radial-gradient(circle_at_top,_#1f2029,_#12131a)]">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_55%)]"
-        aria-hidden="true"
-      />
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 py-12">
         <div className="mb-10 space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-white/60">BinBird Client Portal</p>

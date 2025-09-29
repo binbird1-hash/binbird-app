@@ -134,7 +134,7 @@ export default function SmartJobCard({
   }
 
   return (
-    <article className="bg-[#12131a] w-full p-6 flex flex-col gap-3 text-white">
+    <article className="bg-black w-full p-6 flex flex-col gap-3 text-white">
       <h2 className="text-2xl font-bold">
         {job.job_type === "put_out" ? "Put Bins Out At" : "Bring Bins In At"}
       </h2>

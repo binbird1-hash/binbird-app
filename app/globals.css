@@ -7,7 +7,7 @@
    ============================== */
 :root {
   --accent: #ff5757;
-  --bg-gradient: linear-gradient(180deg, #12131a 0%, #1c1e26 50%, #12131a 100%);
+  --bg-gradient: none;
   --card: #fff;
   --card-fg: #000;
   --border: #e5e7eb;
@@ -30,10 +30,8 @@
 
 body {
   margin: 0;
-  background-color: #12131a;
-  background-image: var(--bg-gradient);
-  background-attachment: fixed;
-  background-size: cover;
+  background-color: #000;
+  background-image: none;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   @apply text-white antialiased;
 }

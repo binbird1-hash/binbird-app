@@ -17,7 +17,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-[#12131a] text-white p-6">
+    <div className="max-w-md mx-auto min-h-screen bg-black text-white p-6">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       <p className="mb-3">Preferred Navigation App:</p>
       <div className="flex flex-col gap-3">

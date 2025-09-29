@@ -47,7 +47,7 @@ const applyVictoriaAutocompleteLimits = (
 export default function RunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-[#12131a] text-white">
+      <div className="relative min-h-screen bg-black text-white">
         <SettingsDrawer />
         <RunPageContent />
       </div>
@@ -477,7 +477,7 @@ function RunPageContent() {
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#12131a] text-white overflow-hidden">
+    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
 
       <div className="flex-grow relative">
 
@@ -507,7 +507,7 @@ function RunPageContent() {
 
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-[#12131a] w-full flex flex-col gap-3 p-6 relative">
+          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 

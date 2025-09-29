@@ -379,7 +379,7 @@ function CompletedRunContent() {
 
       {/* Fixed footer button */}
       <div className="fixed inset-x-0 bottom-0 z-10">
-        <div className="bg-[#12131a] w-full p-6">
+        <div className="bg-black w-full p-6">
           <button
             type="button"
             onClick={() => router.push("/staff/run")}
@@ -396,7 +396,7 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen overflow-y-auto bg-[#12131a] text-white pb-6">
+      <div className="relative min-h-screen overflow-y-auto bg-black text-white pb-6">
         <SettingsDrawer />
         <CompletedRunContent />
       </div>
