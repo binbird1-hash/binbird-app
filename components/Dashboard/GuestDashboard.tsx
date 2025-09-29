@@ -7,7 +7,7 @@ export default function GuestDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white px-6 py-8">
+    <div className="flex flex-col min-h-screen bg-[#12131a] text-white px-6 py-8">
       <Header title="Welcome to BinBird" />
 
       <main className="flex-1 flex flex-col items-center mt-8">

@@ -11,7 +11,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
+    <div className="flex flex-col min-h-screen bg-[#12131a] text-white">
       {/* Header */}
       <Header title="Admin Console" />
 

@@ -268,7 +268,7 @@ export default function SettingsDrawer() {
     <>
       {/* Header Bar */}
       <div
-        className="fixed top-0 left-0 w-full h-14 bg-black z-50 flex items-center px-4 shadow-md"
+        className="fixed top-0 left-0 w-full h-14 bg-[#12131a] z-50 flex items-center px-4 shadow-md"
         style={{ borderBottom: "2px solid #ff5757" }}
       >
         <button
@@ -297,7 +297,7 @@ export default function SettingsDrawer() {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween" }}
-            className="fixed top-0 left-0 w-full h-full bg-black text-white z-50"
+            className="fixed top-0 left-0 w-full h-full bg-[#12131a] text-white z-50"
           >
             {/* Close X top-left */}
             <button

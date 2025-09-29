@@ -7,7 +7,7 @@
    ============================== */
 :root {
   --accent: #ff5757;
-  --bg-gradient: linear-gradient(180deg, #040404 0%, #0d0d0d 50%, #040404 100%);
+  --bg-gradient: linear-gradient(180deg, #12131a 0%, #1c1e26 50%, #12131a 100%);
   --card: #fff;
   --card-fg: #000;
   --border: #e5e7eb;
@@ -30,7 +30,7 @@
 
 body {
   margin: 0;
-  background-color: #000;
+  background-color: #12131a;
   background-image: var(--bg-gradient);
   background-attachment: fixed;
   background-size: cover;
@@ -74,7 +74,7 @@ a {
   justify-content: center;
   align-items: center;
   padding: 8px 16px;
-  background: #000;
+  background: #12131a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-wrap: wrap;
 }

@@ -245,7 +245,7 @@ function RoutePageContent() {
   }
 
   if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
-  if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
+  if (!activeJob) return <div className="p-6 text-white bg-[#12131a]">No jobs found.</div>;
 
   const navigateUrl =
     navPref === "google"
@@ -262,7 +262,7 @@ function RoutePageContent() {
       : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
+    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-[#12131a] text-white">
       <div className="relative h-[150vh]">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -296,7 +296,7 @@ function RoutePageContent() {
         </GoogleMap>
 
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
+          <div className="bg-[#12131a] w-full flex flex-col gap-3 p-6 relative">
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
               <button
@@ -343,7 +343,7 @@ function RoutePageContent() {
 export default function RoutePage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
+      <div className="relative min-h-screen bg-[#12131a] text-white">
         <SettingsDrawer />
         <RoutePageContent />
       </div>

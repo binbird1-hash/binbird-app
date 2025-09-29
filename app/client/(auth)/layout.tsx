@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 export default function ClientAuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-white [background-image:radial-gradient(circle_at_top,_#161616,_#000000)]">
+    <div className="relative min-h-screen overflow-hidden bg-[#12131a] text-white [background-image:radial-gradient(circle_at_top,_#1f2029,_#12131a)]">
       <div
         className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_55%)]"
         aria-hidden="true"
