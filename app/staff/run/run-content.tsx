@@ -7,6 +7,7 @@ import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
+import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
@@ -207,7 +208,9 @@ function RunPageContent() {
         // Jobs query
         const { data, error } = await supabase
           .from("jobs")
-          .select("*")
+          .select(
+            "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week"
+          )
           .eq("assigned_to", assigneeId)
           .ilike("day_of_week", todayName)
           .is("last_completed_on", null);
@@ -515,8 +518,8 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
   };
 
-  if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (loading) return <PortalLoadingScreen />;
+  if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 

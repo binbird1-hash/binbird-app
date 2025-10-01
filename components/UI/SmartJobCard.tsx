@@ -63,7 +63,13 @@ export default function SmartJobCard({
       const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
       const combinedNotes = propertyNote ? propertyNote : null;
 
+      if (!job.account_id) {
+        throw new Error("Unable to log completion: missing account identifier for job.");
+      }
+
       const { error: logErr } = await supabase.from("logs").insert({
+        job_id: job.id,
+        account_id: job.account_id,
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,

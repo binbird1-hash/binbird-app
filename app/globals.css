@@ -7,7 +7,7 @@
    ============================== */
 :root {
   --accent: #ff5757;
-  --bg: #000;
+  --bg-gradient: none;
   --card: #fff;
   --card-fg: #000;
   --border: #e5e7eb;
@@ -30,9 +30,10 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background-color: #000;
+  background-image: none;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  @apply text-black antialiased;
+  @apply text-white antialiased;
 }
 
 a {
@@ -71,7 +72,7 @@ a {
   justify-content: center;
   align-items: center;
   padding: 8px 16px;
-  background: #000;
+  background: #12131a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-wrap: wrap;
 }

@@ -4,6 +4,16 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 
+type ClientListRow = {
+  id: string
+  account_id: string | null
+  client_name: string | null
+  company: string | null
+}
+
+const deriveAccountId = (row: ClientListRow): string =>
+  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
+
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
@@ -70,17 +80,46 @@ export async function middleware(req: NextRequest) {
     res.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
   }
 
+  const fetchClientRowsForToken = async (accountId: string): Promise<ClientListRow[]> => {
+    const selectColumns = 'id, account_id, client_name, company'
+    const { data, error } = await supabase
+      .from('client_list')
+      .select(selectColumns)
+      .or(`account_id.eq.${accountId},id.eq.${accountId}`)
+
+    if (error) {
+      console.warn('Failed to fetch client_list for token middleware check', error)
+      return []
+    }
+
+    const deduped = new Map<string, ClientListRow>()
+    ;(data ?? []).forEach((row) => deduped.set(row.id, row as ClientListRow))
+
+    return Array.from(deduped.values())
+  }
+
   // Check client portal tokens
   if (pathname.startsWith('/c/') && !pathname.startsWith('/c/error')) {
     const token = pathname.split('/c/')[1]
     if (token) {
-      const { data } = await supabase
-        .from('client_token')
-        .select('token')
-        .eq('token', token)
-        .maybeSingle()
+      let decodedToken = token
+      try {
+        decodedToken = decodeURIComponent(token).trim()
+      } catch (error) {
+        console.warn('Failed to decode client portal token', error)
+        return NextResponse.redirect(new URL('/c/error', req.url))
+      }
 
-      if (!data) {
+      if (!decodedToken) {
+        return NextResponse.redirect(new URL('/c/error', req.url))
+      }
+
+      const rows = await fetchClientRowsForToken(decodedToken)
+      const canonicalAccountId =
+        rows.find((row) => row.account_id && row.account_id.trim() === decodedToken)?.account_id?.trim() ?? decodedToken
+      const hasMatch = rows.some((row) => deriveAccountId(row) === canonicalAccountId)
+
+      if (!hasMatch) {
         return NextResponse.redirect(new URL('/c/error', req.url))
       }
     } else {
