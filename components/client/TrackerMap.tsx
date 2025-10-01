@@ -156,18 +156,21 @@ export function TrackerMap({ jobs, properties }: TrackerMapProps) {
 
   const statusIcons = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return null
-    const entries = Object.entries(STATUS_COLOURS).map(([status, colour]) => [
-      status as Job['status'],
-      {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: colour,
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2,
-      } as google.maps.Symbol,
-    ])
-    return new Map(entries)
+    const entries = Object.entries(STATUS_COLOURS).map(
+      ([status, colour]) =>
+        [
+          status as Job['status'],
+          {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: colour,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+          } as google.maps.Symbol,
+        ] as const,
+    )
+    return new Map<Job['status'], google.maps.Symbol>(entries)
   }, [isLoaded])
 
   const propertyIcon = useMemo(() => {
