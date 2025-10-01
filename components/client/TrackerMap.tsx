@@ -55,19 +55,23 @@ export function TrackerMap({ jobs, properties }: TrackerMapProps) {
 
   const jobMarkers = useMemo<MarkerDescriptor[]>(() => {
     const propertyById = new Map(properties.map((property) => [property.id, property]))
-    return jobs
-      .map((job) => {
-        const property = job.propertyId ? propertyById.get(job.propertyId) : undefined
-        const latitude = normalisePropertyCoordinate(job.lastLatitude ?? property?.latitude)
-        const longitude = normalisePropertyCoordinate(job.lastLongitude ?? property?.longitude)
-        if (latitude === null || longitude === null) return null
-        return {
-          job,
-          property,
-          position: { lat: latitude, lng: longitude },
-        }
+    const markers: MarkerDescriptor[] = []
+
+    for (const job of jobs) {
+      const property = job.propertyId ? propertyById.get(job.propertyId) : undefined
+      const latitude = normalisePropertyCoordinate(job.lastLatitude ?? property?.latitude)
+      const longitude = normalisePropertyCoordinate(job.lastLongitude ?? property?.longitude)
+
+      if (latitude === null || longitude === null) continue
+
+      markers.push({
+        job,
+        property,
+        position: { lat: latitude, lng: longitude },
       })
-      .filter((marker): marker is MarkerDescriptor => Boolean(marker))
+    }
+
+    return markers
   }, [jobs, properties])
 
   const jobPropertyIds = useMemo(() => {
