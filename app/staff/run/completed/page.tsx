@@ -431,15 +431,17 @@ function CompletedRunContent() {
                           : `scheduled next on ${nextAssignment.day}.`}
                       </p>
                       <p className="text-sm text-gray-300">
-                        First call: {nextAssignment.clientName ? (
+                        {nextAssignment.clientName ? (
                           <>
+                            Kick things off with{" "}
                             <span className="font-medium text-white">
                               {nextAssignment.clientName}
                             </span>
-                            {" — "}
+                            {` — ${nextAssignment.address}`}
                           </>
-                        ) : null}
-                        {nextAssignment.address}
+                        ) : (
+                          <>Kick things off at {nextAssignment.address}</>
+                        )}
                       </p>
                     </div>
                   ) : (
