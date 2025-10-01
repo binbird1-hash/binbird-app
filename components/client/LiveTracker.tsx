@@ -47,8 +47,19 @@ function Stepper({ status }: { status: typeof STEPS[number]['key'] }) {
 export function LiveTracker() {
   const { jobs, properties, selectedAccount, upsertJob, refreshJobs, jobsLoading } = useClientPortal()
   const activeJobs = useMemo(() => jobs.filter((job) => job.status !== 'completed' && job.status !== 'skipped'), [jobs])
+  const realtimePropertyIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          properties
+            .map((property) => property.id)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ),
+    [properties],
+  )
 
-  useRealtimeJobs(selectedAccount?.id ?? null, (job) => {
+  useRealtimeJobs(selectedAccount?.id ?? null, realtimePropertyIds, (job) => {
     upsertJob(job)
   })
 

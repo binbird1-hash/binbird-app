@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
 import type { Job } from '@/components/client/ClientPortalProvider'
 import { nextDay, setHours, setMinutes, startOfToday } from 'date-fns'
@@ -27,48 +28,101 @@ const computeNextOccurrence = (dayOfWeek: string | null): string => {
   return withHour.toISOString()
 }
 
-export function useRealtimeJobs(accountId: string | null, onChange: (job: Job) => void) {
-  useEffect(() => {
-    if (!accountId) return
+const normaliseId = (value: string | number | null | undefined): string | null => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null
+    return String(value)
+  }
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : null
+}
 
-    const channel = supabase
-      .channel(`jobs-client-${accountId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'jobs', filter: `account_id=eq.${accountId}` },
-        (payload) => {
-          const newJob = payload.new as any
-          if (!newJob) return
-          const scheduledAt = computeNextOccurrence(newJob.day_of_week ?? null)
-          const bins = typeof newJob.bins === 'string' ? newJob.bins.split(',').map((value: string) => value.trim()) : []
-          const propertyId =
-            typeof newJob.property_id === 'string' && newJob.property_id.trim().length ? newJob.property_id.trim() : null
-          const job: Job = {
-            id: String(newJob.id),
-            accountId,
-            propertyId,
-            propertyName: newJob.address ?? 'Property',
-            status: 'scheduled',
-            scheduledAt,
-            etaMinutes: null,
-            startedAt: null,
-            completedAt: newJob.last_completed_on ?? null,
-            crewName: null,
-            proofPhotoKeys: newJob.photo_path ? [newJob.photo_path] : [],
-            routePolyline: null,
-            lastLatitude: newJob.lat ?? undefined,
-            lastLongitude: newJob.lng ?? undefined,
-            notes: newJob.notes ?? null,
-            jobType: newJob.job_type ?? null,
-            bins,
-          }
-          onChange(job)
-        },
-      )
-      .subscribe()
+const createJobFromPayload = (payload: any, fallbackAccountId: string | null): Job | null => {
+  if (!payload) return null
+  const scheduledAt = computeNextOccurrence(payload.day_of_week ?? null)
+  const bins =
+    typeof payload.bins === 'string'
+      ? payload.bins.split(',').map((value: string) => value.trim())
+      : []
+  const propertyId = normaliseId(payload.property_id)
+  const accountId = normaliseId(payload.account_id) ?? fallbackAccountId ?? 'unknown'
+  return {
+    id: String(payload.id),
+    accountId,
+    propertyId,
+    propertyName: payload.address ?? 'Property',
+    status: 'scheduled',
+    scheduledAt,
+    etaMinutes: null,
+    startedAt: null,
+    completedAt: payload.last_completed_on ?? null,
+    crewName: null,
+    proofPhotoKeys: payload.photo_path ? [payload.photo_path] : [],
+    routePolyline: null,
+    lastLatitude: payload.lat ?? undefined,
+    lastLongitude: payload.lng ?? undefined,
+    notes: payload.notes ?? null,
+    jobType: payload.job_type ?? null,
+    bins,
+  }
+}
+
+export function useRealtimeJobs(
+  accountId: string | null,
+  propertyIds: string[],
+  onChange: (job: Job) => void,
+) {
+  useEffect(() => {
+    const uniquePropertyIds = Array.from(
+      new Set(
+        propertyIds
+          .map((value) => normaliseId(value))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    )
+
+    if (!accountId && uniquePropertyIds.length === 0) {
+      return
+    }
+
+    const channels: RealtimeChannel[] = []
+
+    const handleChange = (payload: { new: any }) => {
+      const job = createJobFromPayload(payload.new, accountId)
+      if (job) {
+        onChange(job)
+      }
+    }
+
+    if (accountId) {
+      const channel = supabase
+        .channel(`jobs-client-account-${accountId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'jobs', filter: `account_id=eq.${accountId}` },
+          handleChange,
+        )
+        .subscribe()
+      channels.push(channel)
+    }
+
+    uniquePropertyIds.forEach((propertyId) => {
+      const channel = supabase
+        .channel(`jobs-client-property-${propertyId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'jobs', filter: `property_id=eq.${propertyId}` },
+          handleChange,
+        )
+        .subscribe()
+      channels.push(channel)
+    })
 
     return () => {
-      supabase.removeChannel(channel)
+      channels.forEach((channel) => {
+        supabase.removeChannel(channel)
+      })
     }
-  }, [accountId, onChange])
+  }, [accountId, onChange, propertyIds])
 }

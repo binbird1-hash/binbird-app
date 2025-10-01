@@ -175,6 +175,82 @@ const parseLatLng = (value: string | null): { lat: number | null; lng: number | 
 
 const normaliseAddress = (address: string | null | undefined) => address?.trim().toLowerCase() ?? ''
 
+const normaliseIdentifier = (value: string | number | null | undefined): string | null => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null
+    return String(value)
+  }
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : null
+}
+
+const extractIdentifierArray = (
+  metadata: Record<string, unknown> | undefined,
+  keys: string[],
+): string[] => {
+  if (!metadata) return []
+  const identifiers = new Set<string>()
+  const addValue = (raw: unknown) => {
+    if (typeof raw === 'string') {
+      const normalised = normaliseIdentifier(raw)
+      if (normalised) {
+        identifiers.add(normalised)
+      }
+    } else if (Array.isArray(raw)) {
+      raw.forEach((entry) => {
+        if (typeof entry === 'string') {
+          const normalised = normaliseIdentifier(entry)
+          if (normalised) {
+            identifiers.add(normalised)
+          }
+        }
+      })
+    }
+  }
+
+  keys.forEach((key) => {
+    addValue(metadata[key])
+  })
+
+  return Array.from(identifiers)
+}
+
+const extractEmailCandidates = (user: User): string[] => {
+  const emails = new Set<string>()
+
+  const register = (raw: string | null | undefined) => {
+    if (!raw) return
+    const parts = raw
+      .split(/[,\s;]/)
+      .map((part) => part.trim())
+      .filter((part) => part.includes('@'))
+
+    parts.forEach((part) => {
+      if (!part) return
+      emails.add(part)
+      emails.add(part.toLowerCase())
+    })
+  }
+
+  register(user.email ?? null)
+
+  const metadata = user.user_metadata ?? {}
+  Object.values(metadata).forEach((value) => {
+    if (typeof value === 'string') {
+      register(value)
+    } else if (Array.isArray(value)) {
+      value.forEach((entry) => {
+        if (typeof entry === 'string') {
+          register(entry)
+        }
+      })
+    }
+  })
+
+  return Array.from(emails)
+}
+
 const describeBinFrequency = (color: string, frequency: string | null, flip: string | null) => {
   if (!frequency) return null
   const base = `${color} (${frequency.toLowerCase()})`
@@ -294,44 +370,100 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
   }, [])
 
   const fetchClientRows = useCallback(async (currentUser: User): Promise<ClientListRow[]> => {
-    const email = currentUser.email ?? ''
-    if (!email) return []
-    const emailLower = email.toLowerCase()
-    const { data, error: rowsError } = await supabase
+    const emailCandidates = extractEmailCandidates(currentUser)
+    const metadata = currentUser.user_metadata ?? {}
+    const accountCandidates = extractIdentifierArray(metadata, [
+      'account_id',
+      'accountId',
+      'account_ids',
+      'accountIds',
+      'client_account_id',
+      'clientAccountId',
+      'client_account_ids',
+      'clientAccountIds',
+    ])
+    const propertyCandidates = extractIdentifierArray(metadata, [
+      'property_id',
+      'propertyId',
+      'property_ids',
+      'propertyIds',
+      'client_property_id',
+      'clientPropertyId',
+      'client_property_ids',
+      'clientPropertyIds',
+    ])
+
+    if (emailCandidates.length === 0 && accountCandidates.length === 0 && propertyCandidates.length === 0) {
+      return []
+    }
+
+    const filters: string[] = []
+    const escapeValue = (value: string) => value.replace(/,/g, '\\,').replace(/'/g, "''")
+
+    emailCandidates.forEach((email) => {
+      const safe = escapeValue(email)
+      filters.push(`email.ilike.%${safe}%`)
+      filters.push(`email.eq.${safe}`)
+    })
+    accountCandidates.forEach((accountId) => {
+      const safe = escapeValue(accountId)
+      filters.push(`account_id.eq.${safe}`)
+    })
+    propertyCandidates.forEach((propertyId) => {
+      const safe = escapeValue(propertyId)
+      filters.push(`id.eq.${safe}`)
+    })
+
+    let query = supabase
       .from('client_list')
       .select(
         `id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
       )
-      .or(`email.eq.${email},email.eq.${emailLower}`)
+
+    const uniqueFilters = Array.from(new Set(filters))
+
+    if (uniqueFilters.length > 0) {
+      query = query.or(uniqueFilters.join(','))
+    }
+
+    const { data, error: rowsError } = await query
 
     if (rowsError) {
       console.warn('Failed to fetch client properties', rowsError)
       return []
     }
 
-    return (data ?? []).map((row) => ({
-      id: row.id,
-      account_id: typeof row.account_id === 'string' ? row.account_id.trim() : null,
-      client_name: row.client_name,
-      company: row.company,
-      address: row.address,
-      collection_day: row.collection_day,
-      put_bins_out: row.put_bins_out,
-      notes: row.notes,
-      red_freq: row.red_freq,
-      red_flip: row.red_flip,
-      yellow_freq: row.yellow_freq,
-      yellow_flip: row.yellow_flip,
-      green_freq: row.green_freq,
-      green_flip: row.green_flip,
-      email: row.email,
-      assigned_to: row.assigned_to,
-      lat_lng: row.lat_lng,
-      price_per_month: row.price_per_month as number | null,
-      photo_path: row.photo_path,
-      trial_start: row.trial_start as string | null,
-      membership_start: row.membership_start as string | null,
-    }))
+    const deduped = new Map<string, ClientListRow>()
+
+    ;(data ?? []).forEach((row) => {
+      const id = normaliseIdentifier(row.id)
+      if (!id) return
+      deduped.set(id, {
+        id,
+        account_id: normaliseIdentifier(row.account_id),
+        client_name: row.client_name,
+        company: row.company,
+        address: row.address,
+        collection_day: row.collection_day,
+        put_bins_out: row.put_bins_out,
+        notes: row.notes,
+        red_freq: row.red_freq,
+        red_flip: row.red_flip,
+        yellow_freq: row.yellow_freq,
+        yellow_flip: row.yellow_flip,
+        green_freq: row.green_freq,
+        green_flip: row.green_flip,
+        email: row.email,
+        assigned_to: row.assigned_to,
+        lat_lng: row.lat_lng,
+        price_per_month: typeof row.price_per_month === 'number' ? row.price_per_month : null,
+        photo_path: row.photo_path,
+        trial_start: typeof row.trial_start === 'string' ? row.trial_start : null,
+        membership_start: typeof row.membership_start === 'string' ? row.membership_start : null,
+      })
+    })
+
+    return Array.from(deduped.values())
   }, [])
 
   const deriveAccountsFromRows = useCallback(
@@ -392,22 +524,100 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       addressLookup.set(normaliseAddress(row.address), row.id)
     })
 
-    const twoMonthsAgo = subMonths(new Date(), 2)
+    const propertyIds = propertiesForAccount
+      .map((row) => normaliseIdentifier(row.id))
+      .filter((value): value is string => Boolean(value))
 
-    const { data: jobRows, error: jobsError } = await supabase
-      .from('jobs')
-      .select('id, account_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type, property_id')
-      .or(`account_id.eq.${accountId},property_id.eq.${accountId}`)
-
-    if (jobsError) {
-      console.warn('Failed to load jobs', jobsError)
+    const accountCandidates = new Set<string>()
+    const addCandidate = (value: string | null | undefined) => {
+      const normalised = normaliseIdentifier(value)
+      if (normalised) {
+        accountCandidates.add(normalised)
+      }
     }
 
-    const { data: logRows, error: logsError } = await supabase
+    addCandidate(accountId)
+    propertiesForAccount.forEach((row) => {
+      addCandidate(row.account_id)
+      addCandidate(row.id)
+    })
+
+    const accountIdFilters = Array.from(accountCandidates)
+    const jobSelectFields =
+      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type'
+
+    const mergedJobRows: any[] = []
+
+    if (accountIdFilters.length > 0) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(jobSelectFields)
+        .in('account_id', accountIdFilters)
+
+      if (error) {
+        console.warn('Failed to load jobs', error)
+      }
+
+      if (data) {
+        mergedJobRows.push(...data)
+      }
+    } else if (accountId) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(jobSelectFields)
+        .eq('account_id', accountId)
+
+      if (error) {
+        console.warn('Failed to load jobs', error)
+      }
+
+      if (data) {
+        mergedJobRows.push(...data)
+      }
+    }
+
+    if (propertyIds.length > 0) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(jobSelectFields)
+        .in('property_id', propertyIds)
+
+      if (error) {
+        console.warn('Failed to load jobs', error)
+      }
+
+      if (data) {
+        mergedJobRows.push(...data)
+      }
+    }
+    const seenJobIds = new Set<string>()
+    const jobRows = mergedJobRows.filter((row) => {
+      const id = row?.id
+      if (!id) return false
+      const key = String(id)
+      if (seenJobIds.has(key)) return false
+      seenJobIds.add(key)
+      return true
+    })
+
+    const twoMonthsAgo = subMonths(new Date(), 2)
+
+    let logsQuery = supabase
       .from('logs')
-      .select('id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at')
-      .eq('account_id', accountId)
+      .select(
+        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
+      )
       .gte('done_on', formatISO(twoMonthsAgo, { representation: 'date' }))
+
+    if (accountIdFilters.length === 1) {
+      logsQuery = logsQuery.eq('account_id', accountIdFilters[0]!)
+    } else if (accountIdFilters.length > 1) {
+      logsQuery = logsQuery.in('account_id', accountIdFilters)
+    } else {
+      logsQuery = logsQuery.eq('account_id', accountId)
+    }
+
+    const { data: logRows, error: logsError } = await logsQuery
 
     if (logsError) {
       console.warn('Failed to load logs', logsError)
