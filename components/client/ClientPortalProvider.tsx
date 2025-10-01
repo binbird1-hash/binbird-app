@@ -191,19 +191,19 @@ const extractIdentifierArray = (
 ): string[] => {
   if (!metadata) return []
   const identifiers = new Set<string>()
+  const register = (value: string | number | null | undefined) => {
+    const normalised = normaliseIdentifier(value)
+    if (normalised) {
+      identifiers.add(normalised)
+    }
+  }
   const addValue = (raw: unknown) => {
-    if (typeof raw === 'string') {
-      const normalised = normaliseIdentifier(raw)
-      if (normalised) {
-        identifiers.add(normalised)
-      }
+    if (typeof raw === 'string' || typeof raw === 'number') {
+      register(raw)
     } else if (Array.isArray(raw)) {
       raw.forEach((entry) => {
-        if (typeof entry === 'string') {
-          const normalised = normaliseIdentifier(entry)
-          if (normalised) {
-            identifiers.add(normalised)
-          }
+        if (typeof entry === 'string' || typeof entry === 'number') {
+          register(entry)
         }
       })
     }
