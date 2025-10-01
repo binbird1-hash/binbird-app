@@ -22,10 +22,17 @@ const WEEKDAYS = [
   "Saturday",
 ];
 
+type NextAssignmentDateParts = {
+  weekday: string;
+  month: string;
+  day: number;
+  ordinalSuffix: string;
+};
+
 type NextAssignment = {
   totalJobs: number;
   isToday: boolean;
-  dateLabel: string;
+  dateParts: NextAssignmentDateParts;
 };
 
 type AssignmentState = "loading" | "ready" | "error";
@@ -66,6 +73,37 @@ function formatTimestamp(input: string | null): string | null {
   });
 
   return `${datePart} • ${timePart}`;
+}
+
+function getOrdinalSuffix(day: number): string {
+  const remainder = day % 100;
+  if (remainder >= 11 && remainder <= 13) {
+    return "th";
+  }
+
+  switch (day % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+function formatNextAssignmentDateParts(date: Date): NextAssignmentDateParts {
+  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+  const month = date.toLocaleDateString(undefined, { month: "long" });
+  const day = date.getDate();
+
+  return {
+    weekday,
+    month,
+    day,
+    ordinalSuffix: getOrdinalSuffix(day),
+  };
 }
 
 function CompletedRunContent() {
@@ -197,11 +235,7 @@ function CompletedRunContent() {
           found = {
             totalJobs: todayJobs.length,
             isToday: true,
-            dateLabel: now.toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            }),
+            dateParts: formatNextAssignmentDateParts(now),
           };
         } else {
           for (let offset = 1; offset <= WEEKDAYS.length; offset += 1) {
@@ -214,11 +248,7 @@ function CompletedRunContent() {
               found = {
                 totalJobs: jobsForDay.length,
                 isToday: false,
-                dateLabel: nextDate.toLocaleDateString(undefined, {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                }),
+                dateParts: formatNextAssignmentDateParts(nextDate),
               };
               break;
             }
@@ -406,16 +436,24 @@ function CompletedRunContent() {
                       {assignmentError ?? "Unable to load assignments."}
                     </p>
                   ) : nextAssignment ? (
-                    <p className="mt-2 text-sm text-gray-200">
-                      <span className="font-semibold text-white">
-                        {nextAssignment.totalJobs} job
-                        {nextAssignment.totalJobs === 1 ? "" : "s"}
-                      </span>{" "}
-                      {nextAssignment.isToday
-                        ? "remaining today."
-                        : `awaiting you on ${nextAssignment.dateLabel}.`}
-                    </p>
-                  ) : (
+                  <p className="mt-2 text-sm text-gray-200">
+                    <span className="font-semibold text-white">
+                      {nextAssignment.totalJobs} job
+                      {nextAssignment.totalJobs === 1 ? "" : "s"}
+                    </span>{" "}
+                    {nextAssignment.isToday ? (
+                      "remaining today."
+                    ) : (
+                      <>
+                        awaiting on {nextAssignment.dateParts.weekday},
+                        {" "}
+                        {nextAssignment.dateParts.month}{" "}
+                        {nextAssignment.dateParts.day}
+                        <sup>{nextAssignment.dateParts.ordinalSuffix}</sup>.
+                      </>
+                    )}
+                  </p>
+                ) : (
                     <p className="mt-2 text-sm text-gray-400">
                       Everything from your roster is wrapped up. No upcoming
                       assignments are waiting for you right now.
