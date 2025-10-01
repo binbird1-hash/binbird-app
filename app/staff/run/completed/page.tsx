@@ -27,6 +27,7 @@ type NextAssignment = {
   address: string;
   totalJobs: number;
   clientName: string | null;
+  isToday: boolean;
 };
 
 type AssignmentState = "loading" | "ready" | "error";
@@ -35,6 +36,7 @@ type AssignmentJob = {
   day: string;
   address: string;
   clientName: string | null;
+  lastCompletedOn: string | null;
 };
 
 function formatDuration(ms: number): string {
@@ -92,6 +94,11 @@ function CompletedRunContent() {
 
   const todayIndex = WEEKDAYS.indexOf(todayName);
 
+  const todayIso = useMemo(() => {
+    const now = new Date();
+    return now.toISOString().slice(0, 10);
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       setRunData(null);
@@ -128,7 +135,7 @@ function CompletedRunContent() {
 
         const { data, error } = await supabase
           .from("jobs")
-          .select("address, day_of_week, client_name")
+          .select("address, day_of_week, client_name, last_completed_on")
           .eq("assigned_to", user.id);
 
         if (error) throw error;
@@ -136,8 +143,14 @@ function CompletedRunContent() {
         const normalized: AssignmentJob[] = Array.isArray(data)
           ? data
               .map((job) => {
-                const day =
+                const rawDay =
                   typeof job?.day_of_week === "string" ? job.day_of_week : "";
+                const trimmedDay = rawDay.trim();
+                const canonicalDay = WEEKDAYS.find(
+                  (weekday) =>
+                    weekday.toLowerCase() === trimmedDay.toLowerCase()
+                );
+                const day = canonicalDay ?? trimmedDay;
                 const addressValue =
                   typeof job?.address === "string" ? job.address.trim() : "";
                 const clientValue = job?.client_name;
@@ -147,11 +160,24 @@ function CompletedRunContent() {
                     : typeof clientValue === "number"
                     ? String(clientValue)
                     : null;
+                const lastCompletedRaw = job?.last_completed_on;
+                let lastCompletedOn: string | null = null;
+                if (typeof lastCompletedRaw === "string") {
+                  const trimmed = lastCompletedRaw.trim();
+                  if (trimmed.length >= 10) {
+                    lastCompletedOn = trimmed.slice(0, 10);
+                  } else if (trimmed.length) {
+                    lastCompletedOn = trimmed;
+                  }
+                } else if (lastCompletedRaw instanceof Date) {
+                  lastCompletedOn = lastCompletedRaw.toISOString().slice(0, 10);
+                }
 
                 return {
                   day,
                   address: addressValue.length ? addressValue : "Address TBC",
                   clientName,
+                  lastCompletedOn,
                 };
               })
               .filter((job) => job.day.length > 0)
@@ -159,6 +185,15 @@ function CompletedRunContent() {
 
         const jobsByDay = new Map<string, AssignmentJob[]>();
         normalized.forEach((job) => {
+          const matchesToday =
+            todayName &&
+            job.day.toLowerCase() === todayName.toLowerCase();
+          const completedToday =
+            matchesToday && job.lastCompletedOn === todayIso;
+          if (completedToday) {
+            return;
+          }
+
           const list = jobsByDay.get(job.day) ?? [];
           list.push(job);
           jobsByDay.set(job.day, list);
@@ -169,17 +204,20 @@ function CompletedRunContent() {
 
         let found: NextAssignment | null = null;
 
-        const todayJobs = jobsByDay.get(todayName);
+        const canonicalTodayName =
+          todayIndex >= 0 ? todayName : WEEKDAYS[startIndex];
+        const todayJobs = jobsByDay.get(canonicalTodayName);
         if (todayJobs && todayJobs.length > 0) {
           const [primary] = todayJobs;
           found = {
-            day: "Today",
+            day: canonicalTodayName,
             address: primary.address,
             clientName:
               typeof primary.clientName === "string"
                 ? primary.clientName
                 : null,
             totalJobs: todayJobs.length,
+            isToday: true,
           };
         } else {
           for (let offset = 1; offset <= WEEKDAYS.length; offset += 1) {
@@ -196,6 +234,7 @@ function CompletedRunContent() {
                     ? primary.clientName
                     : null,
                 totalJobs: jobsForDay.length,
+                isToday: false,
               };
               break;
             }
@@ -222,7 +261,7 @@ function CompletedRunContent() {
     return () => {
       isActive = false;
     };
-  }, [supabase, todayIndex, todayName]);
+  }, [supabase, todayIndex, todayName, todayIso]);
 
   const derivedStats = useMemo(() => {
     if (!runData) {
@@ -386,14 +425,27 @@ function CompletedRunContent() {
                     <div className="mt-2 space-y-1 text-sm text-gray-200">
                       <p className="font-semibold text-white">
                         {nextAssignment.totalJobs} job
-                        {nextAssignment.totalJobs === 1 ? "" : "s"} scheduled for
-                        {" "}
-                        {nextAssignment.day}.
+                        {nextAssignment.totalJobs === 1 ? "" : "s"}{" "}
+                        {nextAssignment.isToday
+                          ? "remaining today."
+                          : `scheduled next on ${nextAssignment.day}.`}
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        First call: {nextAssignment.clientName ? (
+                          <>
+                            <span className="font-medium text-white">
+                              {nextAssignment.clientName}
+                            </span>
+                            {" — "}
+                          </>
+                        ) : null}
+                        {nextAssignment.address}
                       </p>
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-gray-400">
-                      You&apos;re all caught up. No upcoming assignments found.
+                      Everything from your roster is wrapped up. No upcoming
+                      assignments are waiting for you right now.
                     </p>
                   )}
                 </div>
