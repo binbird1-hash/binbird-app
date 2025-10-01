@@ -28,8 +28,12 @@ const computeNextOccurrence = (dayOfWeek: string | null): string => {
   return withHour.toISOString()
 }
 
-const normaliseId = (value: string | null | undefined): string | null => {
-  if (!value) return null
+const normaliseId = (value: string | number | null | undefined): string | null => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null
+    return String(value)
+  }
   const trimmed = value.trim()
   return trimmed.length ? trimmed : null
 }
