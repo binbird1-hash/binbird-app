@@ -1,12 +1,26 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { GoogleMap, MarkerF, OverlayViewF, useLoadScript } from '@react-google-maps/api'
 import type { Job, Property } from './ClientPortalProvider'
 import { computeEtaLabel } from './ClientPortalProvider'
+import { useMapSettings } from '@/components/Context/MapSettingsContext'
+import { darkMapStyle, lightMapStyle, satelliteMapStyle } from '@/lib/mapStyle'
 
-function normaliseCoordinate(value: number, min: number, max: number) {
-  if (Number.isNaN(value)) return 0.5
-  return (value - min) / (max - min || 1)
+function normalisePropertyCoordinate(value: number | null | undefined): number | null {
+  if (typeof value !== 'number') return null
+  return Number.isFinite(value) ? value : null
+}
+
+type MarkerDescriptor = {
+  job: Job
+  property?: Property
+  position: google.maps.LatLngLiteral
+}
+
+type PropertyMarkerDescriptor = {
+  property: Property
+  position: google.maps.LatLngLiteral
 }
 
 export type TrackerMapProps = {
@@ -14,58 +28,230 @@ export type TrackerMapProps = {
   properties: Property[]
 }
 
+const FALLBACK_CENTER: google.maps.LatLngLiteral = { lat: -33.865143, lng: 151.2099 }
+
+const STATUS_COLOURS: Record<Job['status'], string> = {
+  scheduled: '#f59e0b',
+  en_route: '#3b82f6',
+  on_site: '#ef4444',
+  completed: '#22c55e',
+  skipped: '#9ca3af',
+}
+
+const MAP_STYLE_LOOKUP = {
+  Dark: darkMapStyle,
+  Light: lightMapStyle,
+  Satellite: satelliteMapStyle,
+} as const
+
 export function TrackerMap({ jobs, properties }: TrackerMapProps) {
-  const markers = useMemo(() => {
-    const points = jobs
+  const { mapStylePref } = useMapSettings()
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  const { isLoaded, loadError } = useLoadScript({
+    id: 'client-tracker-map',
+    googleMapsApiKey: apiKey ?? '',
+  })
+  const [map, setMap] = useState<google.maps.Map | null>(null)
+
+  const jobMarkers = useMemo<MarkerDescriptor[]>(() => {
+    const propertyById = new Map(properties.map((property) => [property.id, property]))
+    return jobs
       .map((job) => {
-        const property = properties.find((candidate) => candidate.id === job.propertyId)
-        const lat = job.lastLatitude ?? property?.latitude ?? null
-        const lng = job.lastLongitude ?? property?.longitude ?? null
-        if (lat === null || lng === null) return null
-        return { lat, lng, job, property }
+        const property = job.propertyId ? propertyById.get(job.propertyId) : undefined
+        const latitude = normalisePropertyCoordinate(job.lastLatitude ?? property?.latitude)
+        const longitude = normalisePropertyCoordinate(job.lastLongitude ?? property?.longitude)
+        if (latitude === null || longitude === null) return null
+        return {
+          job,
+          property,
+          position: { lat: latitude, lng: longitude },
+        }
       })
-      .filter(Boolean) as { lat: number; lng: number; job: Job; property?: Property }[]
-
-    if (points.length === 0) return []
-
-    const minLat = Math.min(...points.map((point) => point.lat))
-    const maxLat = Math.max(...points.map((point) => point.lat))
-    const minLng = Math.min(...points.map((point) => point.lng))
-    const maxLng = Math.max(...points.map((point) => point.lng))
-
-    return points.map((point) => ({
-      top: `${(1 - normaliseCoordinate(point.lat, minLat, maxLat)) * 90 + 5}%`,
-      left: `${normaliseCoordinate(point.lng, minLng, maxLng) * 90 + 5}%`,
-      job: point.job,
-      property: point.property,
-    }))
+      .filter((marker): marker is MarkerDescriptor => Boolean(marker))
   }, [jobs, properties])
 
+  const jobPropertyIds = useMemo(() => {
+    const ids = new Set<string>()
+    jobMarkers.forEach((marker) => {
+      if (marker.property?.id) {
+        ids.add(marker.property.id)
+      }
+    })
+    return ids
+  }, [jobMarkers])
+
+  const idlePropertyMarkers = useMemo<PropertyMarkerDescriptor[]>(() => {
+    return properties
+      .filter((property) => {
+        if (!property.id || jobPropertyIds.has(property.id)) return false
+        const latitude = normalisePropertyCoordinate(property.latitude)
+        const longitude = normalisePropertyCoordinate(property.longitude)
+        return latitude !== null && longitude !== null
+      })
+      .map((property) => ({
+        property,
+        position: {
+          lat: normalisePropertyCoordinate(property.latitude) as number,
+          lng: normalisePropertyCoordinate(property.longitude) as number,
+        },
+      }))
+  }, [jobPropertyIds, properties])
+
+  const anchorPoints = useMemo(() => {
+    if (jobMarkers.length > 0) return jobMarkers.map((marker) => marker.position)
+    if (idlePropertyMarkers.length > 0) return idlePropertyMarkers.map((marker) => marker.position)
+    return []
+  }, [idlePropertyMarkers, jobMarkers])
+
+  const mapCenter = useMemo(() => {
+    if (anchorPoints.length === 0) return FALLBACK_CENTER
+    const aggregate = anchorPoints.reduce(
+      (acc, point) => ({ lat: acc.lat + point.lat, lng: acc.lng + point.lng }),
+      { lat: 0, lng: 0 },
+    )
+    return {
+      lat: aggregate.lat / anchorPoints.length,
+      lng: aggregate.lng / anchorPoints.length,
+    }
+  }, [anchorPoints])
+
+  const mapOptions = useMemo(
+    () => ({
+      styles: MAP_STYLE_LOOKUP[mapStylePref] ?? darkMapStyle,
+      disableDefaultUI: true,
+      zoomControl: true,
+      fullscreenControl: false,
+      streetViewControl: false,
+      gestureHandling: 'greedy',
+      backgroundColor: '#000000',
+    }),
+    [mapStylePref],
+  )
+
+  useEffect(() => {
+    if (!map) return
+
+    if (anchorPoints.length === 0) {
+      map.setCenter(FALLBACK_CENTER)
+      map.setZoom(11)
+      return
+    }
+
+    if (typeof window === 'undefined' || !window.google?.maps) return
+
+    if (anchorPoints.length === 1) {
+      map.panTo(anchorPoints[0]!)
+      map.setZoom(14)
+      return
+    }
+
+    const bounds = new window.google.maps.LatLngBounds()
+    anchorPoints.forEach((point) => bounds.extend(point))
+    map.fitBounds(bounds, 48)
+  }, [anchorPoints, map])
+
+  const statusIcons = useMemo(() => {
+    if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return null
+    const entries = Object.entries(STATUS_COLOURS).map(([status, colour]) => [
+      status as Job['status'],
+      {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: colour,
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2,
+      } as google.maps.Symbol,
+    ])
+    return new Map(entries)
+  }, [isLoaded])
+
+  const propertyIcon = useMemo(() => {
+    if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
+    return {
+      path: window.google.maps.SymbolPath.CIRCLE,
+      scale: 6,
+      fillColor: '#6b7280',
+      fillOpacity: 0.9,
+      strokeColor: '#111827',
+      strokeWeight: 2,
+    } as google.maps.Symbol
+  }, [isLoaded])
+
+  const handleMapLoad = useCallback((instance: google.maps.Map) => {
+    setMap(instance)
+  }, [])
+
+  const handleMapUnmount = useCallback(() => {
+    setMap(null)
+  }, [])
+
   return (
-    <div className="relative h-80 overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,#2a2a2a,transparent)]">
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(239,68,68,0.2),rgba(0,0,0,0.6))]" />
-      <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\' viewBox=\'0 0 200 200\'%3E%3Cpath d=\'M0 50 L200 50 M0 150 L200 150 M50 0 L50 200 M150 0 L150 200\' stroke=\'rgba(255,255,255,0.08)\' stroke-width=\'2\'/%3E%3C/svg%3E")' }} />
-      {markers.length === 0 ? (
-        <div className="absolute inset-0 flex items-center justify-center text-sm text-white/60">
-          Location data will appear here once your crew heads out.
+    <div className="relative h-80 overflow-hidden rounded-3xl border border-white/10 bg-black/60">
+      {!apiKey ? (
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
+          Add a Google Maps API key to enable live location tracking.
         </div>
+      ) : loadError ? (
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
+          We couldn’t load the map right now. Please refresh to try again.
+        </div>
+      ) : !isLoaded ? (
+        <div className="absolute inset-0 flex items-center justify-center text-white/60">Loading live map…</div>
       ) : (
-        markers.map((marker) => (
-          <div
-            key={marker.job.id}
-            className="absolute flex -translate-x-1/2 -translate-y-full flex-col items-center gap-2"
-            style={{ top: marker.top, left: marker.left }}
+        <>
+          <GoogleMap
+            mapContainerClassName="h-full w-full"
+            options={mapOptions}
+            center={mapCenter}
+            zoom={12}
+            onLoad={handleMapLoad}
+            onUnmount={handleMapUnmount}
           >
-            <span className="rounded-full border border-white/40 bg-binbird-red px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-red-900/40">
-              {computeEtaLabel(marker.job)}
-            </span>
-            <div className="rounded-2xl border border-white/20 bg-black/80 px-4 py-2 text-center text-xs text-white/80">
-              <p className="font-semibold text-white">{marker.property?.name ?? marker.job.propertyName}</p>
-              <p>{marker.job.status.replace('_', ' ')}</p>
+            {jobMarkers.map((marker) => (
+              <MarkerF
+                key={`job-${marker.job.id}`}
+                position={marker.position}
+                icon={statusIcons?.get(marker.job.status)}
+                title={marker.property?.name ?? marker.job.propertyName}
+                zIndex={marker.job.status === 'completed' ? 2 : 3}
+              />
+            ))}
+            {jobMarkers.map((marker) => (
+              <OverlayViewF
+                key={`overlay-${marker.job.id}`}
+                position={marker.position}
+                mapPaneName="overlayMouseTarget"
+              >
+                <div className="pointer-events-none -translate-x-1/2 -translate-y-3">
+                  <div className="rounded-2xl border border-white/20 bg-black/80 px-3 py-2 text-xs text-white/80 shadow-lg shadow-black/40">
+                    <p className="text-sm font-semibold text-white">
+                      {marker.property?.name ?? marker.job.propertyName}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wide text-white/50">
+                      {marker.job.status.replace('_', ' ')}
+                    </p>
+                    <p className="text-xs text-white/70">{computeEtaLabel(marker.job)}</p>
+                  </div>
+                </div>
+              </OverlayViewF>
+            ))}
+            {idlePropertyMarkers.map((marker) => (
+              <MarkerF
+                key={`property-${marker.property.id}`}
+                position={marker.position}
+                icon={propertyIcon}
+                title={marker.property.name}
+                zIndex={1}
+              />
+            ))}
+          </GoogleMap>
+          {jobMarkers.length === 0 && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
+              Location data will appear here once your crew heads out.
             </div>
-            <span className="h-3 w-3 rounded-full border-2 border-white bg-binbird-red" />
-          </div>
-        ))
+          )}
+        </>
       )}
     </div>
   )

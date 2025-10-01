@@ -175,6 +175,12 @@ const parseLatLng = (value: string | null): { lat: number | null; lng: number | 
 
 const normaliseAddress = (address: string | null | undefined) => address?.trim().toLowerCase() ?? ''
 
+const normaliseIdentifier = (value: string | null | undefined): string | null => {
+  if (!value) return null
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : null
+}
+
 const describeBinFrequency = (color: string, frequency: string | null, flip: string | null) => {
   if (!frequency) return null
   const base = `${color} (${frequency.toLowerCase()})`
@@ -392,22 +398,100 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       addressLookup.set(normaliseAddress(row.address), row.id)
     })
 
-    const twoMonthsAgo = subMonths(new Date(), 2)
+    const propertyIds = propertiesForAccount
+      .map((row) => normaliseIdentifier(row.id))
+      .filter((value): value is string => Boolean(value))
 
-    const { data: jobRows, error: jobsError } = await supabase
-      .from('jobs')
-      .select('id, account_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type, property_id')
-      .or(`account_id.eq.${accountId},property_id.eq.${accountId}`)
-
-    if (jobsError) {
-      console.warn('Failed to load jobs', jobsError)
+    const accountCandidates = new Set<string>()
+    const addCandidate = (value: string | null | undefined) => {
+      const normalised = normaliseIdentifier(value)
+      if (normalised) {
+        accountCandidates.add(normalised)
+      }
     }
 
-    const { data: logRows, error: logsError } = await supabase
+    addCandidate(accountId)
+    propertiesForAccount.forEach((row) => {
+      addCandidate(row.account_id)
+      addCandidate(row.id)
+    })
+
+    const accountIdFilters = Array.from(accountCandidates)
+    const jobSelectFields =
+      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type'
+
+    const mergedJobRows: any[] = []
+
+    if (accountIdFilters.length > 0) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(jobSelectFields)
+        .in('account_id', accountIdFilters)
+
+      if (error) {
+        console.warn('Failed to load jobs', error)
+      }
+
+      if (data) {
+        mergedJobRows.push(...data)
+      }
+    } else if (accountId) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(jobSelectFields)
+        .eq('account_id', accountId)
+
+      if (error) {
+        console.warn('Failed to load jobs', error)
+      }
+
+      if (data) {
+        mergedJobRows.push(...data)
+      }
+    }
+
+    if (propertyIds.length > 0) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(jobSelectFields)
+        .in('property_id', propertyIds)
+
+      if (error) {
+        console.warn('Failed to load jobs', error)
+      }
+
+      if (data) {
+        mergedJobRows.push(...data)
+      }
+    }
+    const seenJobIds = new Set<string>()
+    const jobRows = mergedJobRows.filter((row) => {
+      const id = row?.id
+      if (!id) return false
+      const key = String(id)
+      if (seenJobIds.has(key)) return false
+      seenJobIds.add(key)
+      return true
+    })
+
+    const twoMonthsAgo = subMonths(new Date(), 2)
+
+    let logsQuery = supabase
       .from('logs')
-      .select('id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at')
-      .eq('account_id', accountId)
+      .select(
+        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
+      )
       .gte('done_on', formatISO(twoMonthsAgo, { representation: 'date' }))
+
+    if (accountIdFilters.length === 1) {
+      logsQuery = logsQuery.eq('account_id', accountIdFilters[0]!)
+    } else if (accountIdFilters.length > 1) {
+      logsQuery = logsQuery.in('account_id', accountIdFilters)
+    } else {
+      logsQuery = logsQuery.eq('account_id', accountId)
+    }
+
+    const { data: logRows, error: logsError } = await logsQuery
 
     if (logsError) {
       console.warn('Failed to load logs', logsError)
