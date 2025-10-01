@@ -23,18 +23,16 @@ const WEEKDAYS = [
 ];
 
 type NextAssignment = {
-  day: string;
-  address: string;
   totalJobs: number;
-  clientName: string | null;
+  isToday: boolean;
+  dateLabel: string;
 };
 
 type AssignmentState = "loading" | "ready" | "error";
 
 type AssignmentJob = {
   day: string;
-  address: string;
-  clientName: string | null;
+  lastCompletedOn: string | null;
 };
 
 function formatDuration(ms: number): string {
@@ -92,6 +90,11 @@ function CompletedRunContent() {
 
   const todayIndex = WEEKDAYS.indexOf(todayName);
 
+  const todayIso = useMemo(() => {
+    const now = new Date();
+    return now.toISOString().slice(0, 10);
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       setRunData(null);
@@ -128,7 +131,7 @@ function CompletedRunContent() {
 
         const { data, error } = await supabase
           .from("jobs")
-          .select("address, day_of_week, client_name")
+          .select("day_of_week, last_completed_on")
           .eq("assigned_to", user.id);
 
         if (error) throw error;
@@ -136,22 +139,30 @@ function CompletedRunContent() {
         const normalized: AssignmentJob[] = Array.isArray(data)
           ? data
               .map((job) => {
-                const day =
+                const rawDay =
                   typeof job?.day_of_week === "string" ? job.day_of_week : "";
-                const addressValue =
-                  typeof job?.address === "string" ? job.address.trim() : "";
-                const clientValue = job?.client_name;
-                const clientName =
-                  typeof clientValue === "string" && clientValue.trim().length
-                    ? clientValue.trim()
-                    : typeof clientValue === "number"
-                    ? String(clientValue)
-                    : null;
+                const trimmedDay = rawDay.trim();
+                const canonicalDay = WEEKDAYS.find(
+                  (weekday) =>
+                    weekday.toLowerCase() === trimmedDay.toLowerCase()
+                );
+                const day = canonicalDay ?? trimmedDay;
+                const lastCompletedRaw = job?.last_completed_on;
+                let lastCompletedOn: string | null = null;
+                if (typeof lastCompletedRaw === "string") {
+                  const trimmed = lastCompletedRaw.trim();
+                  if (trimmed.length >= 10) {
+                    lastCompletedOn = trimmed.slice(0, 10);
+                  } else if (trimmed.length) {
+                    lastCompletedOn = trimmed;
+                  }
+                } else if (lastCompletedRaw instanceof Date) {
+                  lastCompletedOn = lastCompletedRaw.toISOString().slice(0, 10);
+                }
 
                 return {
                   day,
-                  address: addressValue.length ? addressValue : "Address TBC",
-                  clientName,
+                  lastCompletedOn,
                 };
               })
               .filter((job) => job.day.length > 0)
@@ -159,45 +170,60 @@ function CompletedRunContent() {
 
         const jobsByDay = new Map<string, AssignmentJob[]>();
         normalized.forEach((job) => {
+          const matchesToday =
+            todayName &&
+            job.day.toLowerCase() === todayName.toLowerCase();
+          const completedToday =
+            matchesToday && job.lastCompletedOn === todayIso;
+          if (completedToday) {
+            return;
+          }
+
           const list = jobsByDay.get(job.day) ?? [];
           list.push(job);
           jobsByDay.set(job.day, list);
         });
 
-        const fallbackIndex = new Date().getDay();
+        const now = new Date();
+        const fallbackIndex = now.getDay();
         const startIndex = todayIndex >= 0 ? todayIndex : fallbackIndex;
-        
+
         let found: NextAssignment | null = null;
-        
-        // 1️⃣ Check for jobs today
-        const todayJobs = jobsByDay.get(todayName);
+
+        const canonicalTodayName =
+          todayIndex >= 0 ? todayName : WEEKDAYS[startIndex];
+        const todayJobs = jobsByDay.get(canonicalTodayName);
         if (todayJobs && todayJobs.length > 0) {
-          const [primary] = todayJobs;
           found = {
-            day: "Today",
-            address: primary.address,
-            clientName: typeof primary.clientName === "string" ? primary.clientName : null,
             totalJobs: todayJobs.length,
+            isToday: true,
+            dateLabel: now.toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            }),
           };
         } else {
-          // 2️⃣ Otherwise, look ahead for the next day with jobs
           for (let offset = 1; offset <= WEEKDAYS.length; offset += 1) {
             const idx = (startIndex + offset) % WEEKDAYS.length;
             const dayName = WEEKDAYS[idx];
             const jobsForDay = jobsByDay.get(dayName);
             if (jobsForDay && jobsForDay.length > 0) {
-              const [primary] = jobsForDay;
+              const nextDate = new Date(now);
+              nextDate.setDate(now.getDate() + offset);
               found = {
-                day: dayName,
-                address: primary.address,
-                clientName: typeof primary.clientName === "string" ? primary.clientName : null,
                 totalJobs: jobsForDay.length,
+                isToday: false,
+                dateLabel: nextDate.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                }),
               };
               break;
             }
           }
         }
-
 
         if (!isActive) return;
 
@@ -219,7 +245,7 @@ function CompletedRunContent() {
     return () => {
       isActive = false;
     };
-  }, [supabase, todayIndex]);
+  }, [supabase, todayIndex, todayName, todayIso]);
 
   const derivedStats = useMemo(() => {
     if (!runData) {
@@ -227,8 +253,8 @@ function CompletedRunContent() {
         durationLabel: runData === undefined ? "" : "—",
         startLabel: null as string | null,
         endLabel: null as string | null,
-        jobsCompleted: runData === undefined ? undefined : 0,
-        totalJobs: runData === undefined ? undefined : 0,
+        jobsCompleted: 0,
+        totalJobs: 0,
         avgPerJob: runData === undefined ? "" : "—",
       };
     }
@@ -274,120 +300,142 @@ function CompletedRunContent() {
   }, [runData]);
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-6 pb-10 pt-6 sm:pt-10">
-      <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold text-[#ff5757]">Run Complete!</h1>
-        <p className="text-gray-300">
-          <span className="block">Nice work there.</span>
-          <span className="block">Here&apos;s a quick recap of your shift.</span>
-        </p>
-      </header>
 
-      <div className="mt-6 flex-1">
-        <section className="flex flex-col gap-3 rounded-2xl bg-neutral-900 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-gray-100">Run Summary</h2>
-            {runData === undefined && (
-              <span className="text-sm text-gray-400">Loading…</span>
-            )}
-          </div>
+    <div className="flex flex-1 flex-col bg-black text-white">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pt-8 sm:pt-12">
+        <header className="space-y-3 text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
+            Run Complete!
+          </h1>
+          <p className="text-base text-gray-200 sm:text-lg">
+            <span className="block">Nice work there.</span>
+            <span className="block">
+              Here&apos;s a quick recap of your shift.
+            </span>
+          </p>
+        </header>
 
-          {runData === undefined ? (
-            <p className="text-gray-300">
-              Hang tight while we gather the final numbers.
-            </p>
-          ) : runData === null ? (
-            <p className="text-gray-300">
-              We couldn&apos;t find run details for this session, but your proofs
-              were saved successfully.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <div className="divide-y divide-gray-800 text-gray-100">
-                {/* Duration */}
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Duration</p>
-                  <p className="text-xl font-semibold text-gray-100">
+        <div className="mt-8 flex-1">
+          <section className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-lg">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-white">Run Summary</h2>
+              {runData === undefined && (
+                <span className="text-sm text-gray-400">Loading…</span>
+              )}
+            </div>
+
+            {runData === undefined ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {[0, 1, 2, 3].map((key) => (
+                  <div
+                    key={key}
+                    className="h-24 rounded-xl bg-white/5 p-4 animate-pulse"
+                  >
+                    <div className="mb-3 h-4 w-1/3 rounded bg-white/10" />
+                    <div className="h-6 w-2/3 rounded bg-white/10" />
+                  </div>
+                ))}
+              </div>
+            ) : runData === null ? (
+              <p className="text-sm text-gray-300">
+                We couldn&apos;t find any details about your most recent run. Try
+                starting a new run to see summary information here.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Duration
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
                     {derivedStats.durationLabel}
                   </p>
+                  {(derivedStats.startLabel || derivedStats.endLabel) && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      {derivedStats.startLabel ? `Started ${derivedStats.startLabel}` : "Start time unavailable"}
+                      <br />
+                      {derivedStats.endLabel ? `Ended ${derivedStats.endLabel}` : "End time unavailable"}
+                    </p>
+                  )}
                 </div>
-
-                {/* Jobs completed */}
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Jobs completed</p>
-                  <p className="text-xl font-semibold text-gray-100">
-                    {derivedStats.jobsCompleted ?? "—"}
-                    {derivedStats.totalJobs !== undefined &&
-                      derivedStats.totalJobs !== derivedStats.jobsCompleted &&
-                      derivedStats.totalJobs !== 0 && (
-                        <span className="ml-1 text-sm font-medium text-gray-400">
-                          / {derivedStats.totalJobs}
-                        </span>
-                      )}
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Jobs Completed
                   </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {derivedStats.jobsCompleted} / {derivedStats.totalJobs}
+                  </p>
+                  <div className="mt-3 h-2 rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-[#ff5757] transition-all"
+                      style={{
+                        width:
+                          derivedStats.totalJobs && derivedStats.totalJobs > 0
+                            ? `${Math.min(
+                                100,
+                                Math.round(
+                                  (derivedStats.jobsCompleted /
+                                    derivedStats.totalJobs) *
+                                    100
+                                )
+                              )}%`
+                            : "0%",
+                      }}
+                    />
+                  </div>
                 </div>
-
-                {/* Avg per job */}
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Avg per job</p>
-                  <p className="text-xl font-semibold text-gray-100">
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Average Time / Job
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
                     {derivedStats.avgPerJob}
                   </p>
-                </div>
-
-                {/* Started */}
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Started</p>
-                  <p className="text-sm text-gray-200">
-                    {derivedStats.startLabel ?? "—"}
+                  <p className="mt-2 text-xs text-gray-400">
+                    Based on completed jobs during this run.
                   </p>
                 </div>
-
-                {/* Wrapped up */}
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Wrapped up</p>
-                  <p className="text-sm text-gray-200">
-                    {derivedStats.endLabel ?? "—"}
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    Next Run
                   </p>
-                </div>
-
-                {/* Next Run */}
-                <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Next Run</p>
-                  <p className="text-xl font-semibold text-gray-100">
-                    {assignmentStatus === "loading"
-                      ? "Loading…"
-                      : assignmentStatus === "error"
-                      ? assignmentError
-                      : nextAssignment
-                      ? nextAssignment.day === "Today"
-                        ? `${nextAssignment.totalJobs} job${nextAssignment.totalJobs === 1 ? "" : "s"} left today`
-                        : `${nextAssignment.totalJobs} job${
-                            nextAssignment.totalJobs === 1 ? "" : "s"
-                          } on ${nextAssignment.day}, ${new Date().toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}`
-                      : "—"}
-                  </p>
+                  {assignmentStatus === "loading" ? (
+                    <p className="mt-2 text-sm text-gray-400">Checking…</p>
+                  ) : assignmentStatus === "error" ? (
+                    <p className="mt-2 text-sm text-red-300">
+                      {assignmentError ?? "Unable to load assignments."}
+                    </p>
+                  ) : nextAssignment ? (
+                    <p className="mt-2 text-sm text-gray-200">
+                      <span className="font-semibold text-white">
+                        {nextAssignment.totalJobs} job
+                        {nextAssignment.totalJobs === 1 ? "" : "s"}
+                      </span>{" "}
+                      {nextAssignment.isToday
+                        ? "remaining today."
+                        : `awaiting you on ${nextAssignment.dateLabel}.`}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-400">
+                      Everything from your roster is wrapped up. No upcoming
+                      assignments are waiting for you right now.
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        </div>
       </div>
 
-      {/* Fixed footer button */}
-      <div className="fixed inset-x-0 bottom-0 z-10">
-        <div className="bg-black w-full p-6">
-          <button
-            type="button"
-            onClick={() => router.push("/staff/run")}
-            className="w-full rounded-lg bg-[#ff5757] px-4 py-3 font-bold text-white transition hover:opacity-90"
-          >
-            End Run
-          </button>
-        </div>
+      <div className="mt-auto bg-black/95 p-6 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => router.push("/staff/run")}
+          className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-bold text-white transition hover:opacity-90"
+        >
+          End Run
+        </button>
       </div>
     </div>
   );
@@ -396,10 +444,13 @@ function CompletedRunContent() {
 export default function CompletedRunPage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen overflow-y-auto bg-black text-white pb-6">
+      <div className="relative flex min-h-screen flex-col bg-black text-white">
         <SettingsDrawer />
-        <CompletedRunContent />
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <CompletedRunContent />
+        </div>
       </div>
     </MapSettingsProvider>
   );
 }
+

@@ -17,6 +17,30 @@ function RoutePageContent() {
   const router = useRouter();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const html = document.documentElement;
+    const body = document.body;
+
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousHtmlHeight = html.style.height;
+    const previousBodyHeight = body.style.height;
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.height = "100%";
+    body.style.height = "100%";
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+      html.style.height = previousHtmlHeight;
+      body.style.height = previousBodyHeight;
+    };
+  }, []);
+
   const [start, setStart] = useState<{ lat: number; lng: number } | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -24,6 +48,7 @@ function RoutePageContent() {
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
+  const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
 
   const { isLoaded } = useLoadScript({
@@ -119,7 +144,14 @@ function RoutePageContent() {
 
   // Update current location
   useEffect(() => {
-    if (!activeJob || !navigator.geolocation) return;
+    if (!activeJob) return;
+
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      console.warn("Geolocation API unavailable. Falling back to stored coordinates.");
+      setCurrentLocation(null);
+      setLocationWarning("Enable location sharing/HTTPS to see live position.");
+      return;
+    }
 
     let isCancelled = false;
 
@@ -130,10 +162,13 @@ function RoutePageContent() {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
+        setLocationWarning(null);
       },
       (err) => {
         console.warn("Unable to read current location:", err);
-        if (!isCancelled) setCurrentLocation(null);
+        if (isCancelled) return;
+        setCurrentLocation(null);
+        setLocationWarning("Enable location sharing/HTTPS to see live position.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -205,7 +240,7 @@ function RoutePageContent() {
       if (activeJob) bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
     if (!bounds.isEmpty())
-      mapRef.fitBounds(bounds, { top: 50, right: 50, bottom: 700, left: 50 });
+      mapRef.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
   }, [mapRef, directions, currentLocation, activeJob]);
 
   // Distance calculation
@@ -228,7 +263,7 @@ function RoutePageContent() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
-        if (dist <= 500000) {
+        if (dist <= 50) {
           router.push(
             `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
           );
@@ -262,8 +297,8 @@ function RoutePageContent() {
       : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-xl mx-auto bg-black text-white">
-      <div className="relative h-[150vh]">
+  <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+    <div className="flex-grow relative">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
@@ -299,6 +334,11 @@ function RoutePageContent() {
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
+            {locationWarning && (
+              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2 relative z-10">
+                {locationWarning}
+              </p>
+            )}
               <button
                 onClick={() => window.open(navigateUrl, "_blank")}
                 className="w-full bg-neutral-900 text-white px-4 py-2 rounded-lg font-semibold transition hover:bg-neutral-800 relative z-10"
@@ -343,7 +383,7 @@ function RoutePageContent() {
 export default function RoutePage() {
   return (
     <MapSettingsProvider>
-      <div className="relative min-h-screen bg-black text-white">
+      <div className="relative min-h-screen overflow-hidden bg-black text-white">
         <SettingsDrawer />
         <RoutePageContent />
       </div>
