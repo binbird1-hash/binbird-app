@@ -427,8 +427,20 @@ export default function ProofPageContent() {
 
               {/* Step 3 */}
               <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">Step 3 – Move the Bins</summary>
-                <div className="p-4 text-left">
+                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">
+                  Step 3 – Move the Bins
+                </summary>
+                <div className="p-4 space-y-3 text-left">
+                  {/* 👇 New image above the writings */}
+                  <div className="relative">
+                    <img
+                      src="images/binPlacement.jpeg"
+                      alt="Example of moving bins"
+                      className="w-full h-auto object-contain rounded-lg border border-neutral-800/70 shadow-md"
+                    />
+                  </div>
+
+                  {/* Existing text list */}
                   <ul className="space-y-2 text-sm text-gray-300">
                     {moveStepLines.map((line) => (
                       <li key={line} className="flex items-start gap-2">
@@ -439,6 +451,8 @@ export default function ProofPageContent() {
                   </ul>
                 </div>
               </details>
+
+
 
               {/* Step 4 */}
               <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
