@@ -1,52 +1,14 @@
 // app/c/[token]/page.tsx
 import BackButton from '@/components/UI/BackButton'
+import { buildOrFilters, resolvePortalScope, type PortalClientRow } from '@/lib/clientPortalAccess'
 import { supabaseServer } from '@/lib/supabaseServer'
 import type { JobRecord, Property } from '@/lib/database.types'
 
-type ClientListRow = {
-  id: string
-  account_id: string | null
-  client_name: string | null
-  company: string | null
-  address: string | null
-  notes: string | null
-}
-
-const deriveAccountId = (row: ClientListRow): string =>
-  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
-
-const deriveAccountName = (row: ClientListRow): string =>
-  row.company?.trim() || row.client_name?.trim() || 'Client Account'
-
-const toProperty = (row: ClientListRow): Property => ({
+const toProperty = (row: PortalClientRow): Property => ({
   id: row.id,
   address: row.address,
   notes: row.notes,
 })
-
-const fetchClientRowsForToken = async (
-  accountId: string,
-  sb: ReturnType<typeof supabaseServer>,
-) => {
-  const selectColumns = 'id, account_id, client_name, company, address, notes'
-
-  const { data, error } = await sb
-    .from('client_list')
-    .select(selectColumns)
-    .or(`account_id.eq.${accountId},id.eq.${accountId}`)
-
-  if (error) {
-    console.warn('Failed to fetch client_list for portal token', error)
-    return [] as ClientListRow[]
-  }
-
-  const deduped = new Map<string, ClientListRow>()
-  ;(data ?? []).forEach((row) => {
-    deduped.set(row.id, row as ClientListRow)
-  })
-
-  return Array.from(deduped.values()) as ClientListRow[]
-}
 
 export default async function ClientPortal({
   params: { token },
@@ -73,15 +35,9 @@ export default async function ClientPortal({
     )
   }
 
-  const clientRows = await fetchClientRowsForToken(accountToken, sb)
-  const canonicalAccountId =
-    clientRows.find((row) => row.account_id && row.account_id.trim() === accountToken)?.account_id?.trim() ?? accountToken
+  const scope = await resolvePortalScope(sb, accountToken)
 
-  const matchingRows = clientRows.filter(
-    (row) => deriveAccountId(row) === canonicalAccountId,
-  )
-
-  if (!matchingRows.length) {
+  if (!scope) {
     return (
       <div className="container">
         <BackButton />
@@ -91,21 +47,25 @@ export default async function ClientPortal({
     )
   }
 
-  const accountName = deriveAccountName(matchingRows[0])
+  const accountFilters = buildOrFilters('account_id', [scope.accountId])
+  const propertyFilters = buildOrFilters('property_id', scope.propertyIds)
+  const jobsFilters = [...accountFilters, ...propertyFilters]
 
   const [jobsResult, logsResult] = await Promise.all([
-    sb
-      .from('jobs')
-      .select(
-        'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week',
-      )
-      .or(`account_id.eq.${canonicalAccountId},property_id.eq.${canonicalAccountId}`),
+    jobsFilters.length
+      ? sb
+          .from('jobs')
+          .select(
+            'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week',
+          )
+          .or(jobsFilters.join(','))
+      : { data: [] as JobRecord[], error: null },
     sb
       .from('logs')
       .select(
         'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
       )
-      .eq('account_id', canonicalAccountId)
+      .eq('account_id', scope.accountId)
       .order('done_on', { ascending: false }),
   ])
 
@@ -120,7 +80,7 @@ export default async function ClientPortal({
     )
   }
 
-  const properties = matchingRows.map(toProperty)
+  const properties = scope.rows.map(toProperty)
   const jobs = (jobsResult.data ?? []) as JobRecord[]
   const logs = logsResult.data ?? []
 
@@ -128,7 +88,7 @@ export default async function ClientPortal({
     <div className="container">
       <BackButton />
       <h2 className="text-xl font-semibold mb-4">
-        Client Portal — {accountName}
+        Client Portal — {scope.accountName}
       </h2>
 
       {properties.length ? (
