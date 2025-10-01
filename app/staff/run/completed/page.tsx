@@ -23,19 +23,15 @@ const WEEKDAYS = [
 ];
 
 type NextAssignment = {
-  day: string;
-  address: string;
   totalJobs: number;
-  clientName: string | null;
   isToday: boolean;
+  dateLabel: string;
 };
 
 type AssignmentState = "loading" | "ready" | "error";
 
 type AssignmentJob = {
   day: string;
-  address: string;
-  clientName: string | null;
   lastCompletedOn: string | null;
 };
 
@@ -135,7 +131,7 @@ function CompletedRunContent() {
 
         const { data, error } = await supabase
           .from("jobs")
-          .select("address, day_of_week, client_name, last_completed_on")
+          .select("day_of_week, last_completed_on")
           .eq("assigned_to", user.id);
 
         if (error) throw error;
@@ -151,15 +147,6 @@ function CompletedRunContent() {
                     weekday.toLowerCase() === trimmedDay.toLowerCase()
                 );
                 const day = canonicalDay ?? trimmedDay;
-                const addressValue =
-                  typeof job?.address === "string" ? job.address.trim() : "";
-                const clientValue = job?.client_name;
-                const clientName =
-                  typeof clientValue === "string" && clientValue.trim().length
-                    ? clientValue.trim()
-                    : typeof clientValue === "number"
-                    ? String(clientValue)
-                    : null;
                 const lastCompletedRaw = job?.last_completed_on;
                 let lastCompletedOn: string | null = null;
                 if (typeof lastCompletedRaw === "string") {
@@ -175,8 +162,6 @@ function CompletedRunContent() {
 
                 return {
                   day,
-                  address: addressValue.length ? addressValue : "Address TBC",
-                  clientName,
                   lastCompletedOn,
                 };
               })
@@ -199,7 +184,8 @@ function CompletedRunContent() {
           jobsByDay.set(job.day, list);
         });
 
-        const fallbackIndex = new Date().getDay();
+        const now = new Date();
+        const fallbackIndex = now.getDay();
         const startIndex = todayIndex >= 0 ? todayIndex : fallbackIndex;
 
         let found: NextAssignment | null = null;
@@ -208,16 +194,14 @@ function CompletedRunContent() {
           todayIndex >= 0 ? todayName : WEEKDAYS[startIndex];
         const todayJobs = jobsByDay.get(canonicalTodayName);
         if (todayJobs && todayJobs.length > 0) {
-          const [primary] = todayJobs;
           found = {
-            day: canonicalTodayName,
-            address: primary.address,
-            clientName:
-              typeof primary.clientName === "string"
-                ? primary.clientName
-                : null,
             totalJobs: todayJobs.length,
             isToday: true,
+            dateLabel: now.toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            }),
           };
         } else {
           for (let offset = 1; offset <= WEEKDAYS.length; offset += 1) {
@@ -225,16 +209,16 @@ function CompletedRunContent() {
             const dayName = WEEKDAYS[idx];
             const jobsForDay = jobsByDay.get(dayName);
             if (jobsForDay && jobsForDay.length > 0) {
-              const [primary] = jobsForDay;
+              const nextDate = new Date(now);
+              nextDate.setDate(now.getDate() + offset);
               found = {
-                day: dayName,
-                address: primary.address,
-                clientName:
-                  typeof primary.clientName === "string"
-                    ? primary.clientName
-                    : null,
                 totalJobs: jobsForDay.length,
                 isToday: false,
+                dateLabel: nextDate.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                }),
               };
               break;
             }
@@ -422,28 +406,15 @@ function CompletedRunContent() {
                       {assignmentError ?? "Unable to load assignments."}
                     </p>
                   ) : nextAssignment ? (
-                    <div className="mt-2 space-y-1 text-sm text-gray-200">
-                      <p className="font-semibold text-white">
+                    <p className="mt-2 text-sm text-gray-200">
+                      <span className="font-semibold text-white">
                         {nextAssignment.totalJobs} job
-                        {nextAssignment.totalJobs === 1 ? "" : "s"}{" "}
-                        {nextAssignment.isToday
-                          ? "remaining today."
-                          : `scheduled next on ${nextAssignment.day}.`}
-                      </p>
-                      <p className="text-sm text-gray-300">
-                        {nextAssignment.clientName ? (
-                          <>
-                            Kick things off with{" "}
-                            <span className="font-medium text-white">
-                              {nextAssignment.clientName}
-                            </span>
-                            {` — ${nextAssignment.address}`}
-                          </>
-                        ) : (
-                          <>Kick things off at {nextAssignment.address}</>
-                        )}
-                      </p>
-                    </div>
+                        {nextAssignment.totalJobs === 1 ? "" : "s"}
+                      </span>{" "}
+                      {nextAssignment.isToday
+                        ? "remaining today."
+                        : `awaiting you on ${nextAssignment.dateLabel}.`}
+                    </p>
                   ) : (
                     <p className="mt-2 text-sm text-gray-400">
                       Everything from your roster is wrapped up. No upcoming
