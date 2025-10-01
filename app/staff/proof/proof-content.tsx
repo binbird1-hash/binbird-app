@@ -434,7 +434,7 @@ export default function ProofPageContent() {
                   {/* 👇 New image above the writings */}
                   <div className="relative">
                     <img
-                      src="images/binPlacement.jpeg"
+                      src="/public/images/binPlacement.jpeg"
                       alt="Example of moving bins"
                       className="w-full h-auto object-contain rounded-lg border border-neutral-800/70 shadow-md"
                     />
