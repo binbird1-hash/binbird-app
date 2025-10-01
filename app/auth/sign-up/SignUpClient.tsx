@@ -49,6 +49,10 @@ export default function SignUpClient() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: name,
+          phone: `${countryCode}${phone}`,
+        },
       },
     });
 
