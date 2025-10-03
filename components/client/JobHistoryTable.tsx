@@ -228,7 +228,6 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
                 <tr key={job.id} className="hover:bg-white/5">
                   <td className="px-4 py-3 text-white">
                     <div className="font-semibold">{job.propertyName}</div>
-                    <p className="text-xs uppercase tracking-wide text-white/40">{selectedAccount?.name}</p>
                     <p className="mt-1 text-xs text-white/50">
                       {job.jobType ? job.jobType.replace('_', ' ') : 'service'}
                       {job.bins && job.bins.length > 0 ? ` · ${job.bins.join(', ')}` : ''}
