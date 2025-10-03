@@ -9,15 +9,6 @@ import { formatBinLabel } from '@/lib/binLabels'
 export type PropertyFilterState = {
   search: string
   status: 'all' | 'active' | 'paused'
-  binType: 'all' | 'garbage' | 'recycling' | 'compost'
-  groupBy: 'city' | 'status'
-}
-
-const BIN_LABELS: Record<PropertyFilterState['binType'], string> = {
-  all: 'All bins',
-  garbage: 'Garbage',
-  recycling: 'Recycling',
-  compost: 'Compost',
 }
 
 const STATUS_LABELS: Record<PropertyFilterState['status'], string> = {
@@ -60,7 +51,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
         <FunnelIcon className="h-5 w-5" />
         <span>Filter properties</span>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <label className="flex flex-col gap-2 text-sm">
           <span className="text-white/60">Search</span>
           <input
@@ -90,31 +81,6 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
               </button>
             ))}
           </div>
-        </label>
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="text-white/60">Bin type</span>
-          <select
-            value={filters.binType}
-            onChange={(event) => update({ binType: event.target.value as PropertyFilterState['binType'] })}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-          >
-            {(Object.keys(BIN_LABELS) as PropertyFilterState['binType'][]).map((bin) => (
-              <option key={bin} value={bin} className="bg-black">
-                {BIN_LABELS[bin]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="text-white/60">Group by</span>
-          <select
-            value={filters.groupBy}
-            onChange={(event) => update({ groupBy: event.target.value as PropertyFilterState['groupBy'] })}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-          >
-            <option value="city">City</option>
-            <option value="status">Status</option>
-          </select>
         </label>
       </div>
       <dl className="mt-6 grid gap-4 sm:grid-cols-3">

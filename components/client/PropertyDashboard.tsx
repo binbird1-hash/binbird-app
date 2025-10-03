@@ -5,13 +5,10 @@ import { format } from 'date-fns'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
 import { PropertyFilters, type PropertyFilterState } from './PropertyFilters'
-import { formatBinLabel } from '@/lib/binLabels'
 
 const DEFAULT_FILTERS: PropertyFilterState = {
   search: '',
   status: 'all',
-  binType: 'all',
-  groupBy: 'city',
 }
 
 function matchesFilters(property: Property, filters: PropertyFilterState) {
@@ -22,28 +19,10 @@ function matchesFilters(property: Property, filters: PropertyFilterState) {
       return false
     }
   }
-  if (filters.binType !== 'all') {
-    const hasBinType = property.binTypes.some((bin) => {
-      const label = formatBinLabel(bin)
-      if (!label) return false
-      if (filters.binType === 'garbage') return label === 'Garbage'
-      if (filters.binType === 'recycling') return label === 'Recycling'
-      return label === 'Compost'
-    })
-    if (!hasBinType) return false
-  }
   return true
 }
 
-function groupProperties(properties: Property[], filters: PropertyFilterState) {
-  if (filters.groupBy === 'status') {
-    return properties.reduce<Record<string, Property[]>>((groups, property) => {
-      const key = property.status
-      groups[key] = groups[key] ? [...groups[key], property] : [property]
-      return groups
-    }, {})
-  }
-
+function groupProperties(properties: Property[]) {
   return properties.reduce<Record<string, Property[]>>((groups, property) => {
     const key = property.city || 'Unassigned'
     groups[key] = groups[key] ? [...groups[key], property] : [property]
@@ -60,7 +39,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
   const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_FILTERS)
 
   const filtered = useMemo(() => properties.filter((property) => matchesFilters(property, filters)), [properties, filters])
-  const grouped = useMemo(() => groupProperties(filtered, filters), [filtered, filters])
+  const grouped = useMemo(() => groupProperties(filtered), [filtered])
 
   return (
     <div className="space-y-6 text-white">
