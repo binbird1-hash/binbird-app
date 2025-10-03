@@ -147,7 +147,12 @@ export function NotificationPreferencesForm() {
                       formState[emailKey] ? 'bg-binbird-red' : 'bg-white/20',
                     )}
                   >
-                    <span className="inline-block h-5 w-5 translate-x-1 rounded-full bg-white transition" />
+                    <span
+                      className={clsx(
+                        'inline-block h-5 w-5 transform rounded-full bg-white transition',
+                        formState[emailKey] ? 'translate-x-6' : 'translate-x-1',
+                      )}
+                    />
                   </Switch>
                 </label>
                 <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
@@ -161,7 +166,12 @@ export function NotificationPreferencesForm() {
                       formState[pushKey] ? 'bg-binbird-red' : 'bg-white/20',
                     )}
                   >
-                    <span className="inline-block h-5 w-5 translate-x-1 rounded-full bg-white transition" />
+                    <span
+                      className={clsx(
+                        'inline-block h-5 w-5 transform rounded-full bg-white transition',
+                        formState[pushKey] ? 'translate-x-6' : 'translate-x-1',
+                      )}
+                    />
                   </Switch>
                 </label>
               </div>
