@@ -91,9 +91,13 @@ const parseLatLng = (value: string | null): { lat: number | null; lng: number | 
   }
 }
 
-const describeBinFrequency = (color: string, frequency: string | null, flip: string | null) => {
+const describeBinFrequency = (
+  label: string,
+  frequency: string | null,
+  flip: string | null,
+) => {
   if (!frequency) return null
-  const base = `${color} (${frequency.toLowerCase()})`
+  const base = `${label} (${frequency.toLowerCase()})`
   if (frequency === 'Fortnightly' && flip === 'Yes') {
     return `${base}, alternate weeks`
   }
@@ -108,9 +112,9 @@ const deriveClientName = (row: ClientListRow): string =>
 
 const buildBinsSummary = (row: ClientListRow): string | null => {
   const bins = [
-    describeBinFrequency('Red', row.red_freq, row.red_flip),
-    describeBinFrequency('Yellow', row.yellow_freq, row.yellow_flip),
-    describeBinFrequency('Green', row.green_freq, row.green_flip),
+    describeBinFrequency('Landfill', row.red_freq, row.red_flip),
+    describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip),
+    describeBinFrequency('Organic', row.green_freq, row.green_flip),
   ].filter(Boolean) as string[]
 
   if (!bins.length) return null

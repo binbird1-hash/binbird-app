@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { MapPinIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
 import { PropertyFilters, type PropertyFilterState } from './PropertyFilters'
 
@@ -96,11 +96,9 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h4 className="text-xl font-semibold text-white">{property.name}</h4>
-                        <p className="mt-1 flex items-center gap-2 text-sm text-white/60">
-                          <MapPinIcon className="h-4 w-4" />
+                        <h4 className="text-xl font-semibold text-white">
                           {property.addressLine}, {property.suburb}
-                        </p>
+                        </h4>
                       </div>
                       <span
                         className="rounded-full border border-white/20 px-3 py-1 text-xs uppercase tracking-wide text-white/70"
