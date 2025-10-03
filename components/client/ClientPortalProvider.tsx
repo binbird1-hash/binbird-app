@@ -86,7 +86,7 @@ export type ClientProfile = {
 }
 
 type ClientListRow = {
-  id: string
+  property_id: string
   account_id: string | null
   client_name: string | null
   company: string | null
@@ -276,7 +276,7 @@ const nextOccurrenceIso = (dayOfWeek: string | null): string => {
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
+  row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.property_id
 
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'My Properties'
@@ -295,7 +295,7 @@ const toProperty = (row: ClientListRow): Property => {
     ? new Date(row.membership_start) <= new Date()
     : Boolean(row.trial_start)
   return {
-    id: row.id,
+    id: row.property_id,
     name: row.client_name ?? addressLine ?? 'Property',
     addressLine: (addressLine ?? '').trim(),
     suburb,
@@ -411,13 +411,13 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     })
     propertyCandidates.forEach((propertyId) => {
       const safe = escapeValue(propertyId)
-      filters.push(`id.eq.${safe}`)
+      filters.push(`property_id.eq.${safe}`)
     })
 
     let query = supabase
       .from('client_list')
       .select(
-        `id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
+        `property_id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
       )
 
     const uniqueFilters = Array.from(new Set(filters))
@@ -436,10 +436,10 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     const deduped = new Map<string, ClientListRow>()
 
     ;(data ?? []).forEach((row) => {
-      const id = normaliseIdentifier(row.id)
-      if (!id) return
-      deduped.set(id, {
-        id,
+      const propertyId = normaliseIdentifier(row.property_id)
+      if (!propertyId) return
+      deduped.set(propertyId, {
+        property_id: propertyId,
         account_id: normaliseIdentifier(row.account_id),
         client_name: row.client_name,
         company: row.company,
@@ -479,21 +479,21 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         ]
       }
 
-      const grouped = new Map<string, ClientAccount>()
-      rows.forEach((row) => {
-        const id = deriveAccountId(row)
-        const existing = grouped.get(id)
-        if (existing) {
-          existing.propertyIds.push(row.id)
-        } else {
-          grouped.set(id, {
-            id,
-            name: deriveAccountName(row),
-            role: (currentUser?.user_metadata?.role as ClientAccountRole) ?? 'owner',
-            propertyIds: [row.id],
-          })
-        }
-      })
+    const grouped = new Map<string, ClientAccount>()
+    rows.forEach((row) => {
+      const id = deriveAccountId(row)
+      const existing = grouped.get(id)
+      if (existing) {
+        existing.propertyIds.push(row.property_id)
+      } else {
+        grouped.set(id, {
+          id,
+          name: deriveAccountName(row),
+          role: (currentUser?.user_metadata?.role as ClientAccountRole) ?? 'owner',
+          propertyIds: [row.property_id],
+        })
+      }
+    })
       return Array.from(grouped.values())
     },
     [],
@@ -517,15 +517,15 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     const propertiesForAccount = allRows.filter((row) => deriveAccountId(row) === accountId)
     const propertyMap = new Map<string, Property>()
     propertiesForAccount.forEach((row) => {
-      propertyMap.set(row.id, toProperty(row))
+      propertyMap.set(row.property_id, toProperty(row))
     })
     const addressLookup = new Map<string, string>()
     propertiesForAccount.forEach((row) => {
-      addressLookup.set(normaliseAddress(row.address), row.id)
+      addressLookup.set(normaliseAddress(row.address), row.property_id)
     })
 
     const propertyIds = propertiesForAccount
-      .map((row) => normaliseIdentifier(row.id))
+      .map((row) => normaliseIdentifier(row.property_id))
       .filter((value): value is string => Boolean(value))
 
     const accountCandidates = new Set<string>()
@@ -539,7 +539,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     addCandidate(accountId)
     propertiesForAccount.forEach((row) => {
       addCandidate(row.account_id)
-      addCandidate(row.id)
+      addCandidate(row.property_id)
     })
 
     const accountIdFilters = Array.from(accountCandidates)

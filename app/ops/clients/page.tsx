@@ -3,7 +3,7 @@ import BackButton from '@/components/UI/BackButton'
 import { supabaseServer } from '@/lib/supabaseServer'
 
 type ClientListRow = {
-  id: string
+  property_id: string
   client_name: string | null
   company: string | null
   address: string | null
@@ -63,7 +63,7 @@ async function fetchClientRows(): Promise<TableRow[]> {
   const { data, error } = await sb
     .from('client_list')
     .select(
-      'id, client_name, company, address, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip',
+      'property_id, client_name, company, address, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip',
     )
 
   if (error) {
@@ -72,7 +72,7 @@ async function fetchClientRows(): Promise<TableRow[]> {
   }
 
   return ((data ?? []) as ClientListRow[]).map((row) => ({
-    id: row.id,
+    id: row.property_id,
     name: deriveName(row),
     address: deriveAddress(row),
     binsThisWeek: deriveBinsThisWeek(row),

@@ -51,12 +51,12 @@ export default async function TokensPage() {
     })
 
     propertyIds.forEach((propertyId) => {
-      filters.push(`id.eq.${escape(propertyId)}`)
+      filters.push(`property_id.eq.${escape(propertyId)}`)
     })
 
     const { data, error } = await sb
       .from('client_list')
-      .select('id, account_id, client_name, company, address, notes')
+      .select('property_id, account_id, client_name, company, address, notes')
       .or(filters.join(','))
 
     if (error) {
@@ -70,7 +70,7 @@ export default async function TokensPage() {
     }
 
     clientRows = (data ?? []).map((row) => ({
-      id: row.id,
+      property_id: row.property_id,
       account_id: row.account_id,
       client_name: row.client_name,
       company: row.company,
@@ -81,7 +81,7 @@ export default async function TokensPage() {
 
   const clientsById = new Map<string, PortalClientRow>()
   clientRows.forEach((row) => {
-    clientsById.set(row.id, row)
+    clientsById.set(row.property_id, row)
   })
 
   const accountsById = new Map<

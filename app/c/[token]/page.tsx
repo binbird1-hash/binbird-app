@@ -5,7 +5,7 @@ import { supabaseServer } from '@/lib/supabaseServer'
 import type { JobRecord, Property } from '@/lib/database.types'
 
 const toProperty = (row: PortalClientRow): Property => ({
-  id: row.id,
+  property_id: row.property_id,
   address: row.address,
   notes: row.notes,
 })
@@ -94,7 +94,7 @@ export default async function ClientPortal({
       {properties.length ? (
         <ul className="space-y-2">
           {properties.map((p) => (
-            <li key={p.id} className="p-3 border rounded">
+            <li key={p.property_id} className="p-3 border rounded">
               <p className="font-medium">{p.address}</p>
               <p className="text-sm opacity-70">{p.notes || 'No notes'}</p>
             </li>
