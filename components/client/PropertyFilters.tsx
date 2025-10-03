@@ -9,13 +9,13 @@ import { formatBinLabel } from '@/lib/binLabels'
 export type PropertyFilterState = {
   search: string
   status: 'all' | 'active' | 'paused'
-  binType: 'all' | 'landfill' | 'recycling' | 'compost'
+  binType: 'all' | 'garbage' | 'recycling' | 'compost'
   groupBy: 'city' | 'status'
 }
 
 const BIN_LABELS: Record<PropertyFilterState['binType'], string> = {
   all: 'All bins',
-  landfill: 'Landfill',
+  garbage: 'Garbage',
   recycling: 'Recycling',
   compost: 'Compost',
 }
@@ -40,11 +40,11 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
           const label = formatBinLabel(bin)
           if (label === 'Recycling') accumulator.recycling += 1
           else if (label === 'Compost') accumulator.compost += 1
-          else if (label === 'Landfill') accumulator.landfill += 1
+          else if (label === 'Garbage') accumulator.garbage += 1
         })
         return accumulator
       },
-      { landfill: 0, recycling: 0, compost: 0 },
+      { garbage: 0, recycling: 0, compost: 0 },
     )
 
     return totalBins
@@ -119,8 +119,8 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
       </div>
       <dl className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-          <dt className="text-xs uppercase tracking-wide text-white/50">Landfill bins</dt>
-          <dd className="mt-1 text-2xl font-semibold">{totals.landfill}</dd>
+          <dt className="text-xs uppercase tracking-wide text-white/50">Garbage bins</dt>
+          <dd className="mt-1 text-2xl font-semibold">{totals.garbage}</dd>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
           <dt className="text-xs uppercase tracking-wide text-white/50">Recycling bins</dt>
