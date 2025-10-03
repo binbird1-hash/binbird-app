@@ -4,11 +4,12 @@ import { useMemo } from 'react'
 import clsx from 'clsx'
 import { FunnelIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
+import { formatBinLabel } from '@/lib/binLabels'
 
 export type PropertyFilterState = {
   search: string
   status: 'all' | 'active' | 'paused'
-  binType: 'all' | 'landfill' | 'recycling' | 'organics'
+  binType: 'all' | 'landfill' | 'recycling' | 'compost'
   groupBy: 'city' | 'status'
 }
 
@@ -16,7 +17,7 @@ const BIN_LABELS: Record<PropertyFilterState['binType'], string> = {
   all: 'All bins',
   landfill: 'Landfill',
   recycling: 'Recycling',
-  organics: 'Organics',
+  compost: 'Compost',
 }
 
 const STATUS_LABELS: Record<PropertyFilterState['status'], string> = {
@@ -36,13 +37,14 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
     const totalBins = properties.reduce(
       (accumulator, property) => {
         property.binTypes.forEach((bin) => {
-          if (bin.toLowerCase().includes('recycle')) accumulator.recycling += 1
-          else if (bin.toLowerCase().includes('green') || bin.toLowerCase().includes('organic')) accumulator.organics += 1
-          else accumulator.landfill += 1
+          const label = formatBinLabel(bin)
+          if (label === 'Recycling') accumulator.recycling += 1
+          else if (label === 'Compost') accumulator.compost += 1
+          else if (label === 'Landfill') accumulator.landfill += 1
         })
         return accumulator
       },
-      { landfill: 0, recycling: 0, organics: 0 },
+      { landfill: 0, recycling: 0, compost: 0 },
     )
 
     return totalBins
@@ -125,8 +127,8 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
           <dd className="mt-1 text-2xl font-semibold">{totals.recycling}</dd>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-          <dt className="text-xs uppercase tracking-wide text-white/50">Organics bins</dt>
-          <dd className="mt-1 text-2xl font-semibold">{totals.organics}</dd>
+          <dt className="text-xs uppercase tracking-wide text-white/50">Compost bins</dt>
+          <dd className="mt-1 text-2xl font-semibold">{totals.compost}</dd>
         </div>
       </dl>
     </section>

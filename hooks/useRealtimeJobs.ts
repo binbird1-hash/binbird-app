@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
 import type { Job } from '@/components/client/ClientPortalProvider'
+import { normaliseBinList } from '@/lib/binLabels'
 import { nextDay, setHours, setMinutes, startOfToday } from 'date-fns'
 import type { Day } from 'date-fns'
 
@@ -41,10 +42,7 @@ const normaliseId = (value: string | number | null | undefined): string | null =
 const createJobFromPayload = (payload: any, fallbackAccountId: string | null): Job | null => {
   if (!payload) return null
   const scheduledAt = computeNextOccurrence(payload.day_of_week ?? null)
-  const bins =
-    typeof payload.bins === 'string'
-      ? payload.bins.split(',').map((value: string) => value.trim())
-      : []
+  const bins = normaliseBinList(payload.bins)
   const propertyId = normaliseId(payload.property_id)
   const accountId = normaliseId(payload.account_id) ?? fallbackAccountId ?? 'unknown'
   return {

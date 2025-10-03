@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
+import { normaliseBinList } from '@/lib/binLabels'
 import {
   addMinutes,
   differenceInMinutes,
@@ -291,7 +292,7 @@ const toProperty = (row: ClientListRow): Property => {
   const binTypes = [
     describeBinFrequency('Landfill', row.red_freq, row.red_flip),
     describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip),
-    describeBinFrequency('Organic', row.green_freq, row.green_flip),
+    describeBinFrequency('Compost', row.green_freq, row.green_flip),
   ].filter(Boolean) as string[]
   const nextServiceAt = row.collection_day ? nextOccurrenceIso(row.collection_day) : null
   const { lat, lng } = parseLatLng(row.lat_lng)
@@ -645,9 +646,14 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       const explicitPropertyId =
         typeof job.property_id === 'string' && job.property_id.trim().length ? job.property_id.trim() : null
       const propertyId = explicitPropertyId ?? addressLookup.get(normaliseAddress(job.address)) ?? null
-      const propertyName = propertyId ? propertyMap.get(propertyId)?.name ?? job.address ?? 'Property' : job.address ?? 'Property'
+      const property = propertyId ? propertyMap.get(propertyId) : undefined
+      const propertyName = property?.name ?? job.address ?? 'Property'
       const scheduledAt = nextOccurrenceIso(job.day_of_week)
       const latestLog = job.id ? logsByJobId.get(job.id) : undefined
+      const jobAccountId = normaliseIdentifier(job.account_id)
+      if (!property && jobAccountId && jobAccountId !== accountId) {
+        return
+      }
       const status: JobStatus = latestLog
         ? 'completed'
         : (() => {
@@ -658,10 +664,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
             return 'scheduled'
           })()
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
-      const bins =
-        typeof job.bins === 'string'
-          ? job.bins.split(',').map((value: string) => value.trim())
-          : []
+      const bins = normaliseBinList(job.bins)
       combinedJobs.push({
         id: job.id,
         accountId,
@@ -687,7 +690,12 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       .filter((log) => !log.job_id)
       .forEach((log) => {
         const propertyId = addressLookup.get(normaliseAddress(log.address)) ?? null
-        const propertyName = propertyId ? propertyMap.get(propertyId)?.name ?? log.address ?? 'Property' : log.address ?? 'Property'
+        const property = propertyId ? propertyMap.get(propertyId) : undefined
+        const propertyName = property?.name ?? log.address ?? 'Property'
+        const logAccountId = normaliseIdentifier(log.account_id)
+        if (!property && logAccountId && logAccountId !== accountId) {
+          return
+        }
         combinedJobs.push({
           id: `log-${log.id}`,
           accountId,
@@ -705,10 +713,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
           lastLongitude: log.gps_lng ?? undefined,
           notes: log.notes,
           jobType: log.task_type,
-          bins:
-            typeof log.bins === 'string'
-              ? log.bins.split(',').map((value: string) => value.trim())
-              : [],
+          bins: normaliseBinList(log.bins),
         })
       })
 
