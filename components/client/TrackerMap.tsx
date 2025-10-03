@@ -107,14 +107,29 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
+    const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
+      <svg width="52" height="70" viewBox="0 0 52 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="pinGradient" x1="26" y1="0" x2="26" y2="70" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#facc15"/>
+            <stop offset="45%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#ef4444"/>
+          </linearGradient>
+          <filter id="pinShadow" x="0" y="0" width="52" height="70" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.35)"/>
+          </filter>
+        </defs>
+        <g filter="url(#pinShadow)">
+          <path d="M26 0C14.9543 0 6 8.95431 6 20C6 33.2 26 62 26 62C26 62 46 33.2 46 20C46 8.95431 37.0457 0 26 0Z" fill="url(#pinGradient)"/>
+          <circle cx="26" cy="20" r="9" fill="white" fill-opacity="0.9"/>
+          <circle cx="26" cy="20" r="5" fill="#0f172a" fill-opacity="0.8"/>
+        </g>
+      </svg>`)
     return {
-      path: window.google.maps.SymbolPath.CIRCLE,
-      scale: 8,
-      fillColor: '#ef4444',
-      fillOpacity: 0.95,
-      strokeColor: '#ffffff',
-      strokeWeight: 2,
-    } as google.maps.Symbol
+      url: `data:image/svg+xml;charset=UTF-8,${svg}`,
+      scaledSize: new window.google.maps.Size(40, 54),
+      anchor: new window.google.maps.Point(20, 54),
+    } as google.maps.Icon
   }, [isLoaded])
 
   const handleMapLoad = useCallback((instance: google.maps.Map) => {
@@ -162,10 +177,17 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                 position={marker.position}
                 mapPaneName="overlayMouseTarget"
               >
-                <div className="pointer-events-none -translate-x-1/2 -translate-y-3">
-                  <div className="rounded-2xl border border-white/20 bg-black/80 px-3 py-2 text-xs text-white/80 shadow-lg shadow-black/40">
-                    <p className="text-sm font-semibold text-white">{marker.property.name}</p>
-                    <p className="text-[11px] text-white/70">{formatPropertyAddress(marker.property)}</p>
+                <div className="pointer-events-none -translate-x-1/2 -translate-y-5">
+                  <div className="flex flex-col items-center">
+                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/80 text-xs shadow-lg shadow-black/40">
+                      <div className="bg-gradient-to-r from-amber-400/90 via-orange-500/80 to-rose-500/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-900">
+                        {marker.property.name}
+                      </div>
+                      <div className="px-3 py-2 text-[11px] text-white/70">
+                        <p className="leading-snug">{formatPropertyAddress(marker.property)}</p>
+                      </div>
+                    </div>
+                    <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-black/80" />
                   </div>
                 </div>
               </OverlayViewF>
