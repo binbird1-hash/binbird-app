@@ -1,7 +1,7 @@
 // lib/database.types.ts
 
 export type Property = {
-  id: string
+  property_id: string
   address: string | null
   notes: string | null
 }

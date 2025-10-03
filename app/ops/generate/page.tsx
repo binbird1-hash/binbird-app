@@ -27,7 +27,7 @@ const DAY_ALIASES: Record<string, number> = {
 }
 
 type ClientListRow = {
-  id: string
+  property_id: string
   account_id: string | null
   client_name: string | null
   company: string | null
@@ -101,7 +101,7 @@ const describeBinFrequency = (color: string, frequency: string | null, flip: str
 }
 
 const deriveAccountId = (row: ClientListRow): string =>
-  (row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.id)
+  row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.property_id
 
 const deriveClientName = (row: ClientListRow): string =>
   row.client_name?.trim() || row.company?.trim() || 'Client'
@@ -131,7 +131,7 @@ async function generateJobs() {
   const { data: clients, error: clientError } = await sb
     .from('client_list')
     .select(
-      `id, account_id, client_name, company, address, collection_day, put_bins_out, notes, assigned_to, lat_lng, photo_path, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip`,
+      `property_id, account_id, client_name, company, address, collection_day, put_bins_out, notes, assigned_to, lat_lng, photo_path, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip`,
     )
 
   if (clientError) {
@@ -156,7 +156,7 @@ async function generateJobs() {
     if (matchesDay(client.put_bins_out, dayIndex)) {
       jobs.push({
         account_id: accountId,
-        property_id: client.id,
+        property_id: client.property_id,
         address,
         lat,
         lng,
@@ -174,7 +174,7 @@ async function generateJobs() {
     if (matchesDay(client.collection_day, dayIndex)) {
       jobs.push({
         account_id: accountId,
-        property_id: client.id,
+        property_id: client.property_id,
         address,
         lat,
         lng,

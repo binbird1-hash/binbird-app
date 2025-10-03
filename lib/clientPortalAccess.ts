@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type PortalClientRow = {
-  id: string
+  property_id: string
   account_id: string | null
   client_name: string | null
   company: string | null
@@ -19,7 +19,7 @@ const escapeFilterValue = (value: string) => value.replace(/,/g, '\\,').replace(
 
 export const deriveAccountId = (row: PortalClientRow): string => {
   const explicit = row.account_id?.trim()
-  return explicit && explicit.length > 0 ? explicit : row.id
+  return explicit && explicit.length > 0 ? explicit : row.property_id
 }
 
 export const deriveAccountName = (row: PortalClientRow): string =>
@@ -42,7 +42,7 @@ async function fetchPortalClientRows(
   propertyIds.forEach((propertyId) => {
     const trimmed = propertyId.trim()
     if (trimmed) {
-      filters.push(`id.eq.${escapeFilterValue(trimmed)}`)
+      filters.push(`property_id.eq.${escapeFilterValue(trimmed)}`)
     }
   })
 
@@ -52,7 +52,7 @@ async function fetchPortalClientRows(
 
   const { data, error } = await supabase
     .from('client_list')
-    .select('id, account_id, client_name, company, address, notes')
+    .select('property_id, account_id, client_name, company, address, notes')
     .or(filters.join(','))
 
   if (error) {
@@ -63,11 +63,12 @@ async function fetchPortalClientRows(
   const deduped = new Map<string, PortalClientRow>()
 
   ;(data ?? []).forEach((row) => {
-    const id = typeof row.id === 'string' ? row.id.trim() : null
-    if (!id) return
+    const propertyId =
+      typeof row.property_id === 'string' ? row.property_id.trim() : null
+    if (!propertyId) return
 
-    deduped.set(id, {
-      id,
+    deduped.set(propertyId, {
+      property_id: propertyId,
       account_id: typeof row.account_id === 'string' ? row.account_id : null,
       client_name: typeof row.client_name === 'string' ? row.client_name : null,
       company: typeof row.company === 'string' ? row.company : null,
@@ -143,7 +144,9 @@ export async function resolvePortalScope(
     candidateAccountIds.find((value) => value.trim().length) ??
     (() => {
       if (tokenRow.property_id) {
-        const target = clientRows.find((row) => row.id === tokenRow.property_id)
+        const target = clientRows.find(
+          (row) => row.property_id === tokenRow.property_id,
+        )
         return target ? deriveAccountId(target) : null
       }
       return deriveAccountId(clientRows[0]!)
@@ -154,7 +157,7 @@ export async function resolvePortalScope(
   }
 
   const scopedRows = tokenRow.property_id
-    ? clientRows.filter((row) => row.id === tokenRow.property_id)
+    ? clientRows.filter((row) => row.property_id === tokenRow.property_id)
     : clientRows.filter((row) => deriveAccountId(row) === canonicalAccountId)
 
   if (!scopedRows.length) {
@@ -164,7 +167,7 @@ export async function resolvePortalScope(
   return {
     accountId: canonicalAccountId,
     accountName: deriveAccountName(scopedRows[0]!),
-    propertyIds: scopedRows.map((row) => row.id),
+    propertyIds: scopedRows.map((row) => row.property_id),
     rows: scopedRows,
     expiresAt: tokenRow.expires_at,
   }
