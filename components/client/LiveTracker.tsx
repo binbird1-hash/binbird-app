@@ -1,10 +1,9 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { format } from 'date-fns'
-import { BoltIcon, CheckIcon, MapIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import { BoltIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { useClientPortal, computeEtaLabel, type Job } from './ClientPortalProvider'
+import { useClientPortal, type Job } from './ClientPortalProvider'
 import { TrackerMap } from './TrackerMap'
 import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
 
@@ -44,6 +43,30 @@ const PROGRESS_INDEX: Record<Job['status'], number> = {
   on_site: 2,
   completed: 3,
   skipped: 3,
+}
+
+const formatJobDetail = (job: Job): string => {
+  const bins = job.bins && job.bins.length > 0 ? job.bins.join(', ') : null
+  const jobType = job.jobType
+    ? job.jobType
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : null
+
+  if (jobType && bins) {
+    return `${jobType}: ${bins}`
+  }
+
+  if (jobType) {
+    return jobType
+  }
+
+  if (bins) {
+    return `Bins: ${bins}`
+  }
+
+  return 'Service details coming soon'
 }
 
 export function LiveTracker() {
@@ -145,8 +168,8 @@ export function LiveTracker() {
                   <div className="flex flex-col gap-6 md:flex-row md:justify-between">
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm uppercase tracking-wide text-white/50">{job.propertyName}</p>
-                        <h3 className="text-xl font-semibold text-white">{computeEtaLabel(job)}</h3>
+                        <p className="text-sm uppercase tracking-wide text-white/50">Address</p>
+                        <h3 className="text-xl font-semibold text-white">{job.propertyName}</h3>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
                         <span
@@ -157,98 +180,34 @@ export function LiveTracker() {
                         >
                           {status.label}
                         </span>
-                        {job.jobType ? (
-                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
-                            {job.jobType.replace('_', ' ')}
-                          </span>
-                        ) : null}
-                        {job.bins && job.bins.length > 0 ? (
-                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
-                            {job.bins.join(', ')}
-                          </span>
-                        ) : null}
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
+                          {formatJobDetail(job)}
+                        </span>
                       </div>
                     </div>
-                    <dl className="grid w-full gap-3 text-sm text-white/70 md:w-auto md:min-w-[220px]">
-                      <div className="flex items-center gap-2">
-                        <dt className="flex items-center gap-2 text-white/50">
-                          <MapIcon className="h-5 w-5" />
-                          <span>Scheduled</span>
-                        </dt>
-                        <dd className="font-medium text-white">{format(new Date(job.scheduledAt), 'p')}</dd>
-                      </div>
-                      {job.crewName ? (
-                        <div className="flex items-center gap-2">
-                          <dt className="text-white/50">Crew</dt>
-                          <dd className="font-medium text-white">{job.crewName}</dd>
-                        </div>
-                      ) : null}
-                      {job.startedAt ? (
-                        <div className="flex items-center gap-2">
-                          <dt className="text-white/50">Started</dt>
-                          <dd className="font-medium text-white">{format(new Date(job.startedAt), 'p')}</dd>
-                        </div>
-                      ) : null}
-                      {job.completedAt ? (
-                        <div className="flex items-center gap-2">
-                          <dt className="text-white/50">Completed</dt>
-                          <dd className="font-medium text-white">{format(new Date(job.completedAt), 'p')}</dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                  </div>
-                  <div className="mt-6">
-                    <ol className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-0">
+                    <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:min-w-[220px]">
                       {PROGRESS_STEPS.map((step, index) => {
                         const reached = progressIndex >= index
-                        const completed = progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
                         const isCurrent = progressIndex === index
                         const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                         return (
-                          <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center">
-                            <div className="flex items-center gap-3">
-                              <span
-                                className={clsx(
-                                  'flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold transition',
-                                  reached ? 'border-white/80 bg-white/10 text-white' : 'border-white/20 bg-black/40 text-white/40',
-                                )}
-                              >
-                                {completed ? <CheckIcon className="h-5 w-5" /> : index + 1}
-                              </span>
-                              <div className="flex flex-col text-left">
-                                <span className={clsx('text-xs uppercase tracking-wide', reached ? 'text-white/70' : 'text-white/40')}>
-                                  {label}
-                                </span>
-                                <span className={clsx('text-sm font-medium', isCurrent ? 'text-white' : 'text-white/60')}>
-                                  {isCurrent
-                                    ? step.key === 'scheduled'
-                                      ? format(new Date(job.scheduledAt), 'p')
-                                      : computeEtaLabel(job)
-                                    : null}
-                                </span>
-                              </div>
-                            </div>
-                            {index < PROGRESS_STEPS.length - 1 ? (
-                              <div className="ml-11 mt-4 hidden h-px flex-1 bg-white/10 sm:ml-3 sm:mt-0 sm:flex" aria-hidden>
-                                <span
-                                  className={clsx(
-                                    'h-px w-full',
-                                    progressIndex > index ? 'bg-gradient-to-r from-white/60 to-white/20' : 'bg-white/10',
-                                  )}
-                                />
-                              </div>
-                            ) : null}
-                          </li>
+                          <span
+                            key={step.key}
+                            className={clsx(
+                              'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide transition',
+                              isCurrent
+                                ? 'border-white bg-white/10 text-white'
+                                : reached
+                                  ? 'border-white/60 text-white/80'
+                                  : 'border-white/20 text-white/40',
+                            )}
+                          >
+                            {label}
+                          </span>
                         )
                       })}
-                    </ol>
-                  </div>
-                  {job.notes ? (
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Crew notes</p>
-                      <p className="mt-2 leading-relaxed">{job.notes}</p>
                     </div>
-                  ) : null}
+                  </div>
                 </article>
               )
             })}
