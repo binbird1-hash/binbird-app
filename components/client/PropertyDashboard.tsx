@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
 import { PropertyFilters, type PropertyFilterState } from './PropertyFilters'
+import { formatBinLabel } from '@/lib/binLabels'
 
 const DEFAULT_FILTERS: PropertyFilterState = {
   search: '',
@@ -23,10 +24,11 @@ function matchesFilters(property: Property, filters: PropertyFilterState) {
   }
   if (filters.binType !== 'all') {
     const hasBinType = property.binTypes.some((bin) => {
-      const normalised = bin.toLowerCase()
-      if (filters.binType === 'landfill') return normalised.includes('red') || normalised.includes('landfill')
-      if (filters.binType === 'recycling') return normalised.includes('yellow') || normalised.includes('recycle')
-      return normalised.includes('green') || normalised.includes('organic')
+      const label = formatBinLabel(bin)
+      if (!label) return false
+      if (filters.binType === 'landfill') return label === 'Landfill'
+      if (filters.binType === 'recycling') return label === 'Recycling'
+      return label === 'Compost'
     })
     if (!hasBinType) return false
   }
