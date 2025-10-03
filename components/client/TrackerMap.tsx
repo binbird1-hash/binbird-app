@@ -41,6 +41,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
     googleMapsApiKey: apiKey ?? '',
   })
   const [map, setMap] = useState<google.maps.Map | null>(null)
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
 
   const propertyMarkers = useMemo<PropertyMarkerDescriptor[]>(() => {
     return properties
@@ -111,18 +112,18 @@ export function TrackerMap({ properties }: TrackerMapProps) {
       <svg width="52" height="70" viewBox="0 0 52 70" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="pinGradient" x1="26" y1="0" x2="26" y2="70" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#facc15"/>
-            <stop offset="45%" stop-color="#f97316"/>
-            <stop offset="100%" stop-color="#ef4444"/>
+            <stop offset="0%" stop-color="#fb7185"/>
+            <stop offset="50%" stop-color="#f43f5e"/>
+            <stop offset="100%" stop-color="#e11d48"/>
           </linearGradient>
           <filter id="pinShadow" x="0" y="0" width="52" height="70" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.35)"/>
+            <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="rgba(239,68,68,0.35)"/>
           </filter>
         </defs>
         <g filter="url(#pinShadow)">
           <path d="M26 0C14.9543 0 6 8.95431 6 20C6 33.2 26 62 26 62C26 62 46 33.2 46 20C46 8.95431 37.0457 0 26 0Z" fill="url(#pinGradient)"/>
-          <circle cx="26" cy="20" r="9" fill="white" fill-opacity="0.9"/>
-          <circle cx="26" cy="20" r="5" fill="#0f172a" fill-opacity="0.8"/>
+          <circle cx="26" cy="20" r="9" fill="white" fill-opacity="0.95"/>
+          <circle cx="26" cy="20" r="5" fill="#1f2937" fill-opacity="0.85"/>
         </g>
       </svg>`)
     return {
@@ -138,6 +139,10 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const handleMapUnmount = useCallback(() => {
     setMap(null)
+  }, [])
+
+  const handleMapClick = useCallback(() => {
+    setSelectedPropertyId(null)
   }, [])
 
   return (
@@ -161,6 +166,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
             zoom={12}
             onLoad={handleMapLoad}
             onUnmount={handleMapUnmount}
+            onClick={handleMapClick}
           >
             {propertyMarkers.map((marker) => (
               <MarkerF
@@ -168,30 +174,63 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                 position={marker.position}
                 icon={propertyIcon}
                 title={marker.property.name}
+                onClick={() => {
+                  setSelectedPropertyId((current) =>
+                    current === marker.property.id ? null : marker.property.id,
+                  )
+                }}
                 zIndex={1}
               />
             ))}
-            {propertyMarkers.map((marker) => (
-              <OverlayViewF
-                key={`overlay-${marker.property.id}`}
-                position={marker.position}
-                mapPaneName="overlayMouseTarget"
-              >
-                <div className="pointer-events-none -translate-x-1/2 -translate-y-5">
-                  <div className="flex flex-col items-center">
-                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/80 text-xs shadow-lg shadow-black/40">
-                      <div className="bg-gradient-to-r from-amber-400/90 via-orange-500/80 to-rose-500/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-900">
-                        {marker.property.name}
-                      </div>
-                      <div className="px-3 py-2 text-[11px] text-white/70">
-                        <p className="leading-snug">{formatPropertyAddress(marker.property)}</p>
-                      </div>
+            {propertyMarkers.map((marker) => {
+              const isSelected = marker.property.id === selectedPropertyId
+              if (!isSelected) {
+                return (
+                  <OverlayViewF
+                    key={`halo-${marker.property.id}`}
+                    position={marker.position}
+                    mapPaneName="overlayMouseTarget"
+                  >
+                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[58px]">
+                      <span className="relative block h-12 w-12">
+                        <span className="absolute inset-0 animate-pulse rounded-full bg-rose-500/20" />
+                      </span>
                     </div>
-                    <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-black/80" />
+                  </OverlayViewF>
+                )
+              }
+
+              return (
+                <OverlayViewF
+                  key={`overlay-${marker.property.id}`}
+                  position={marker.position}
+                  mapPaneName="overlayMouseTarget"
+                >
+                  <div className="pointer-events-auto -translate-x-1/2 -translate-y-5" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex flex-col items-center">
+                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 text-xs shadow-xl shadow-rose-900/40">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-rose-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-100">
+                          <span>{marker.property.name}</span>
+                          <button
+                            type="button"
+                            className="rounded-full border border-white/10 bg-white/5 px-1 text-[10px] font-medium uppercase tracking-wide text-white/60 transition hover:border-white/30 hover:text-white"
+                            onClick={() => {
+                              setSelectedPropertyId(null)
+                            }}
+                          >
+                            Close
+                          </button>
+                        </div>
+                        <div className="px-3 py-2 text-[11px] text-white">
+                          <p className="leading-snug text-white/80">{formatPropertyAddress(marker.property)}</p>
+                        </div>
+                      </div>
+                      <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-slate-900/95" />
+                    </div>
                   </div>
-                </div>
-              </OverlayViewF>
-            ))}
+                </OverlayViewF>
+              )
+            })}
           </GoogleMap>
           {propertyMarkers.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
