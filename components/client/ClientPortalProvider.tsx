@@ -251,9 +251,13 @@ const extractEmailCandidates = (user: User): string[] => {
   return Array.from(emails)
 }
 
-const describeBinFrequency = (color: string, frequency: string | null, flip: string | null) => {
+const describeBinFrequency = (
+  label: string,
+  frequency: string | null,
+  flip: string | null,
+) => {
   if (!frequency) return null
-  const base = `${color} (${frequency.toLowerCase()})`
+  const base = `${label} (${frequency.toLowerCase()})`
   if (frequency === 'Fortnightly' && flip === 'Yes') {
     return `${base}, alternate weeks`
   }
@@ -285,9 +289,9 @@ const toProperty = (row: ClientListRow): Property => {
   const [addressLine, suburbRaw = ''] = (row.address ?? '').split(',')
   const suburb = suburbRaw.trim()
   const binTypes = [
-    describeBinFrequency('Red', row.red_freq, row.red_flip),
-    describeBinFrequency('Yellow', row.yellow_freq, row.yellow_flip),
-    describeBinFrequency('Green', row.green_freq, row.green_flip),
+    describeBinFrequency('Landfill', row.red_freq, row.red_flip),
+    describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip),
+    describeBinFrequency('Organic', row.green_freq, row.green_flip),
   ].filter(Boolean) as string[]
   const nextServiceAt = row.collection_day ? nextOccurrenceIso(row.collection_day) : null
   const { lat, lng } = parseLatLng(row.lat_lng)
@@ -296,7 +300,7 @@ const toProperty = (row: ClientListRow): Property => {
     : Boolean(row.trial_start)
   return {
     id: row.property_id,
-    name: row.client_name ?? addressLine ?? 'Property',
+    name: addressLine || row.client_name || 'Property',
     addressLine: (addressLine ?? '').trim(),
     suburb,
     city: suburb,
