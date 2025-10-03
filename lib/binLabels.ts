@@ -1,7 +1,7 @@
-export type BinLabel = 'Landfill' | 'Recycling' | 'Compost'
+export type BinLabel = 'Garbage' | 'Recycling' | 'Compost'
 
 const BIN_KEYWORDS: { label: BinLabel; keywords: string[] }[] = [
-  { label: 'Landfill', keywords: ['landfill', 'general', 'garbage', 'trash', 'rubbish', 'red'] },
+  { label: 'Garbage', keywords: ['garbage', 'landfill', 'general', 'trash', 'rubbish', 'red'] },
   { label: 'Recycling', keywords: ['recycling', 'commingled', 'co-mingled', 'yellow'] },
   { label: 'Compost', keywords: ['compost', 'organic', 'food', 'green'] },
 ]

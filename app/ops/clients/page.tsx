@@ -40,7 +40,7 @@ const describeBinFrequency = (
 const deriveBinsThisWeek = (row: ClientListRow): string => {
   const bins = [
 
-    describeBinFrequency('Landfill', row.red_freq, row.red_flip),
+    describeBinFrequency('Garbage', row.red_freq, row.red_flip),
     describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip),
     describeBinFrequency('Organic', row.green_freq, row.green_flip),
   ].filter(Boolean) as string[]

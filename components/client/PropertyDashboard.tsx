@@ -26,7 +26,7 @@ function matchesFilters(property: Property, filters: PropertyFilterState) {
     const hasBinType = property.binTypes.some((bin) => {
       const label = formatBinLabel(bin)
       if (!label) return false
-      if (filters.binType === 'landfill') return label === 'Landfill'
+      if (filters.binType === 'garbage') return label === 'Garbage'
       if (filters.binType === 'recycling') return label === 'Recycling'
       return label === 'Compost'
     })

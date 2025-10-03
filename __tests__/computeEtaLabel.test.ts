@@ -18,7 +18,7 @@ const baseJob: Job = {
   lastLongitude: null,
   notes: null,
   jobType: 'bring_in',
-  bins: ['Landfill'],
+  bins: ['Garbage'],
 }
 
 describe('computeEtaLabel', () => {

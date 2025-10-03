@@ -290,7 +290,7 @@ const toProperty = (row: ClientListRow): Property => {
   const [addressLine, suburbRaw = ''] = (row.address ?? '').split(',')
   const suburb = suburbRaw.trim()
   const binTypes = [
-    describeBinFrequency('Landfill', row.red_freq, row.red_flip),
+    describeBinFrequency('Garbage', row.red_freq, row.red_flip),
     describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip),
     describeBinFrequency('Compost', row.green_freq, row.green_flip),
   ].filter(Boolean) as string[]

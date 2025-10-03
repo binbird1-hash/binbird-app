@@ -26,7 +26,7 @@ const jobs: Job[] = [
     lastLongitude: null,
     notes: null,
     jobType: 'bring_in',
-    bins: ['Landfill', 'Recycling'],
+    bins: ['Garbage', 'Recycling'],
   },
 ]
 
