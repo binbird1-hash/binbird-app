@@ -108,28 +108,24 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
+    const accent = '#ff5757'
     const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-      <svg width="52" height="70" viewBox="0 0 52 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="48" height="66" viewBox="0 0 48 66" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="pinGradient" x1="26" y1="0" x2="26" y2="70" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#fb7185"/>
-            <stop offset="50%" stop-color="#f43f5e"/>
-            <stop offset="100%" stop-color="#e11d48"/>
-          </linearGradient>
-          <filter id="pinShadow" x="0" y="0" width="52" height="70" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="rgba(239,68,68,0.35)"/>
+          <filter id="pinShadow" x="0" y="0" width="48" height="66" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="rgba(255, 87, 87, 0.32)"/>
           </filter>
         </defs>
         <g filter="url(#pinShadow)">
-          <path d="M26 0C14.9543 0 6 8.95431 6 20C6 33.2 26 62 26 62C26 62 46 33.2 46 20C46 8.95431 37.0457 0 26 0Z" fill="url(#pinGradient)"/>
-          <circle cx="26" cy="20" r="9" fill="white" fill-opacity="0.95"/>
-          <circle cx="26" cy="20" r="5" fill="#1f2937" fill-opacity="0.85"/>
+          <path d="M24 0C13.5066 0 5 8.50659 5 19C5 31.98 24 58 24 58C24 58 43 31.98 43 19C43 8.50659 34.4934 0 24 0Z" fill="${accent}"/>
+          <circle cx="24" cy="18" r="8.5" fill="#0b0d12" fill-opacity="0.92"/>
+          <circle cx="24" cy="18" r="4.5" fill="white" fill-opacity="0.92"/>
         </g>
       </svg>`)
     return {
       url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-      scaledSize: new window.google.maps.Size(40, 54),
-      anchor: new window.google.maps.Point(20, 54),
+      scaledSize: new window.google.maps.Size(36, 52),
+      anchor: new window.google.maps.Point(18, 52),
     } as google.maps.Icon
   }, [isLoaded])
 
@@ -193,7 +189,10 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                   >
                     <div className="pointer-events-none -translate-x-1/2 -translate-y-[58px]">
                       <span className="relative block h-12 w-12">
-                        <span className="absolute inset-0 animate-pulse rounded-full bg-rose-500/20" />
+                        <span
+                          className="absolute inset-0 animate-pulse rounded-full"
+                          style={{ backgroundColor: 'rgba(255, 87, 87, 0.18)' }}
+                        />
                       </span>
                     </div>
                   </OverlayViewF>
@@ -205,15 +204,20 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                   key={`overlay-${marker.property.id}`}
                   position={marker.position}
                   mapPaneName="overlayMouseTarget"
+                  zIndex={2}
                 >
-                  <div className="pointer-events-auto -translate-x-1/2 -translate-y-5" onClick={(event) => event.stopPropagation()}>
+                  <div
+                    className="pointer-events-auto"
+                    style={{ transform: 'translate(-50%, calc(-100% - 58px))' }}
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 text-xs shadow-xl shadow-rose-900/40">
-                        <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-rose-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-100">
-                          <span>{marker.property.name}</span>
+                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d12]/90 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-sm">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80">
+                          <span className="text-[var(--accent)]">{marker.property.name}</span>
                           <button
                             type="button"
-                            className="rounded-full border border-white/10 bg-white/5 px-1 text-[10px] font-medium uppercase tracking-wide text-white/60 transition hover:border-white/30 hover:text-white"
+                            className="rounded-full border border-white/10 bg-black/40 px-2 text-[10px] font-medium uppercase tracking-wide text-white/70 transition hover:border-white/40 hover:text-white"
                             onClick={() => {
                               setSelectedPropertyId(null)
                             }}
@@ -222,10 +226,10 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                           </button>
                         </div>
                         <div className="px-3 py-2 text-[11px] text-white">
-                          <p className="leading-snug text-white/80">{formatPropertyAddress(marker.property)}</p>
+                          <p className="leading-snug text-white/90">{formatPropertyAddress(marker.property)}</p>
                         </div>
                       </div>
-                      <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-slate-900/95" />
+                      <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-[#0b0d12]/90" />
                     </div>
                   </div>
                 </OverlayViewF>
