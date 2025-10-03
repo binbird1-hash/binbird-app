@@ -39,22 +39,31 @@ const normaliseId = (value: string | number | null | undefined): string | null =
   return trimmed.length ? trimmed : null
 }
 
+const parseDateToIso = (value: string | null | undefined): string | null => {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
+}
+
 const createJobFromPayload = (payload: any, fallbackAccountId: string | null): Job | null => {
   if (!payload) return null
   const scheduledAt = computeNextOccurrence(payload.day_of_week ?? null)
   const bins = normaliseBinList(payload.bins)
   const propertyId = normaliseId(payload.property_id)
   const accountId = normaliseId(payload.account_id) ?? fallbackAccountId ?? 'unknown'
+  const completedAt = parseDateToIso(payload.last_completed_on)
+  const status: Job['status'] = completedAt ? 'completed' : 'scheduled'
   return {
     id: String(payload.id),
     accountId,
     propertyId,
     propertyName: payload.address ?? 'Property',
-    status: 'scheduled',
+    status,
     scheduledAt,
     etaMinutes: null,
     startedAt: null,
-    completedAt: payload.last_completed_on ?? null,
+    completedAt,
     crewName: null,
     proofPhotoKeys: payload.photo_path ? [payload.photo_path] : [],
     routePolyline: null,

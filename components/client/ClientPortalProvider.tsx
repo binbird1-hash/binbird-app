@@ -642,6 +642,13 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const combinedJobs: Job[] = []
 
+    const parseDateToIso = (value: string | null | undefined): string | null => {
+      if (!value) return null
+      const parsed = new Date(value)
+      if (Number.isNaN(parsed.getTime())) return null
+      return parsed.toISOString()
+    }
+
     ;(jobRows ?? []).forEach((job) => {
       const explicitPropertyId =
         typeof job.property_id === 'string' && job.property_id.trim().length ? job.property_id.trim() : null
@@ -654,15 +661,12 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       if (!property && jobAccountId && jobAccountId !== accountId) {
         return
       }
-      const status: JobStatus = latestLog
+      const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
+      const status: JobStatus = completedAtIso
         ? 'completed'
-        : (() => {
-            const scheduledDate = new Date(scheduledAt)
-            const now = new Date()
-            if (scheduledDate.getTime() < now.getTime() - 60 * 60 * 1000) return 'on_site'
-            if (scheduledDate.getTime() <= now.getTime()) return 'en_route'
-            return 'scheduled'
-          })()
+        : latestLog
+          ? 'en_route'
+          : 'scheduled'
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
       combinedJobs.push({
@@ -674,7 +678,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         scheduledAt,
         etaMinutes: status === 'scheduled' ? Math.max(5, differenceInMinutes(new Date(scheduledAt), new Date())) : null,
         startedAt: null,
-        completedAt: latestLog?.done_on ?? (job.last_completed_on ? new Date(job.last_completed_on).toISOString() : null),
+        completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys,
         routePolyline: null,
@@ -696,16 +700,17 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         if (!property && logAccountId && logAccountId !== accountId) {
           return
         }
+        const completedAtIso = parseDateToIso(log.done_on ?? log.created_at)
         combinedJobs.push({
           id: `log-${log.id}`,
           accountId,
           propertyId,
           propertyName,
-          status: 'completed',
-          scheduledAt: log.done_on ?? new Date().toISOString(),
+          status: completedAtIso ? 'completed' : 'scheduled',
+          scheduledAt: completedAtIso ?? new Date().toISOString(),
           etaMinutes: null,
           startedAt: null,
-          completedAt: log.done_on ?? log.created_at ?? null,
+          completedAt: completedAtIso,
           crewName: null,
           proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
           routePolyline: null,
