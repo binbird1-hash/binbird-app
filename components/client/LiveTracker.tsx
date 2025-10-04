@@ -7,29 +7,6 @@ import { useClientPortal, type Job } from './ClientPortalProvider'
 import { TrackerMap } from './TrackerMap'
 import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
 
-const STATUS_META: Record<Job['status'], { label: string; badgeClassName: string }> = {
-  scheduled: {
-    label: 'Scheduled',
-    badgeClassName: 'border-white/30 bg-white/10 text-white/80',
-  },
-  en_route: {
-    label: 'En route',
-    badgeClassName: 'border-binbird-red/60 bg-binbird-red/10 text-binbird-red',
-  },
-  on_site: {
-    label: 'On site',
-    badgeClassName: 'border-binbird-red/60 bg-binbird-red/10 text-binbird-red',
-  },
-  completed: {
-    label: 'Completed',
-    badgeClassName: 'border-white/40 bg-white/10 text-white',
-  },
-  skipped: {
-    label: 'Skipped',
-    badgeClassName: 'border-white/10 bg-white/5 text-white/60',
-  },
-}
-
 const PROGRESS_STEPS: { key: Exclude<Job['status'], 'skipped'>; label: string }[] = [
   { key: 'scheduled', label: 'Scheduled' },
   { key: 'en_route', label: 'En route' },
@@ -83,6 +60,11 @@ export function LiveTracker() {
   const activeJobs = useMemo(
     () => jobs.filter((job) => job.status !== 'completed'),
     [jobs],
+  )
+
+  const propertiesById = useMemo(
+    () => new Map(properties.map((property) => [property.id, property])),
+    [properties],
   )
 
   const realtimePropertyIds = useMemo(
@@ -160,9 +142,13 @@ export function LiveTracker() {
         ) : (
           <div className="mt-6 space-y-6">
             {todaysJobs.map((job) => {
-              const status = STATUS_META[job.status]
               const progressIndex = PROGRESS_INDEX[job.status]
               const isSkipped = job.status === 'skipped'
+              const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
+              const fullAddress = property
+                ? [property.addressLine, property.suburb, property.city].filter(Boolean).join(', ')
+                : job.propertyName
+              const propertyLabel = property?.name && property.name !== fullAddress ? property.name : null
               return (
                 <article
                   key={job.id}
@@ -170,20 +156,12 @@ export function LiveTracker() {
                 >
                   <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-5">
-                      <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-wide">
-                        <span
-                          className={clsx(
-                            'inline-flex items-center gap-2 rounded-full border px-4 py-1.5 font-semibold transition-all',
-                            status.badgeClassName,
-                          )}
-                        >
-                          <span className="h-2 w-2 rounded-full bg-binbird-red" />
-                          {status.label}
-                        </span>
-                      </div>
                       <div className="space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
-                        <h3 className="text-2xl font-semibold text-white">{job.propertyName}</h3>
+                        <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
+                        {propertyLabel ? (
+                          <p className="text-sm text-white/60">{propertyLabel}</p>
+                        ) : null}
                         <p className="text-sm text-white/70">{formatJobDetail(job)}</p>
                       </div>
                       {job.crewName ? (
@@ -206,11 +184,11 @@ export function LiveTracker() {
                             progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
-                            <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center">
+                            <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
                               <div className="flex items-center gap-4 sm:flex-col sm:text-center">
                                 <span
                                   className={clsx(
-                                    'flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
+                                    'flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
                                     completed
                                       ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                       : reached
@@ -223,7 +201,7 @@ export function LiveTracker() {
                                 <div className="flex flex-col text-left sm:text-center">
                                   <span
                                     className={clsx(
-                                      'text-xs font-semibold uppercase tracking-wide',
+                                      'text-xs font-semibold uppercase tracking-wide whitespace-nowrap',
                                       reached ? 'text-white' : 'text-white/40',
                                     )}
                                   >
