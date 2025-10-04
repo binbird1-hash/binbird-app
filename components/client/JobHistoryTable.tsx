@@ -34,16 +34,14 @@ const STATUS_LABELS: Record<Job['status'], string> = {
 }
 
 function toCsv(jobs: Job[]) {
-  const header = 'Job ID,Property,Status,Scheduled,Completed,ETA (min)\n'
+  const header = 'Job ID,Property,Status,Completed\n'
   const rows = jobs
     .map((job) =>
       [
         job.id,
         job.propertyName,
         job.status,
-        job.scheduledAt ? format(new Date(job.scheduledAt), 'yyyy-MM-dd HH:mm') : '',
         job.completedAt ? format(new Date(job.completedAt), 'yyyy-MM-dd HH:mm') : '',
-        job.etaMinutes ?? '',
       ]
         .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
         .join(','),
@@ -62,22 +60,20 @@ function downloadPdf(jobs: Job[]) {
   doc.setFontSize(14)
   doc.text('BinBird job history', 14, 18)
   doc.setFontSize(10)
-  const columnTitles = ['Property', 'Status', 'Scheduled', 'Completed', 'ETA']
+  const columnTitles = ['Property', 'Status', 'Completed']
   const startY = 28
   columnTitles.forEach((title, index) => {
-    doc.text(title, 14 + index * 60, startY)
+    doc.text(title, 14 + index * 80, startY)
   })
   let y = startY + 6
   jobs.slice(0, 30).forEach((job) => {
     const row = [
       job.propertyName,
       STATUS_LABELS[job.status],
-      job.scheduledAt ? format(new Date(job.scheduledAt), 'PP p') : '',
       job.completedAt ? format(new Date(job.completedAt), 'PP p') : '',
-      job.etaMinutes ? `${job.etaMinutes} min` : '—',
     ]
     row.forEach((cell, index) => {
-      doc.text(String(cell), 14 + index * 60, y)
+      doc.text(String(cell), 14 + index * 80, y)
     })
     y += 6
     if (y > 190) {
@@ -200,13 +196,7 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
                 Status
               </th>
               <th scope="col" className="px-4 py-3">
-                Scheduled
-              </th>
-              <th scope="col" className="px-4 py-3">
                 Completed
-              </th>
-              <th scope="col" className="px-4 py-3">
-                ETA
               </th>
               <th scope="col" className="px-4 py-3">
                 Notes
@@ -219,7 +209,7 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
           <tbody className="divide-y divide-white/5">
             {filteredJobs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-white/60">
+                <td colSpan={5} className="px-4 py-10 text-center text-white/60">
                   No jobs found for the selected filters.
                 </td>
               </tr>
@@ -235,12 +225,8 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
                   </td>
                   <td className="px-4 py-3 text-white/70">{STATUS_LABELS[job.status]}</td>
                   <td className="px-4 py-3 text-white/70">
-                    {job.scheduledAt ? format(new Date(job.scheduledAt), 'PP p') : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-white/70">
                     {job.completedAt ? format(new Date(job.completedAt), 'PP p') : '—'}
                   </td>
-                  <td className="px-4 py-3 text-white/70">{job.etaMinutes ? `${job.etaMinutes} min` : '—'}</td>
                   <td className="px-4 py-3 text-white/60">{job.notes ?? '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <button
