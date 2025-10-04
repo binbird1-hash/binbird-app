@@ -151,7 +151,6 @@ export function LiveTracker() {
                   property.name ||
                   job.propertyName
                 : job.propertyName
-              const streetAddress = property?.addressLine ?? null
               return (
                 <article
                   key={job.id}
@@ -162,9 +161,6 @@ export function LiveTracker() {
                       <div className="space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
                         <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
-                        {streetAddress ? (
-                          <p className="text-sm text-white/60">{streetAddress}</p>
-                        ) : null}
                         <p className="text-sm text-white/70">{formatJobDetail(job)}</p>
                       </div>
                       {job.crewName ? (
