@@ -285,7 +285,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
       <Listbox value={value} onChange={onChange}>
         {({ open }) => (
           <div className="relative">
-            <Listbox.Button className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
+            <Listbox.Button className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
               <span className="block truncate text-white/90">{selectedOption?.label}</span>
               <ChevronUpDownIcon className="h-4 w-4 text-white/60" aria-hidden="true" />
             </Listbox.Button>
@@ -296,7 +296,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-gray-900/95 p-1 text-sm text-white shadow-xl backdrop-blur">
+              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-black/90 p-1 text-sm text-white shadow-xl backdrop-blur">
                 {options.map((option) => (
                   <Listbox.Option
                     key={option.value}
@@ -304,7 +304,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
                     className={({ active }) =>
                       clsx(
                         'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/70 transition',
-                        active && 'bg-white/10 text-white',
+                        active && 'bg-binbird-red/20 text-white',
                       )
                     }
                   >
