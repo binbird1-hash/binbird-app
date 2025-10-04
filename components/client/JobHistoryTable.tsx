@@ -1,10 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
 import jsPDF from 'jspdf'
+import { Listbox, Transition } from '@headlessui/react'
+import clsx from 'clsx'
 import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
 import { ProofGalleryModal } from './ProofGalleryModal'
 
@@ -17,6 +19,11 @@ type HistoryFilters = {
   status: 'all' | Job['status']
   propertyId: 'all' | string
   search: string
+}
+
+type HistorySelectOption = {
+  value: string
+  label: string
 }
 
 const DEFAULT_FILTERS: HistoryFilters = {
@@ -89,6 +96,30 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
   const [proofJob, setProofJob] = useState<Job | null>(null)
   const { selectedAccount } = useClientPortal()
 
+  const propertyOptions = useMemo<HistorySelectOption[]>(() => {
+    const baseOptions: HistorySelectOption[] = [
+      { value: 'all', label: 'All properties' },
+      ...properties.map((property) => ({ value: property.id, label: property.name })),
+    ]
+
+    const unassignedJobs = jobs
+      .filter((job) => !job.propertyId)
+      .map((job) => ({ value: `job-${job.id}`, label: job.propertyName }))
+
+    return [...baseOptions, ...unassignedJobs]
+  }, [jobs, properties])
+
+  const statusOptions = useMemo<HistorySelectOption[]>(
+    () => [
+      { value: 'all', label: 'All statuses' },
+      ...(Object.keys(STATUS_LABELS) as Job['status'][]).map((status) => ({
+        value: status,
+        label: STATUS_LABELS[status],
+      })),
+    ],
+    [],
+  )
+
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
     return jobs.filter((job) => {
@@ -119,43 +150,22 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
     <div className="space-y-6 text-white">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-white/60">Property</span>
-            <select
-              value={filters.propertyId}
-              onChange={(event) => setFilters((current) => ({ ...current, propertyId: event.target.value }))}
-              className="min-w-[200px] rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-            >
-              <option value="all">All properties</option>
-              {properties.map((property) => (
-                <option key={property.id} value={property.id}>
-                  {property.name}
-                </option>
-              ))}
-              {jobs
-                .filter((job) => !job.propertyId)
-                .map((job) => (
-                  <option key={`job-${job.id}`} value={`job-${job.id}`}>
-                    {job.propertyName}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-white/60">Status</span>
-            <select
-              value={filters.status}
-              onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as HistoryFilters['status'] }))}
-              className="min-w-[160px] rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-            >
-              <option value="all">All statuses</option>
-              {(Object.keys(STATUS_LABELS) as Job['status'][]).map((status) => (
-                <option key={status} value={status}>
-                  {STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <HistorySelect
+            label="Property"
+            value={filters.propertyId}
+            onChange={(value) => setFilters((current) => ({ ...current, propertyId: value }))}
+            options={propertyOptions}
+            className="min-w-[200px]"
+          />
+          <HistorySelect
+            label="Status"
+            value={filters.status}
+            onChange={(value) =>
+              setFilters((current) => ({ ...current, status: value as HistoryFilters['status'] }))
+            }
+            options={statusOptions}
+            className="min-w-[160px]"
+          />
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-white/60">Search</span>
             <input
@@ -254,6 +264,63 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
       <p className="text-xs text-white/40">
         Showing jobs for account <strong className="text-white">{selectedAccount?.name}</strong> from the last 60 days.
       </p>
+    </div>
+  )
+}
+
+type HistorySelectProps = {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: HistorySelectOption[]
+  className?: string
+}
+
+function HistorySelect({ label, value, onChange, options, className }: HistorySelectProps) {
+  const selectedOption = options.find((option) => option.value === value) ?? options[0]
+
+  return (
+    <div className={clsx('flex flex-col gap-1 text-sm', className)}>
+      <span className="text-white/60">{label}</span>
+      <Listbox value={value} onChange={onChange}>
+        {({ open }) => (
+          <div className="relative">
+            <Listbox.Button className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
+              <span className="block truncate text-white/90">{selectedOption?.label}</span>
+              <ChevronUpDownIcon className="h-4 w-4 text-white/60" aria-hidden="true" />
+            </Listbox.Button>
+            <Transition
+              as={Fragment}
+              show={open}
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-black/90 p-1 text-sm text-white shadow-xl backdrop-blur">
+                {options.map((option) => (
+                  <Listbox.Option
+                    key={option.value}
+                    value={option.value}
+                    className={({ active }) =>
+                      clsx(
+                        'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/70 transition',
+                        active && 'bg-binbird-red/20 text-white',
+                      )
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <span className="block truncate">{option.label}</span>
+                        {selected && <CheckIcon className="h-4 w-4 text-binbird-red" aria-hidden="true" />}
+                      </>
+                    )}
+                  </Listbox.Option>
+                ))}
+              </Listbox.Options>
+            </Transition>
+          </div>
+        )}
+      </Listbox>
     </div>
   )
 }
