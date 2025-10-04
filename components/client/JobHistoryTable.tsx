@@ -303,8 +303,8 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
                     value={option.value}
                     className={({ active }) =>
                       clsx(
-                        'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 transition',
-                        active ? 'bg-binbird-red/20 text-white' : 'text-white/80',
+                        'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/70 transition',
+                        active && 'bg-white/10 text-white',
                       )
                     }
                   >
