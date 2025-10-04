@@ -146,9 +146,12 @@ export function LiveTracker() {
               const isSkipped = job.status === 'skipped'
               const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
               const fullAddress = property
-                ? [property.addressLine, property.suburb, property.city].filter(Boolean).join(', ')
+                ?
+                  [property.addressLine, property.suburb, property.city].filter(Boolean).join(', ') ||
+                  property.name ||
+                  job.propertyName
                 : job.propertyName
-              const propertyLabel = property?.name && property.name !== fullAddress ? property.name : null
+              const streetAddress = property?.addressLine ?? null
               return (
                 <article
                   key={job.id}
@@ -159,8 +162,8 @@ export function LiveTracker() {
                       <div className="space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
                         <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
-                        {propertyLabel ? (
-                          <p className="text-sm text-white/60">{propertyLabel}</p>
+                        {streetAddress ? (
+                          <p className="text-sm text-white/60">{streetAddress}</p>
                         ) : null}
                         <p className="text-sm text-white/70">{formatJobDetail(job)}</p>
                       </div>
