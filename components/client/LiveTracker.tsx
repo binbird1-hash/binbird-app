@@ -1,35 +1,11 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { format } from 'date-fns'
 import { BoltIcon, CheckIcon, MapIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { useClientPortal, computeEtaLabel, type Job } from './ClientPortalProvider'
+import { useClientPortal, type Job } from './ClientPortalProvider'
 import { TrackerMap } from './TrackerMap'
 import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
-
-const STATUS_META: Record<Job['status'], { label: string; badgeClassName: string }> = {
-  scheduled: {
-    label: 'Scheduled',
-    badgeClassName: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
-  },
-  en_route: {
-    label: 'En route',
-    badgeClassName: 'border-sky-500/30 bg-sky-500/10 text-sky-200',
-  },
-  on_site: {
-    label: 'On site',
-    badgeClassName: 'border-rose-500/30 bg-rose-500/10 text-rose-200',
-  },
-  completed: {
-    label: 'Completed',
-    badgeClassName: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
-  },
-  skipped: {
-    label: 'Skipped',
-    badgeClassName: 'border-slate-500/30 bg-slate-500/10 text-slate-200',
-  },
-}
 
 const PROGRESS_STEPS: { key: Exclude<Job['status'], 'skipped'>; label: string }[] = [
   { key: 'scheduled', label: 'Scheduled' },
@@ -46,6 +22,30 @@ const PROGRESS_INDEX: Record<Job['status'], number> = {
   skipped: 3,
 }
 
+const formatJobDetail = (job: Job): string => {
+  const bins = job.bins && job.bins.length > 0 ? job.bins.join(', ') : null
+  const jobType = job.jobType
+    ? job.jobType
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : null
+
+  if (jobType && bins) {
+    return `${jobType}: ${bins}`
+  }
+
+  if (jobType) {
+    return jobType
+  }
+
+  if (bins) {
+    return `Bins: ${bins}`
+  }
+
+  return 'Service details coming soon'
+}
+
 export function LiveTracker() {
   const {
     jobs,
@@ -60,6 +60,11 @@ export function LiveTracker() {
   const activeJobs = useMemo(
     () => jobs.filter((job) => job.status !== 'completed'),
     [jobs],
+  )
+
+  const propertiesById = useMemo(
+    () => new Map(properties.map((property) => [property.id, property])),
+    [properties],
   )
 
   const realtimePropertyIds = useMemo(
@@ -94,7 +99,7 @@ export function LiveTracker() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">Property map</h3>
@@ -106,7 +111,7 @@ export function LiveTracker() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm text-white/60">
             <UserGroupIcon className="h-5 w-5" />
@@ -137,118 +142,99 @@ export function LiveTracker() {
         ) : (
           <div className="mt-6 space-y-6">
             {todaysJobs.map((job) => {
-              const status = STATUS_META[job.status]
               const progressIndex = PROGRESS_INDEX[job.status]
               const isSkipped = job.status === 'skipped'
+              const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
+              const fullAddress = property
+                ?
+                  [property.addressLine, property.suburb, property.city].filter(Boolean).join(', ') ||
+                  property.name ||
+                  job.propertyName
+                : job.propertyName
               return (
-                <article key={job.id} className="rounded-3xl border border-white/10 bg-black/50 p-5">
-                  <div className="flex flex-col gap-6 md:flex-row md:justify-between">
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm uppercase tracking-wide text-white/50">{job.propertyName}</p>
-                        <h3 className="text-xl font-semibold text-white">{computeEtaLabel(job)}</h3>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
-                        <span
-                          className={clsx(
-                            'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
-                            status.badgeClassName,
-                          )}
-                        >
-                          {status.label}
-                        </span>
-                        {job.jobType ? (
-                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
-                            {job.jobType.replace('_', ' ')}
-                          </span>
-                        ) : null}
-                        {job.bins && job.bins.length > 0 ? (
-                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
-                            {job.bins.join(', ')}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <dl className="grid w-full gap-3 text-sm text-white/70 md:w-auto md:min-w-[220px]">
-                      <div className="flex items-center gap-2">
-                        <dt className="flex items-center gap-2 text-white/50">
-                          <MapIcon className="h-5 w-5" />
-                          <span>Scheduled</span>
-                        </dt>
-                        <dd className="font-medium text-white">{format(new Date(job.scheduledAt), 'p')}</dd>
+                <article
+                  key={job.id}
+                  className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/60 via-black/40 to-black/20 p-6"
+                >
+                  <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-5">
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
+                        <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
+                        <p className="text-sm text-white/70">{formatJobDetail(job)}</p>
                       </div>
                       {job.crewName ? (
-                        <div className="flex items-center gap-2">
-                          <dt className="text-white/50">Crew</dt>
-                          <dd className="font-medium text-white">{job.crewName}</dd>
-                        </div>
+                        <dl className="grid gap-3 text-sm text-white/70 sm:grid-cols-2">
+                          <div className="flex items-center gap-2">
+                            <dt className="flex items-center gap-2 text-white/50">
+                              <MapIcon className="h-5 w-5" />
+                              <span>Crew</span>
+                            </dt>
+                            <dd className="font-medium text-white">{job.crewName}</dd>
+                          </div>
+                        </dl>
                       ) : null}
-                      {job.startedAt ? (
-                        <div className="flex items-center gap-2">
-                          <dt className="text-white/50">Started</dt>
-                          <dd className="font-medium text-white">{format(new Date(job.startedAt), 'p')}</dd>
-                        </div>
-                      ) : null}
-                      {job.completedAt ? (
-                        <div className="flex items-center gap-2">
-                          <dt className="text-white/50">Completed</dt>
-                          <dd className="font-medium text-white">{format(new Date(job.completedAt), 'p')}</dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                  </div>
-                  <div className="mt-6">
-                    <ol className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-0">
-                      {PROGRESS_STEPS.map((step, index) => {
-                        const reached = progressIndex >= index
-                        const completed = progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
-                        const isCurrent = progressIndex === index
-                        const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
-                        return (
-                          <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center">
-                            <div className="flex items-center gap-3">
-                              <span
-                                className={clsx(
-                                  'flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold transition',
-                                  reached ? 'border-white/80 bg-white/10 text-white' : 'border-white/20 bg-black/40 text-white/40',
-                                )}
-                              >
-                                {completed ? <CheckIcon className="h-5 w-5" /> : index + 1}
-                              </span>
-                              <div className="flex flex-col text-left">
-                                <span className={clsx('text-xs uppercase tracking-wide', reached ? 'text-white/70' : 'text-white/40')}>
-                                  {label}
-                                </span>
-                                <span className={clsx('text-sm font-medium', isCurrent ? 'text-white' : 'text-white/60')}>
-                                  {isCurrent
-                                    ? step.key === 'scheduled'
-                                      ? format(new Date(job.scheduledAt), 'p')
-                                      : computeEtaLabel(job)
-                                    : null}
-                                </span>
-                              </div>
-                            </div>
-                            {index < PROGRESS_STEPS.length - 1 ? (
-                              <div className="ml-11 mt-4 hidden h-px flex-1 bg-white/10 sm:ml-3 sm:mt-0 sm:flex" aria-hidden>
+                    </div>
+                    <div className="relative flex flex-col gap-6">
+                      <ol className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-0">
+                        {PROGRESS_STEPS.map((step, index) => {
+                          const reached = progressIndex >= index
+                          const completed =
+                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
+                          const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
+                          return (
+                            <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
+                              <div className="flex items-center gap-4 sm:flex-col sm:text-center">
                                 <span
                                   className={clsx(
-                                    'h-px w-full',
-                                    progressIndex > index ? 'bg-gradient-to-r from-white/60 to-white/20' : 'bg-white/10',
+                                    'flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
+                                    completed
+                                      ? 'border-binbird-red bg-binbird-red text-binbird-black'
+                                      : reached
+                                        ? 'border-binbird-red text-binbird-red'
+                                        : 'border-white/15 text-white/40',
                                   )}
-                                />
+                                >
+                                  {completed ? <CheckIcon className="h-6 w-6" /> : index + 1}
+                                </span>
+                                <div className="flex flex-col text-left sm:text-center">
+                                  <span
+                                    className={clsx(
+                                      'text-xs font-semibold uppercase tracking-wide whitespace-nowrap',
+                                      reached ? 'text-white' : 'text-white/40',
+                                    )}
+                                  >
+                                    {label}
+                                  </span>
+                                </div>
                               </div>
-                            ) : null}
-                          </li>
-                        )
-                      })}
-                    </ol>
-                  </div>
-                  {job.notes ? (
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Crew notes</p>
-                      <p className="mt-2 leading-relaxed">{job.notes}</p>
+                              {index < PROGRESS_STEPS.length - 1 ? (
+                                <>
+                                  <span
+                                    aria-hidden
+                                    className={clsx(
+                                      'absolute left-6 top-14 h-8 w-px sm:hidden',
+                                      progressIndex > index ? 'bg-binbird-red/70' : 'bg-white/15',
+                                    )}
+                                  />
+                                  <div className="ml-16 mt-6 hidden flex-1 sm:ml-4 sm:mt-0 sm:flex" aria-hidden>
+                                    <span
+                                      className={clsx(
+                                        'h-[2px] w-full rounded-full transition-all',
+                                        progressIndex > index
+                                          ? 'bg-gradient-to-r from-binbird-red/80 via-binbird-red/40 to-white/10'
+                                          : 'bg-white/10',
+                                      )}
+                                    />
+                                  </div>
+                                </>
+                              ) : null}
+                            </li>
+                          )
+                        })}
+                      </ol>
                     </div>
-                  ) : null}
+                  </div>
                 </article>
               )
             })}
