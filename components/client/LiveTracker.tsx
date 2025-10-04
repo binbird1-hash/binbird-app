@@ -1,10 +1,9 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { format } from 'date-fns'
 import { BoltIcon, CheckIcon, MapIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { useClientPortal, computeEtaLabel, type Job } from './ClientPortalProvider'
+import { useClientPortal, type Job } from './ClientPortalProvider'
 import { TrackerMap } from './TrackerMap'
 import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
 
@@ -70,39 +69,6 @@ const formatJobDetail = (job: Job): string => {
   return 'Service details coming soon'
 }
 
-const describeStep = (job: Job, step: (typeof PROGRESS_STEPS)[number]): string | null => {
-  switch (step.key) {
-    case 'scheduled':
-      return format(new Date(job.scheduledAt), 'p')
-    case 'en_route':
-      if (job.startedAt) {
-        return format(new Date(job.startedAt), 'p')
-      }
-      if (job.status === 'en_route') {
-        return computeEtaLabel(job)
-      }
-      return null
-    case 'on_site':
-      if (job.status === 'on_site') {
-        return 'Crew on site'
-      }
-      if (job.status === 'completed') {
-        return 'Finished up'
-      }
-      return null
-    case 'completed':
-      if (job.completedAt) {
-        return format(new Date(job.completedAt), 'p')
-      }
-      if (job.status === 'skipped') {
-        return 'Skipped'
-      }
-      return job.status === 'completed' ? 'Wrapped' : null
-    default:
-      return null
-  }
-}
-
 export function LiveTracker() {
   const {
     jobs,
@@ -151,7 +117,7 @@ export function LiveTracker() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">Property map</h3>
@@ -163,7 +129,7 @@ export function LiveTracker() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm text-white/60">
             <UserGroupIcon className="h-5 w-5" />
@@ -200,7 +166,7 @@ export function LiveTracker() {
               return (
                 <article
                   key={job.id}
-                  className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/60 via-black/40 to-black/20 p-6 shadow-[0_30px_60px_-40px_rgba(255,87,87,0.75)]"
+                  className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/60 via-black/40 to-black/20 p-6"
                 >
                   <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-5">
@@ -211,11 +177,8 @@ export function LiveTracker() {
                             status.badgeClassName,
                           )}
                         >
-                          <span className="h-2 w-2 rounded-full bg-binbird-red shadow-[0_0_12px_rgba(255,87,87,0.6)]" />
+                          <span className="h-2 w-2 rounded-full bg-binbird-red" />
                           {status.label}
-                        </span>
-                        <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-white/70">
-                          {computeEtaLabel(job)}
                         </span>
                       </div>
                       <div className="space-y-2">
@@ -223,35 +186,17 @@ export function LiveTracker() {
                         <h3 className="text-2xl font-semibold text-white">{job.propertyName}</h3>
                         <p className="text-sm text-white/70">{formatJobDetail(job)}</p>
                       </div>
-                      <dl className="grid gap-3 text-sm text-white/70 sm:grid-cols-2">
-                        <div className="flex items-center gap-2">
-                          <dt className="flex items-center gap-2 text-white/50">
-                            <MapIcon className="h-5 w-5" />
-                            <span>Scheduled</span>
-                          </dt>
-                          <dd className="font-medium text-white">
-                            {format(new Date(job.scheduledAt), 'p')}
-                          </dd>
-                        </div>
-                        {job.crewName ? (
+                      {job.crewName ? (
+                        <dl className="grid gap-3 text-sm text-white/70 sm:grid-cols-2">
                           <div className="flex items-center gap-2">
-                            <dt className="text-white/50">Crew</dt>
+                            <dt className="flex items-center gap-2 text-white/50">
+                              <MapIcon className="h-5 w-5" />
+                              <span>Crew</span>
+                            </dt>
                             <dd className="font-medium text-white">{job.crewName}</dd>
                           </div>
-                        ) : null}
-                        {job.startedAt ? (
-                          <div className="flex items-center gap-2">
-                            <dt className="text-white/50">Started</dt>
-                            <dd className="font-medium text-white">{format(new Date(job.startedAt), 'p')}</dd>
-                          </div>
-                        ) : null}
-                        {job.completedAt ? (
-                          <div className="flex items-center gap-2">
-                            <dt className="text-white/50">Completed</dt>
-                            <dd className="font-medium text-white">{format(new Date(job.completedAt), 'p')}</dd>
-                          </div>
-                        ) : null}
-                      </dl>
+                        </dl>
+                      ) : null}
                     </div>
                     <div className="relative flex flex-col gap-6">
                       <ol className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-0">
@@ -259,9 +204,7 @@ export function LiveTracker() {
                           const reached = progressIndex >= index
                           const completed =
                             progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
-                          const isCurrent = progressIndex === index
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
-                          const stepDescription = describeStep(job, step)
                           return (
                             <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center">
                               <div className="flex items-center gap-4 sm:flex-col sm:text-center">
@@ -269,11 +212,10 @@ export function LiveTracker() {
                                   className={clsx(
                                     'flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
                                     completed
-                                      ? 'border-binbird-red bg-binbird-red text-binbird-black shadow-[0_10px_30px_rgba(255,87,87,0.45)]'
+                                      ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                       : reached
                                         ? 'border-binbird-red text-binbird-red'
                                         : 'border-white/15 text-white/40',
-                                    isCurrent && !completed ? 'shadow-[0_0_20px_rgba(255,87,87,0.45)]' : null,
                                   )}
                                 >
                                   {completed ? <CheckIcon className="h-6 w-6" /> : index + 1}
@@ -287,9 +229,6 @@ export function LiveTracker() {
                                   >
                                     {label}
                                   </span>
-                                  {stepDescription ? (
-                                    <span className="text-xs text-white/60">{stepDescription}</span>
-                                  ) : null}
                                 </div>
                               </div>
                               {index < PROGRESS_STEPS.length - 1 ? (
