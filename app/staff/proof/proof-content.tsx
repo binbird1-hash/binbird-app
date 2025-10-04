@@ -271,15 +271,20 @@ export default function ProofPageContent() {
 
   // handle submit
   async function handleMarkDone() {
+    if (submitting) return;
     if (!file) {
       alert("Please take a photo before marking the job done.");
+      fileInputRef.current?.focus({ preventScroll: true });
       return;
     }
+
     setSubmitting(true);
+
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
       if (!user) throw new Error("You must be signed in to submit proof.");
+
       const now = new Date();
       const dateStr = getLocalISODate(now);
       const { year, week } = getCustomWeek(now);
@@ -289,12 +294,15 @@ export default function ProofPageContent() {
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
+
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
         .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
+
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
+
       const { error: logErr } = await supabase.from("logs").insert({
         job_id: job.id,
         client_name: job.client_name ?? null,
@@ -311,16 +319,20 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
+
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
+
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
       const nowIso = new Date().toISOString();
       const totalJobs = Math.max(existingSession?.totalJobs ?? 0, jobs.length, nextIdx);
       const completedAfterThisJob = Math.min(nextIdx, totalJobs);
+
       const startedAt =
         existingSession?.startedAt && !Number.isNaN(new Date(existingSession.startedAt).getTime())
           ? existingSession.startedAt
           : nowIso;
+
       const updatedSession: RunSessionRecord = {
         ...(existingSession ?? {}),
         startedAt,
@@ -328,9 +340,11 @@ export default function ProofPageContent() {
         totalJobs,
         completedJobs: Math.max(existingSession?.completedJobs ?? 0, completedAfterThisJob),
       };
+
       const sessionToWrite: RunSessionRecord =
         nextIdx >= jobs.length ? { ...updatedSession, endedAt: nowIso } : updatedSession;
       writeRunSession(sessionToWrite);
+
       if (nextIdx >= jobs.length) {
         clearPlannedRun();
         router.push("/staff/run/completed");
@@ -343,9 +357,20 @@ export default function ProofPageContent() {
         router.push(`/staff/route?${paramsObj.toString()}`);
       }
     } catch (err: any) {
-      setSubmitting(false);
       alert(err?.message || "Unable to save proof. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
+  }
+
+  function handlePrimaryAction() {
+    if (submitting) return;
+    if (!file) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    void handleMarkDone();
   }
 
   // images & copy
@@ -531,7 +556,7 @@ export default function ProofPageContent() {
       {/* bottom button */}
       <div className="absolute bottom-2 inset-x-0 p-4">
         <button
-          onClick={() => { if (submitting) return; if (!file) { fileInputRef.current?.click(); return; } void handleMarkDone(); }}
+          onClick={handlePrimaryAction}
           disabled={submitting}
           className={`w-full px-4 py-2 rounded-lg font-semibold transition relative z-10 disabled:opacity-60 disabled:cursor-not-allowed
             ${readyToSubmit ? "bg-[#ff5757] text-white hover:bg-[#e04b4b]" : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
