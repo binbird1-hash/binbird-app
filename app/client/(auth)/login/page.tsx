@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabaseClient'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export default function ClientLoginPage() {
+  const supabase = useSupabase()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

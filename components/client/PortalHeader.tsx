@@ -2,11 +2,12 @@
 
 import { useMemo } from 'react'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
-import { supabase } from '@/lib/supabaseClient'
 import { useClientPortal } from './ClientPortalProvider'
 import { AccountSwitcher } from './AccountSwitcher'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export function PortalHeader() {
+  const supabase = useSupabase()
   const { profile, user } = useClientPortal()
   const greeting = useMemo(() => {
     const hour = new Date().getHours()

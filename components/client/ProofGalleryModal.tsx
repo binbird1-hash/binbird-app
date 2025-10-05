@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { supabase } from '@/lib/supabaseClient'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export type ProofGalleryModalProps = {
   isOpen: boolean
@@ -13,6 +13,7 @@ export type ProofGalleryModalProps = {
 }
 
 export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryModalProps) {
+  const supabase = useSupabase()
   const [urls, setUrls] = useState<string[]>([])
   const [index, setIndex] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -46,7 +47,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
     return () => {
       cancelled = true
     }
-  }, [isOpen, photoKeys])
+  }, [isOpen, photoKeys, supabase])
 
   useEffect(() => {
     if (index >= urls.length) {

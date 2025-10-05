@@ -1,12 +1,11 @@
-'use client'
+"use client"
 
-import { useEffect } from 'react'
-import type { RealtimeChannel } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabaseClient'
-import type { Job } from '@/components/client/ClientPortalProvider'
-import { normaliseBinList } from '@/lib/binLabels'
-import { nextDay, setHours, setMinutes, startOfToday } from 'date-fns'
-import type { Day } from 'date-fns'
+import { useEffect } from "react"
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js"
+import type { Job } from "@/components/client/ClientPortalProvider"
+import { normaliseBinList } from "@/lib/binLabels"
+import { nextDay, setHours, setMinutes, startOfToday } from "date-fns"
+import type { Day } from "date-fns"
 
 const WEEKDAY_LOOKUP: Record<string, Day> = {
   sunday: 0,
@@ -76,6 +75,7 @@ const createJobFromPayload = (payload: any, fallbackAccountId: string | null): J
 }
 
 export function useRealtimeJobs(
+  supabase: SupabaseClient,
   accountId: string | null,
   propertyIds: string[],
   onChange: (job: Job) => void,
@@ -131,5 +131,5 @@ export function useRealtimeJobs(
         supabase.removeChannel(channel)
       })
     }
-  }, [accountId, onChange, propertyIds])
+  }, [accountId, onChange, propertyIds, supabase])
 }

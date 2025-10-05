@@ -2,9 +2,10 @@
 import Header from '../UI/Header'
 import Card from '../UI/Card'
 import { Users, Cog, FileText, KeyRound, LogOut } from 'lucide-react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export default function AdminDashboard() {
+  const supabase = useSupabase()
   async function signOut() {
     await supabase.auth.signOut()
     window.location.href = '/'
