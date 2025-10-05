@@ -76,7 +76,6 @@ export default function SmartJobCard({
         gps_acc: position?.coords.accuracy ?? null,
         gps_time: position ? new Date(position.timestamp).toISOString() : null,
         user_id: user.id,
-        account_id: job.account_id,
       });
       if (logErr) throw logErr;
 
