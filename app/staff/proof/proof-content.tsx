@@ -15,6 +15,8 @@ const PUT_OUT_PLACEHOLDER_URL =
 const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
 
+const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
+
 // kebab-case helper
 function toKebab(value: string | null | undefined, fallback: string): string {
   if (!value || typeof value !== "string") return fallback;
@@ -105,6 +107,7 @@ export default function ProofPageContent() {
   const params = useSearchParams();
   const router = useRouter();
 
+  const [authChecked, setAuthChecked] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [idx, setIdx] = useState<number>(0);
 
@@ -119,6 +122,52 @@ export default function ProofPageContent() {
   const [gpsError, setGpsError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const hasRedirectedRef = useRef(false);
+
+  const redirectToLogin = useCallback(() => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+    alert(SESSION_EXPIRED_MESSAGE);
+    router.replace("/auth/sign-in");
+  }, [router]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function verifySession() {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (!isActive) return;
+
+        if (error) {
+          console.error("Failed to verify staff session", error);
+          redirectToLogin();
+          return;
+        }
+
+        if (!session?.user) {
+          redirectToLogin();
+          return;
+        }
+
+        setAuthChecked(true);
+      } catch (unknownError) {
+        if (!isActive) return;
+        console.error("Unexpected error verifying staff session", unknownError);
+        redirectToLogin();
+      }
+    }
+
+    verifySession();
+
+    return () => {
+      isActive = false;
+    };
+  }, [redirectToLogin, supabase]);
 
   // parse jobs + idx from params
   useEffect(() => {
@@ -228,6 +277,11 @@ export default function ProofPageContent() {
 
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx];
+
+  if (!authChecked) {
+    return <div className="p-6 text-white">Checking session…</div>;
+  }
+
   if (!job) return <div className="p-6 text-white">No job found.</div>;
 
   // bins helpers
@@ -284,7 +338,11 @@ export default function ProofPageContent() {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
-      if (!user) throw new Error("You must be signed in to submit proof.");
+      if (!user) {
+        setSubmitting(false);
+        redirectToLogin();
+        return;
+      }
       const now = new Date();
       const dateStr = getLocalISODate(now);
       const { year, week } = getCustomWeek(now);
