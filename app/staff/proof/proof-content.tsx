@@ -124,6 +124,17 @@ export default function ProofPageContent() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasRedirectedRef = useRef(false);
 
+  console.log("[ProofPageContent] render", {
+    authChecked,
+    jobsLength: jobs.length,
+    idx,
+    filePresent: Boolean(file),
+    submitting,
+    referenceLookupComplete,
+    gpsData,
+    gpsError,
+  });
+
   const redirectToLogin = useCallback(() => {
     if (hasRedirectedRef.current) return;
     hasRedirectedRef.current = true;
@@ -135,6 +146,7 @@ export default function ProofPageContent() {
     let isActive = true;
 
     async function verifySession() {
+      console.log("[ProofPageContent] verifying session");
       try {
         const {
           data: { session },
@@ -150,10 +162,12 @@ export default function ProofPageContent() {
         }
 
         if (!session?.user) {
+          console.warn("[ProofPageContent] no session user found");
           redirectToLogin();
           return;
         }
 
+        console.log("[ProofPageContent] session verified", { userId: session.user.id });
         setAuthChecked(true);
       } catch (unknownError) {
         if (!isActive) return;
@@ -174,13 +188,16 @@ export default function ProofPageContent() {
     try {
       const rawJobs = params.get("jobs");
       const rawIdx = params.get("idx");
+      console.log("[ProofPageContent] parsing params", { rawJobs, rawIdx });
       if (rawJobs) {
         const parsed = JSON.parse(rawJobs);
         if (Array.isArray(parsed)) setJobs(normalizeJobs(parsed));
+        else console.warn("[ProofPageContent] jobs param was not an array", parsed);
       }
       if (rawIdx) {
         const parsedIdx = parseInt(rawIdx, 10);
         if (!Number.isNaN(parsedIdx)) setIdx(parsedIdx);
+        else console.warn("[ProofPageContent] idx param was NaN", rawIdx);
       }
     } catch (err) {
       console.error("Parse failed:", err);
@@ -189,6 +206,7 @@ export default function ProofPageContent() {
 
   const getActiveRunSession = useCallback(() => {
     const existing = readRunSession();
+    console.log("[ProofPageContent] getActiveRunSession", existing);
     if (!existing) return null;
     if (existing.endedAt) {
       const endDate = new Date(existing.endedAt);
@@ -201,12 +219,19 @@ export default function ProofPageContent() {
     let isCancelled = false;
     async function fetchReferenceImages() {
       if (!job?.photo_path) return;
+      console.log("[ProofPageContent] fetching reference images", { jobId: job.id, photoPath: job.photo_path });
       const basePath = job.photo_path;
       const bucket = supabase.storage.from("proofs");
       const [putOutRes, bringInRes] = await Promise.all([
         bucket.createSignedUrl(`${basePath}/Put Out.jpg`, 3600),
         bucket.createSignedUrl(`${basePath}/Bring In.jpg`, 3600),
       ]);
+      console.log("[ProofPageContent] reference image responses", {
+        putOutError: putOutRes.error,
+        bringInError: bringInRes.error,
+        hasPutOutUrl: Boolean(putOutRes.data?.signedUrl),
+        hasBringInUrl: Boolean(bringInRes.data?.signedUrl),
+      });
       if (!isCancelled) {
         setReferenceUrls({
           putOut: putOutRes.data?.signedUrl ?? null,
@@ -223,6 +248,7 @@ export default function ProofPageContent() {
 
   useEffect(() => {
     if (!jobs.length) return;
+    console.log("[ProofPageContent] syncing run session", { jobsLength: jobs.length, idx });
     const activeSession = getActiveRunSession();
     const totalJobs = Math.max(activeSession?.totalJobs ?? 0, jobs.length);
     const safeIdx = Number.isFinite(idx) ? idx : 0;
@@ -245,8 +271,15 @@ export default function ProofPageContent() {
       setGpsError("Geolocation is not supported by this device.");
       return;
     }
+    console.log("[ProofPageContent] starting geolocation watch");
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
+        console.log("[ProofPageContent] gps update", {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          acc: pos.coords.accuracy,
+          timestamp: pos.timestamp,
+        });
         setGpsData({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
@@ -256,6 +289,7 @@ export default function ProofPageContent() {
         setGpsError(null);
       },
       (error) => {
+        console.error("[ProofPageContent] gps error", error);
         setGpsError(
           error.code === error.PERMISSION_DENIED
             ? "Location permission denied. Proofs will save without GPS data."
@@ -271,6 +305,7 @@ export default function ProofPageContent() {
 
   useEffect(() => {
     return () => {
+      console.log("[ProofPageContent] cleaning preview", { hadPreview: Boolean(preview) });
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
@@ -286,6 +321,7 @@ export default function ProofPageContent() {
 
   // bins helpers
   function getParsedBins(bins: string | null | undefined) {
+    console.log("[ProofPageContent] parsing bins", bins);
     if (!bins) return [] as string[];
     return bins.split(",").map((b) => b.trim()).filter(Boolean);
   }
@@ -325,6 +361,14 @@ export default function ProofPageContent() {
 
   // handle submit
   async function handleMarkDone() {
+    console.log("[ProofPageContent] handleMarkDone invoked", {
+      hasFile: Boolean(file),
+      submitting,
+      jobId: job?.id,
+      accountId: job?.account_id,
+      note,
+      gpsData,
+    });
     if (!file) {
       alert("Please take a photo before marking the job done.");
       return;
@@ -336,13 +380,16 @@ export default function ProofPageContent() {
     }
     setSubmitting(true);
     try {
+      console.log("[ProofPageContent] fetching current user before upload");
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
       if (!user) {
+        console.warn("[ProofPageContent] no user returned, redirecting");
         setSubmitting(false);
         redirectToLogin();
         return;
       }
+      console.log("[ProofPageContent] current user", { userId: user.id });
       const now = new Date();
       const dateStr = getLocalISODate(now);
       const { year, week } = getCustomWeek(now);
@@ -350,14 +397,18 @@ export default function ProofPageContent() {
       const safeAddress = toKebab(job.address, "unknown-address");
       const folderPath = `${safeClient}/${safeAddress}/${year}/${week}`;
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      console.log("[ProofPageContent] preparing file", { folderPath, fileLabel });
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
+      console.log("[ProofPageContent] uploading file", { path });
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
         .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
+      console.log("[ProofPageContent] file uploaded successfully");
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
+      console.log("[ProofPageContent] inserting log", { noteValue });
       const { error: logErr } = await supabase.from("logs").insert({
         job_id: job.id,
         account_id: accountId,
@@ -375,6 +426,7 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
+      console.log("[ProofPageContent] log inserted, updating job", { jobId: job.id });
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
@@ -394,9 +446,11 @@ export default function ProofPageContent() {
       };
       const sessionToWrite: RunSessionRecord =
         nextIdx >= jobs.length ? { ...updatedSession, endedAt: nowIso } : updatedSession;
+      console.log("[ProofPageContent] writing session", sessionToWrite);
       writeRunSession(sessionToWrite);
       if (nextIdx >= jobs.length) {
         clearPlannedRun();
+        console.log("[ProofPageContent] run completed, navigating to completed");
         router.push("/staff/run/completed");
       } else {
         const paramsObj = new URLSearchParams({
@@ -404,10 +458,12 @@ export default function ProofPageContent() {
           nextIdx: String(nextIdx),
           total: String(jobs.length),
         });
+        console.log("[ProofPageContent] navigating to next job", { nextIdx, params: paramsObj.toString() });
         router.push(`/staff/route?${paramsObj.toString()}`);
       }
     } catch (err: any) {
       setSubmitting(false);
+      console.error("[ProofPageContent] handleMarkDone error", err);
       alert(err?.message || "Unable to save proof. Please try again.");
     }
   }
@@ -565,6 +621,7 @@ export default function ProofPageContent() {
             className="hidden" ref={fileInputRef}
             onChange={(e) => {
               const f = e.target.files?.[0] ?? null;
+              console.log("[ProofPageContent] file input change", { hasFile: Boolean(f), fileName: f?.name, fileType: f?.type });
               setFile(f);
               setPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return f ? URL.createObjectURL(f) : null; });
             }}
