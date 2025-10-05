@@ -42,7 +42,33 @@ export async function POST(req: Request) {
 
   const response = NextResponse.json({ received: true })
   response.headers.set('Cache-Control', 'no-store')
-  response.headers.set('Access-Control-Allow-Origin', req.headers.get('origin') ?? '*')
+
+  const origin = req.headers.get('origin')
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+  }
+
+  return response
+}
+
+export async function OPTIONS(req: Request) {
+  const response = new Response(null, { status: 204 })
+
+  const origin = req.headers.get('origin')
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+  }
+
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+
+  const requestedHeaders = req.headers.get('access-control-request-headers')
+  if (requestedHeaders) {
+    response.headers.set('Access-Control-Allow-Headers', requestedHeaders)
+  }
+
+  response.headers.set('Cache-Control', 'no-store')
 
   return response
 }
