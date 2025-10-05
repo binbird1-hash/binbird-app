@@ -275,7 +275,8 @@ export default function ProofPageContent() {
       alert("Please take a photo before marking the job done.");
       return;
     }
-    if (!job.account_id) {
+    const accountId = job.account_id;
+    if (!accountId) {
       alert("Unable to log completion: missing account identifier for job.");
       return;
     }
@@ -301,7 +302,7 @@ export default function ProofPageContent() {
       const noteValue = staffNote.length ? staffNote : null;
       const { error: logErr } = await supabase.from("logs").insert({
         job_id: job.id,
-        account_id: job.account_id,
+        account_id: accountId,
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
