@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import { useClientPortal, type Job } from './ClientPortalProvider'
 import { TrackerMap } from './TrackerMap'
 import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 const PROGRESS_STEPS: { key: Exclude<Job['status'], 'skipped'>; label: string }[] = [
   { key: 'scheduled', label: 'Scheduled' },
@@ -47,6 +48,7 @@ const formatJobDetail = (job: Job): string => {
 }
 
 export function LiveTracker() {
+  const supabase = useSupabase()
   const {
     jobs,
     properties,
@@ -79,7 +81,7 @@ export function LiveTracker() {
     [properties],
   )
 
-  useRealtimeJobs(selectedAccount?.id ?? null, realtimePropertyIds, (job) => {
+  useRealtimeJobs(supabase, selectedAccount?.id ?? null, realtimePropertyIds, (job) => {
     upsertJob(job)
   })
 

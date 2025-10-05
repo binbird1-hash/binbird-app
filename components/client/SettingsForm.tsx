@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { supabase } from '@/lib/supabaseClient'
 import { useClientPortal } from './ClientPortalProvider'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export type SettingsFormValues = {
   fullName: string
@@ -17,6 +17,7 @@ const TIMEZONES = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : 
 
 export function SettingsForm() {
   const { profile, user, selectedAccount, refreshProperties } = useClientPortal()
+  const supabase = useSupabase()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const {
     register,

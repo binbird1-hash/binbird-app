@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import GuestDashboard from './GuestDashboard'
 import StaffDashboard from './StaffDashboard'
 import AdminDashboard from './AdminDashboard'
 
 export default function Dashboard() {
+  const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<string | null>(null)
 
@@ -29,7 +30,7 @@ export default function Dashboard() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [supabase])
 
   if (loading) {
     return (

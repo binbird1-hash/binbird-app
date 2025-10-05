@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabaseClient'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export default function ClientResetPasswordPage() {
+  const supabase = useSupabase()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent'>('idle')
   const [error, setError] = useState<string | null>(null)

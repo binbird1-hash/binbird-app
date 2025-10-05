@@ -3,8 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabaseClient'
 import { normaliseBinList } from '@/lib/binLabels'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   addMinutes,
   differenceInMinutes,
@@ -338,6 +338,7 @@ const mergeNotificationPrefs = (
 }
 
 export function ClientPortalProvider({ children }: { children: React.ReactNode }) {
+  const supabase = useSupabase()
   const router = useRouter()
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
@@ -372,7 +373,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       companyName: currentUser.user_metadata?.company ?? null,
       timezone: currentUser.user_metadata?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     })
-  }, [])
+  }, [supabase])
 
   const fetchClientRows = useCallback(async (currentUser: User): Promise<ClientListRow[]> => {
     const emailCandidates = extractEmailCandidates(currentUser)
@@ -469,7 +470,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     })
 
     return Array.from(deduped.values())
-  }, [])
+  }, [supabase])
 
   const deriveAccountsFromRows = useCallback(
     (rows: ClientListRow[], currentUser: User | null): ClientAccount[] => {
@@ -725,7 +726,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     combinedJobs.sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     setJobs(combinedJobs)
     setJobsLoading(false)
-  }, [selectedAccountId, user])
+  }, [selectedAccountId, supabase, user])
 
   const upsertJob = useCallback((job: Job) => {
     setJobs((previousJobs) => {
@@ -749,6 +750,23 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     },
     [],
   )
+
+  const refreshNotificationPreferences = useCallback(async () => {
+    if (!user || !selectedAccountId) return
+    setPreferencesLoading(true)
+    const { data } = await supabase.auth.getUser()
+    if (data.user) {
+      setUser(data.user)
+      setNotificationPreferences(
+        mergeNotificationPrefs(
+          selectedAccountId,
+          data.user.id,
+          (data.user.user_metadata?.notification_preferences as NotificationMetadata | undefined) ?? {},
+        ),
+      )
+    }
+    setPreferencesLoading(false)
+  }, [selectedAccountId, supabase, user])
 
   useEffect(() => {
     let mounted = true
@@ -812,7 +830,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       mounted = false
       authListener.subscription.unsubscribe()
     }
-  }, [deriveAccountsFromRows, fetchClientRows, loadPreferences, loadProfile, router])
+  }, [deriveAccountsFromRows, fetchClientRows, loadPreferences, loadProfile, router, supabase])
 
   useEffect(() => {
     if (!selectedAccountId || !user) return
@@ -846,22 +864,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       upsertJob,
       notificationPreferences,
       preferencesLoading,
-      refreshNotificationPreferences: async () => {
-        if (!user || !selectedAccountId) return
-        setPreferencesLoading(true)
-        const { data } = await supabase.auth.getUser()
-        if (data.user) {
-          setUser(data.user)
-          setNotificationPreferences(
-            mergeNotificationPrefs(
-              selectedAccountId,
-              data.user.id,
-              (data.user.user_metadata?.notification_preferences as NotificationMetadata | undefined) ?? {},
-            ),
-          )
-        }
-        setPreferencesLoading(false)
-      },
+      refreshNotificationPreferences,
       loading,
       error,
     }),
@@ -878,6 +881,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       propertiesLoading,
       refreshJobs,
       refreshProperties,
+      refreshNotificationPreferences,
       selectAccount,
       selectedAccountId,
       session,

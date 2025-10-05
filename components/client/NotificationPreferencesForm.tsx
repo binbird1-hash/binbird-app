@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { BellIcon, InboxIcon, PhoneIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { supabase } from '@/lib/supabaseClient'
 import { useClientPortal } from './ClientPortalProvider'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 const PREFERENCE_FIELDS = [
   {
@@ -41,6 +41,7 @@ type MutablePreferences = {
 
 export function NotificationPreferencesForm() {
   const { notificationPreferences, preferencesLoading, refreshNotificationPreferences, selectedAccount, user } = useClientPortal()
+  const supabase = useSupabase()
   const [formState, setFormState] = useState<MutablePreferences | null>(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)

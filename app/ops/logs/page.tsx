@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export default function LogsPage() {
+  const supabase = useSupabase()
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
@@ -17,7 +18,7 @@ export default function LogsPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [supabase])
 
   useEffect(() => {
     if (logs.length === 0) return
@@ -61,7 +62,7 @@ export default function LogsPage() {
     return () => {
       cancelled = true
     }
-  }, [logs, signedUrls])
+  }, [logs, signedUrls, supabase])
 
   if (loading) return <div className="container">Loading…</div>
 
