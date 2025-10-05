@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function StaffResetPasswordPage() {
+  const supabase = useSupabase();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,6 @@ export default function StaffResetPasswordPage() {
     setError(null);
 
     try {
-      const supabase = createClientComponentClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset/confirm`,
       });

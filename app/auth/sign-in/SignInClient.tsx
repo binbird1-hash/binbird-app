@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SignInClient() {
   const router = useRouter();
+  const supabase = useSupabase();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,8 +30,6 @@ export default function SignInClient() {
     setLoading(true);
 
     try {
-      const supabase = createClientComponentClient();
-
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,

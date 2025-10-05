@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SettingsPage() {
   const [navPref, setNavPref] = useState<"google" | "waze" | "apple">("google");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
 
   useEffect(() => {
     const stored = localStorage.getItem("navPref");

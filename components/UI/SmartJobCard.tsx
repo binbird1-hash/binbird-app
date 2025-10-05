@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Job } from "@/lib/jobs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SmartJobCard({
   job,
@@ -10,7 +10,7 @@ export default function SmartJobCard({
   job: Job;
   onCompleted: () => void;
 }) {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
 
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);

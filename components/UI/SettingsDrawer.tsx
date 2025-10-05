@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { Flag, LogOut, Navigation2, Palette } from "lucide-react";
 import clsx from "clsx";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 type NavOptionKey = "google" | "waze" | "apple";
 type MapStyleKey = "Dark" | "Light" | "Satellite";
@@ -31,7 +31,7 @@ const mapStyleOptions: PickerOption<MapStyleKey>[] = [
 ];
 
 export default function SettingsDrawer() {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
   const router = useRouter();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
@@ -103,7 +103,9 @@ export default function SettingsDrawer() {
   // Load user preferences from Supabase on mount, create row if it doesn't exist
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile, error } = await supabase
@@ -126,7 +128,7 @@ export default function SettingsDrawer() {
         if (profile.nav_pref) setNavPref(profile.nav_pref);
       }
     })();
-  }, []);
+  }, [setMapStylePref, setNavPref, supabase]);
 
   useEffect(() => {
     syncActiveRunState();

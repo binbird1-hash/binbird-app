@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SignUpClient() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

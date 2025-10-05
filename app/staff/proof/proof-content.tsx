@@ -1,12 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { clearPlannedRun } from "@/lib/planned-run";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -103,7 +103,7 @@ async function prepareFileAsJpeg(originalFile: File, desiredName: string): Promi
 }
 
 export default function ProofPageContent() {
-  const supabase = useMemo(() => createClientComponentClient(), []);
+  const supabase = useSupabase();
   const params = useSearchParams();
   const router = useRouter();
 

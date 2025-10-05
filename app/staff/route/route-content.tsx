@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readPlannedRun } from "@/lib/planned-run";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 function RoutePageContent() {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
   const params = useSearchParams();
   const router = useRouter();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
@@ -58,7 +58,9 @@ function RoutePageContent() {
   // Load user settings from Supabase
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile, error } = await supabase
@@ -72,7 +74,7 @@ function RoutePageContent() {
         if (profile.nav_pref) setNavPref(profile.nav_pref);
       }
     })();
-  }, []);
+  }, [setMapStylePref, setNavPref, supabase]);
 
   // Parse jobs + start
   useEffect(() => {
