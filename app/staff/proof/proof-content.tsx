@@ -142,6 +142,7 @@ export default function ProofPageContent() {
     router.replace("/auth/sign-in");
   }, [router]);
 
+
   useEffect(() => {
     let isActive = true;
 
