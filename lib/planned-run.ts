@@ -65,6 +65,10 @@ function normalizeJob(value: Job): Job {
     address: typeof value.address === "string" ? value.address : "",
     lat: Number.isFinite(value.lat) ? value.lat : 0,
     lng: Number.isFinite(value.lng) ? value.lng : 0,
+    account_id:
+      typeof value.account_id === "string" && value.account_id.trim().length
+        ? value.account_id
+        : null,
     job_type: value.job_type === "bring_in" ? "bring_in" : "put_out",
     bins: typeof value.bins === "string" ? value.bins : null,
     notes: typeof value.notes === "string" ? value.notes : null,
