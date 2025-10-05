@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ReactNode } from "react";
 import "./globals.css";
 import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
+import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 
 export const metadata: Metadata = {
     title: "BinBird",
@@ -24,11 +25,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="h-full">
       <body className="min-h-screen bg-transparent text-white antialiased">
-        <MapSettingsProvider>
-          <div className="flex flex-col min-h-screen">
-            {children}
-          </div>
-        </MapSettingsProvider>
+        <SupabaseProvider>
+          <MapSettingsProvider>
+            <div className="flex flex-col min-h-screen">
+              {children}
+            </div>
+          </MapSettingsProvider>
+        </SupabaseProvider>
       </body>
     </html>
   );
