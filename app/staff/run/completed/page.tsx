@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import {
@@ -11,6 +10,7 @@ import {
   RunSessionRecord,
 } from "@/lib/run-session";
 import { clearPlannedRun } from "@/lib/planned-run";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const WEEKDAYS = [
   "Sunday",
@@ -108,7 +108,7 @@ function formatNextAssignmentDateParts(date: Date): NextAssignmentDateParts {
 
 function CompletedRunContent() {
   const router = useRouter();
-  const supabase = useMemo(() => createClientComponentClient(), []);
+  const supabase = useSupabase();
   const [runData, setRunData] = useState<RunSessionRecord | null | undefined>(
     undefined
   );

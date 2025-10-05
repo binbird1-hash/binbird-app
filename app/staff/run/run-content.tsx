@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
@@ -18,6 +17,7 @@ import {
   markPlannedRunStarted,
 } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -56,7 +56,7 @@ export default function RunPage() {
 }
 
 function RunPageContent() {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
   const router = useRouter();
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
