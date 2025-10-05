@@ -309,7 +309,6 @@ export default function ProofPageContent() {
         gps_acc: gpsData.acc ?? null,
         gps_time: gpsData.time ?? null,
         user_id: user.id,
-        account_id: job.account_id,
       });
       if (logErr) throw logErr;
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);

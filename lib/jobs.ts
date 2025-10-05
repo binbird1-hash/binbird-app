@@ -5,7 +5,6 @@ export type Job = {
   address: string;
   lat: number;
   lng: number;
-  account_id: string | null;
   job_type: "put_out" | "bring_in";
   bins: string | null;
   notes: string | null;
@@ -95,7 +94,6 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
     address: normalizeString(record.address),
     lat: normalizeNumber(record.lat),
     lng: normalizeNumber(record.lng),
-    account_id: normalizeOptionalString(record.account_id),
     job_type: normalizeJobType(record.job_type),
     bins: normalizeOptionalString(record.bins),
     notes: normalizeOptionalString(record.notes),
