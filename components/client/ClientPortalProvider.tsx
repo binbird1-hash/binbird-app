@@ -34,6 +34,17 @@ export type Property = {
   city: string
   status: 'active' | 'paused'
   binTypes: string[]
+  binCounts: {
+    garbage: number
+    recycling: number
+    compost: number
+    total: number
+  }
+  binDescriptions: {
+    garbage: string | null
+    recycling: string | null
+    compost: string | null
+  }
   nextServiceAt: string | null
   latitude: number | null
   longitude: number | null
@@ -97,10 +108,13 @@ type ClientListRow = {
   notes: string | null
   red_freq: string | null
   red_flip: string | null
+  red_bins: number | string | null
   yellow_freq: string | null
   yellow_flip: string | null
+  yellow_bins: number | string | null
   green_freq: string | null
   green_flip: string | null
+  green_bins: number | string | null
   email: string | null
   assigned_to: string | null
   lat_lng: string | null
@@ -290,11 +304,31 @@ const deriveAccountName = (row: ClientListRow): string =>
 const toProperty = (row: ClientListRow): Property => {
   const [addressLine, suburbRaw = ''] = (row.address ?? '').split(',')
   const suburb = suburbRaw.trim()
-  const binTypes = [
-    describeBinFrequency('Garbage', row.red_freq, row.red_flip),
-    describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip),
-    describeBinFrequency('Compost', row.green_freq, row.green_flip),
-  ].filter(Boolean) as string[]
+  const garbageDescription = describeBinFrequency('Garbage', row.red_freq, row.red_flip)
+  const recyclingDescription = describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip)
+  const compostDescription = describeBinFrequency('Compost', row.green_freq, row.green_flip)
+  const binTypes = [garbageDescription, recyclingDescription, compostDescription].filter(Boolean) as string[]
+  const binDescriptions = {
+    garbage: garbageDescription,
+    recycling: recyclingDescription,
+    compost: compostDescription,
+  }
+  const parseBinCount = (value: number | string | null | undefined): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const rounded = Math.round(value)
+      return rounded > 0 ? rounded : 0
+    }
+    if (typeof value === 'string') {
+      const parsed = Number.parseInt(value, 10)
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed
+      }
+    }
+    return 0
+  }
+  const garbageCount = parseBinCount(row.red_bins)
+  const recyclingCount = parseBinCount(row.yellow_bins)
+  const compostCount = parseBinCount(row.green_bins)
   const nextServiceAt = row.collection_day ? nextOccurrenceIso(row.collection_day) : null
   const { lat, lng } = parseLatLng(row.lat_lng)
   const isActive = row.membership_start
@@ -308,6 +342,13 @@ const toProperty = (row: ClientListRow): Property => {
     city: suburb,
     status: isActive ? 'active' : 'paused',
     binTypes,
+    binCounts: {
+      garbage: garbageCount,
+      recycling: recyclingCount,
+      compost: compostCount,
+      total: garbageCount + recyclingCount + compostCount,
+    },
+    binDescriptions,
     nextServiceAt,
     latitude: lat,
     longitude: lng,
@@ -425,7 +466,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     let query = supabase
       .from('client_list')
       .select(
-        `property_id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, yellow_freq, yellow_flip, green_freq, green_flip, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
+        `property_id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, red_bins, yellow_freq, yellow_flip, yellow_bins, green_freq, green_flip, green_bins, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start`,
       )
 
     const uniqueFilters = Array.from(new Set(filters))
@@ -457,10 +498,13 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         notes: row.notes,
         red_freq: row.red_freq,
         red_flip: row.red_flip,
+        red_bins: typeof row.red_bins === 'number' || typeof row.red_bins === 'string' ? row.red_bins : null,
         yellow_freq: row.yellow_freq,
         yellow_flip: row.yellow_flip,
+        yellow_bins: typeof row.yellow_bins === 'number' || typeof row.yellow_bins === 'string' ? row.yellow_bins : null,
         green_freq: row.green_freq,
         green_flip: row.green_flip,
+        green_bins: typeof row.green_bins === 'number' || typeof row.green_bins === 'string' ? row.green_bins : null,
         email: row.email,
         assigned_to: row.assigned_to,
         lat_lng: row.lat_lng,

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useId, useMemo, useState } from 'react'
+import { Fragment, useEffect, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
@@ -12,6 +12,7 @@ import { ProofGalleryModal } from './ProofGalleryModal'
 export type JobHistoryTableProps = {
   jobs: Job[]
   properties: Property[]
+  initialPropertyId?: string | null
 }
 
 type HistoryFilters = {
@@ -50,11 +51,24 @@ const formatAddress = (property: Property | undefined) => {
 
 const escapeForCsv = (value: string) => `"${value.replace(/"/g, '""')}"`
 
-export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
-  const [filters, setFilters] = useState<HistoryFilters>(DEFAULT_FILTERS)
+export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHistoryTableProps) {
+  const [filters, setFilters] = useState<HistoryFilters>(() => ({
+    ...DEFAULT_FILTERS,
+    propertyId: initialPropertyId && initialPropertyId.length > 0 ? initialPropertyId : DEFAULT_FILTERS.propertyId,
+  }))
   const [proofJob, setProofJob] = useState<Job | null>(null)
   const { selectedAccount } = useClientPortal()
   const searchListId = useId()
+
+  useEffect(() => {
+    setFilters((current) => {
+      const nextPropertyId = initialPropertyId && initialPropertyId.length > 0 ? initialPropertyId : 'all'
+      if (current.propertyId === nextPropertyId) {
+        return current
+      }
+      return { ...current, propertyId: nextPropertyId }
+    })
+  }, [initialPropertyId])
 
   const propertyMap = useMemo(() => {
     const map = new Map<string, Property>()

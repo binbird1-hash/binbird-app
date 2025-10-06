@@ -39,6 +39,8 @@ const properties: Property[] = [
     city: 'Melbourne',
     status: 'active',
     binTypes: ['General'],
+    binCounts: { garbage: 1, recycling: 0, compost: 0, total: 1 },
+    binDescriptions: { garbage: 'Garbage (weekly)', recycling: null, compost: null },
     nextServiceAt: null,
     latitude: null,
     longitude: null,
