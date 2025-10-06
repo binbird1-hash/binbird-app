@@ -36,6 +36,10 @@ body {
   @apply text-white antialiased;
 }
 
+input[type='search']::-webkit-search-cancel-button {
+  filter: brightness(0) invert(1);
+}
+
 a {
   color: inherit;
   text-decoration: none;

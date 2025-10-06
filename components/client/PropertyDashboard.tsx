@@ -1,8 +1,7 @@
 
 'use client'
 
-import clsx from 'clsx'
-import { useCallback, useMemo, useState } from 'react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import type { Property } from './ClientPortalProvider'
@@ -41,23 +40,6 @@ function groupProperties(properties: Property[]) {
     groups[key] = groups[key] ? [...groups[key], property] : [property]
     return groups
   }, {})
-}
-
-const BIN_THEME: Record<
-  'garbage' | 'recycling' | 'compost',
-  {
-    panel: string
-  }
-> = {
-  garbage: {
-    panel: 'border-red-500/30 bg-red-500/5',
-  },
-  recycling: {
-    panel: 'border-yellow-400/40 bg-yellow-400/10',
-  },
-  compost: {
-    panel: 'border-green-500/30 bg-green-500/10',
-  },
 }
 
 const formatBinFrequency = (description: string | null) => {
@@ -141,6 +123,9 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                       addressParts.push(trimmed)
                     })
                     const address = addressParts.join(', ')
+                    const propertyName = property.name?.trim() ?? ''
+                    const title = propertyName || address || 'Unnamed property'
+                    const secondaryLine = address && address !== title ? address : ''
                     const binSummaries: Array<{
                       key: 'garbage' | 'recycling' | 'compost'
                       label: string
@@ -178,32 +163,32 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         <div className="flex flex-1 flex-col gap-5">
                           <div className="space-y-3">
                             <div className="space-y-2">
-                              <h4 className="text-xl font-semibold text-white">
-                                {address || property.name}
-                              </h4>
-                              {property.name && address && property.name !== address && (
-                                <p className="text-sm text-white/60">{property.name}</p>
-                              )}
+                              <h4 className="text-xl font-semibold text-white">{title}</h4>
+                              {secondaryLine && <p className="text-sm text-white/60">{secondaryLine}</p>}
                             </div>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                              {binSummaries.map((bin) => (
-                                <div
-                                  key={bin.key}
-                                  className={clsx(
-                                    'flex h-full min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
-                                    BIN_THEME[bin.key].panel,
-                                  )}
-                                >
-                                  <div className="space-y-1.5">
-                                    <p className="text-base font-semibold leading-tight text-white sm:text-lg">
-                                      {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
-                                    </p>
-                                    <p className="text-sm text-white/70">
-                                      {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
+                            <div className="space-y-2">
+                              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-white/70">
+                                {binSummaries.map((bin, index) => (
+                                  <Fragment key={bin.key}>
+                                    <span className="whitespace-nowrap">
+                                      <span className="font-semibold text-white">{bin.count}</span>{' '}
+                                      {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
+                                    </span>
+                                    {index < binSummaries.length - 1 && (
+                                      <span className="text-white/40" aria-hidden>
+                                        ,{' '}
+                                      </span>
+                                    )}
+                                  </Fragment>
+                                ))}
+                              </p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/50">
+                                {binSummaries.map((bin) => (
+                                  <span key={`${bin.key}-schedule`} className="whitespace-nowrap">
+                                    {bin.label}: {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -218,9 +203,9 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                             Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
                           </p>
                         </div>
-                        <div className="mt-6 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
+                        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs font-medium tracking-wide text-white/60">
                           <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white">
-                            Total bins: {property.binCounts.total}
+                            <span className="font-semibold text-white">{property.binCounts.total}</span> Total Bins
                           </span>
                           <span className="flex items-center gap-2 text-white/70 transition group-hover:text-white">
                             View job history <span aria-hidden>→</span>

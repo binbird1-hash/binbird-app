@@ -127,16 +127,25 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
         </div>
         <dl className="grid flex-1 gap-3 sm:grid-cols-3 md:auto-cols-fr md:grid-flow-col">
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Garbage bins</dt>
-            <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.garbage)}</dd>
+            <dt className="sr-only">Garbage bins</dt>
+            <dd className="text-sm text-white/70">
+              <span className="text-2xl font-semibold text-white">{formatBinTotal(totals.garbage)}</span>{' '}
+              Garbage Bins
+            </dd>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Recycling bins</dt>
-            <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.recycling)}</dd>
+            <dt className="sr-only">Recycling bins</dt>
+            <dd className="text-sm text-white/70">
+              <span className="text-2xl font-semibold text-white">{formatBinTotal(totals.recycling)}</span>{' '}
+              Recycling Bins
+            </dd>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Compost bins</dt>
-            <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.compost)}</dd>
+            <dt className="sr-only">Compost bins</dt>
+            <dd className="text-sm text-white/70">
+              <span className="text-2xl font-semibold text-white">{formatBinTotal(totals.compost)}</span>{' '}
+              Compost Bins
+            </dd>
           </div>
         </dl>
       </div>
