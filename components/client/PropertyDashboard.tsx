@@ -14,11 +14,21 @@ const DEFAULT_FILTERS: PropertyFilterState = {
 
 function matchesFilters(property: Property, filters: PropertyFilterState) {
   if (filters.search) {
-    const term = filters.search.toLowerCase()
+    const lowerSearch = filters.search.toLowerCase()
+    const terms = lowerSearch
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
     const candidates = [property.name, property.addressLine, property.suburb, property.city]
       .filter((value): value is string => Boolean(value))
       .map((value) => value.toLowerCase())
-    if (!candidates.some((value) => value.includes(term))) {
+
+    if (terms.length === 0) {
+      return true
+    }
+
+    const matchesAllTerms = terms.every((term) => candidates.some((value) => value.includes(term)))
+    if (!matchesAllTerms) {
       return false
     }
   }
