@@ -82,7 +82,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
 
   const handlePropertyClick = useCallback(
     (propertyId: string) => {
-      router.push(`/client/(portal)/history?propertyId=${encodeURIComponent(propertyId)}`)
+      router.push(`/client/history?propertyId=${encodeURIComponent(propertyId)}`)
     },
     [router],
   )
