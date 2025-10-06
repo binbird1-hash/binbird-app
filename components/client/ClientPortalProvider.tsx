@@ -70,6 +70,7 @@ export type Job = {
   completedAt?: string | null
   crewName?: string | null
   proofPhotoKeys?: string[] | null
+  proofUploadedAt?: string | null
   routePolyline?: string | null
   lastLatitude?: number | null
   lastLongitude?: number | null
@@ -730,6 +731,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       }
 
       const completedAtIso = parseDateToIso(log.done_on ?? log.created_at)
+      const uploadedAtIso = parseDateToIso(log.created_at)
       if (!completedAtIso) {
         return
       }
@@ -746,6 +748,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
+        proofUploadedAt: uploadedAtIso,
         routePolyline: null,
         lastLatitude: log.gps_lat ?? undefined,
         lastLongitude: log.gps_lng ?? undefined,
@@ -775,6 +778,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         return
       }
       const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
+      const proofUploadedAtIso = latestLog ? parseDateToIso(latestLog.created_at) : null
       const status: JobStatus = completedAtIso
         ? 'completed'
         : latestLog
@@ -794,6 +798,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys,
+        proofUploadedAt: proofUploadedAtIso,
         routePolyline: null,
         lastLatitude: job.lat ?? undefined,
         lastLongitude: job.lng ?? undefined,
