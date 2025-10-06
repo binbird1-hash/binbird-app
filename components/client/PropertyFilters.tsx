@@ -100,7 +100,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
               id={searchInputId}
               type="search"
               autoComplete="off"
-              placeholder="Search by name or suburb"
+              placeholder="Search for property address"
               value={filters.search}
               onChange={(event) => update({ search: event.target.value })}
               className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
