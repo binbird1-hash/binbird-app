@@ -84,7 +84,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
   }))
   const [proofJob, setProofJob] = useState<Job | null>(null)
   const { selectedAccount } = useClientPortal()
-  const searchListId = useId()
+  const searchInputId = useId()
 
   useEffect(() => {
     setFilters((current) => {
@@ -138,8 +138,24 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
         suggestions.add(fullAddress)
       }
     })
-    return Array.from(suggestions)
+    return Array.from(suggestions).sort((a, b) => a.localeCompare(b))
   }, [jobs, properties, propertyMap])
+
+  const matchingSuggestions = useMemo(() => {
+    if (!filters.search) {
+      return []
+    }
+    const term = filters.search.toLowerCase()
+    return searchSuggestions
+      .filter((suggestion) => {
+        const normalized = suggestion.toLowerCase()
+        if (normalized === term) {
+          return false
+        }
+        return normalized.includes(term)
+      })
+      .slice(0, 10)
+  }, [filters.search, searchSuggestions])
 
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
@@ -198,22 +214,42 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
             options={propertyOptions}
             className="w-full md:min-w-[200px]"
           />
-          <label className="flex w-full flex-col gap-1 text-sm">
-            <span className="text-white/60">Search</span>
-            <input
-              type="search"
-              value={filters.search}
-              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-              placeholder="Search by property, address, or notes"
-              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
-              list={searchListId}
-            />
-          </label>
-          <datalist id={searchListId}>
-            {searchSuggestions.map((suggestion) => (
-              <option key={suggestion} value={suggestion} />
-            ))}
-          </datalist>
+          <div className="flex w-full flex-col gap-2 text-sm md:max-w-sm">
+            <label className="text-white/60" htmlFor={searchInputId}>
+              Search
+            </label>
+            <div className="relative">
+              <input
+                id={searchInputId}
+                type="search"
+                autoComplete="off"
+                value={filters.search}
+                onChange={(event) =>
+                  setFilters((current) => ({ ...current, search: event.target.value }))
+                }
+                placeholder="Search by property, address, or notes"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              />
+              {matchingSuggestions.length > 0 && (
+                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
+                  {matchingSuggestions.map((suggestion) => (
+                    <li key={suggestion}>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          setFilters((current) => ({ ...current, search: suggestion }))
+                        }}
+                        className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
+                      >
+                        {suggestion}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button

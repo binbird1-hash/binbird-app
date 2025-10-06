@@ -199,7 +199,7 @@ export function LiveTracker() {
                               <span
                                 key={`${job.id}-${bin}`}
                                 className={clsx(
-                                  'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                                  'inline-flex min-w-[7rem] items-center justify-center rounded-full border px-4 py-1 text-xs font-semibold uppercase tracking-wide',
                                   pill,
                                 )}
                               >

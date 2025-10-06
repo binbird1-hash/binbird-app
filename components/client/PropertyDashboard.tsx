@@ -50,13 +50,13 @@ const BIN_THEME: Record<
   }
 > = {
   garbage: {
-    panel: 'border-red-500/30 bg-red-500/5',
+    panel: 'border-red-500/60 bg-red-600/15',
   },
   recycling: {
-    panel: 'border-yellow-400/40 bg-yellow-400/10',
+    panel: 'border-amber-300/60 bg-amber-300/15',
   },
   compost: {
-    panel: 'border-green-500/30 bg-green-500/10',
+    panel: 'border-emerald-500/60 bg-emerald-600/15',
   },
 }
 
