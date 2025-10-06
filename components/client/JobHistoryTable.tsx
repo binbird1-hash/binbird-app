@@ -2,8 +2,7 @@
 
 import { Fragment, useEffect, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { saveAs } from 'file-saver'
+import { CheckIcon, ChevronUpDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
@@ -74,8 +73,6 @@ const formatAddress = (property: Property | undefined) => {
 
   return uniqueParts.join(', ')
 }
-
-const escapeForCsv = (value: string) => `"${value.replace(/"/g, '""')}"`
 
 export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHistoryTableProps) {
   const [filters, setFilters] = useState<HistoryFilters>(() => ({
@@ -182,25 +179,6 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
     })
   }, [filters.propertyId, filters.search, jobs, propertyMap])
 
-  const handleDownloadCsv = () => {
-    const header = ['Address', 'Job', 'Completed', 'Notes']
-    const rows = filteredJobs.map((job) => {
-      const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
-      const fullAddress = formatAddress(property) ?? job.propertyName ?? 'Property'
-      const jobTypeLabel = formatJobTypeLabel(job.jobType)
-      const bins = job.bins && job.bins.length > 0 ? job.bins.join(', ') : ''
-      const jobDescription = bins ? `${jobTypeLabel} · ${bins}` : jobTypeLabel
-      const completed = job.completedAt ? format(new Date(job.completedAt), 'yyyy-MM-dd HH:mm') : ''
-      const notes = job.notes ?? ''
-      return [fullAddress, jobDescription, completed, notes].map((value) =>
-        escapeForCsv(String(value ?? '')),
-      )
-    })
-    const csvContent = [header.map(escapeForCsv).join(','), ...rows.map((row) => row.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    saveAs(blob, `binbird-job-history-${format(new Date(), 'yyyyMMdd-HHmm')}.csv`)
-  }
-
   return (
     <div className="space-y-6 text-white">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -212,28 +190,20 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
             options={propertyOptions}
             className="w-full md:min-w-[200px]"
           />
-          <label className="flex w-full flex-col gap-1 text-sm">
-            <span className="text-white/60">Search</span>
+          <div className="flex w-full flex-col gap-2 text-sm md:max-w-sm">
+            <label className="text-white/60" htmlFor={searchInputId}>
+              Search
+            </label>
             <div className="relative">
               <input
-                type="text"
+                type="search"
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-                placeholder="Search for an address or property"
-                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 pr-10 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
+                placeholder="Search for property address"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
                 id={searchInputId}
                 autoComplete="off"
               />
-              {filters.search.trim().length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setFilters((current) => ({ ...current, search: '' }))}
-                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-                >
-                  <span className="sr-only">Clear search</span>
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              )}
               {matchingSuggestions.length > 0 && (
                 <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 text-sm text-white shadow-lg backdrop-blur">
                   {matchingSuggestions.map((suggestion) => (
@@ -253,16 +223,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                 </ul>
               )}
             </div>
-          </label>
-        </div>
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-          <button
-            type="button"
-            onClick={handleDownloadCsv}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red md:w-auto"
-          >
-            <DocumentArrowDownIcon className="h-5 w-5" /> Export CSV
-          </button>
+          </div>
         </div>
       </div>
 
@@ -301,11 +262,26 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                     {(() => {
                       const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
                       const propertyName = property?.name ?? job.propertyName
-                      const fullAddress = formatAddress(property) ?? job.propertyName
+                      const fullAddress = formatAddress(property)
+                      const primaryLabel = fullAddress ?? propertyName ?? 'Property'
+                      const normalizedPrimary = primaryLabel.trim().toLowerCase()
+                      const normalizedName = propertyName?.trim().toLowerCase()
+                      const showSecondary =
+                        Boolean(fullAddress && propertyName) && normalizedPrimary !== normalizedName
                       return (
                         <>
-                          <div className="font-semibold truncate">{propertyName}</div>
-                          {fullAddress && (
+                          <div
+                            className="font-semibold"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: '2',
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {primaryLabel}
+                          </div>
+                          {showSecondary && (
                             <p
                               className="mt-1 max-w-xs text-xs text-white/60"
                               style={{
@@ -315,7 +291,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                                 overflow: 'hidden',
                               }}
                             >
-                              {fullAddress}
+                              {propertyName}
                             </p>
                           )}
                         </>
