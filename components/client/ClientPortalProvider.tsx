@@ -131,6 +131,7 @@ export type ClientPortalContextValue = {
   properties: Property[]
   propertiesLoading: boolean
   refreshProperties: () => Promise<void>
+  jobHistory: Job[]
   jobs: Job[]
   jobsLoading: boolean
   refreshJobs: () => Promise<void>
@@ -348,6 +349,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
   const [properties, setProperties] = useState<Property[]>([])
   const [propertiesLoading, setPropertiesLoading] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
+  const [jobHistory, setJobHistory] = useState<Job[]>([])
   const [jobsLoading, setJobsLoading] = useState(false)
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences | null>(null)
   const [preferencesLoading, setPreferencesLoading] = useState(false)
@@ -642,6 +644,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     })
 
     const combinedJobs: Job[] = []
+    const historyJobs: Job[] = []
 
     const parseDateToIso = (value: string | null | undefined): string | null => {
       if (!value) return null
@@ -650,6 +653,57 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       return parsed.toISOString()
     }
 
+    ;(logRows ?? []).forEach((log) => {
+      const jobIdKey = normaliseIdentifier(log.job_id)
+      const logAccountId = normaliseIdentifier(log.account_id)
+
+      if (jobIdKey && (!logAccountId || logAccountId === accountId)) {
+        const existing = logsByJobId.get(jobIdKey)
+        if (!existing || (log.done_on && log.done_on > (existing.done_on ?? ''))) {
+          logsByJobId.set(jobIdKey, log)
+        }
+      }
+
+      const propertyId = addressLookup.get(normaliseAddress(log.address)) ?? null
+      const property = propertyId ? propertyMap.get(propertyId) : undefined
+      const propertyName = property?.name ?? log.client_name ?? log.address ?? 'Property'
+
+      if (!property && logAccountId && logAccountId !== accountId) {
+        return
+      }
+
+      const completedAtIso = parseDateToIso(log.done_on ?? log.created_at)
+      if (!completedAtIso) {
+        return
+      }
+
+      const logJob: Job = {
+        id: jobIdKey ? `${jobIdKey}-${log.id}` : `log-${log.id}`,
+        accountId,
+        propertyId,
+        propertyName,
+        status: 'completed',
+        scheduledAt: completedAtIso,
+        etaMinutes: null,
+        startedAt: null,
+        completedAt: completedAtIso,
+        crewName: null,
+        proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
+        routePolyline: null,
+        lastLatitude: log.gps_lat ?? undefined,
+        lastLongitude: log.gps_lng ?? undefined,
+        notes: log.notes,
+        jobType: log.task_type,
+        bins: normaliseBinList(log.bins),
+      }
+
+      historyJobs.push(logJob)
+
+      if (!jobIdKey) {
+        combinedJobs.push(logJob)
+      }
+    })
+
     ;(jobRows ?? []).forEach((job) => {
       const explicitPropertyId =
         typeof job.property_id === 'string' && job.property_id.trim().length ? job.property_id.trim() : null
@@ -657,7 +711,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       const property = propertyId ? propertyMap.get(propertyId) : undefined
       const propertyName = property?.name ?? job.address ?? 'Property'
       const scheduledAt = nextOccurrenceIso(job.day_of_week)
-      const latestLog = job.id ? logsByJobId.get(job.id) : undefined
+      const jobIdKey = normaliseIdentifier(job.id)
+      const latestLog = jobIdKey ? logsByJobId.get(jobIdKey) : undefined
       const jobAccountId = normaliseIdentifier(job.account_id)
       if (!property && jobAccountId && jobAccountId !== accountId) {
         return
@@ -691,40 +746,17 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       })
     })
 
-    ;(logRows ?? [])
-      .filter((log) => !log.job_id)
-      .forEach((log) => {
-        const propertyId = addressLookup.get(normaliseAddress(log.address)) ?? null
-        const property = propertyId ? propertyMap.get(propertyId) : undefined
-        const propertyName = property?.name ?? log.address ?? 'Property'
-        const logAccountId = normaliseIdentifier(log.account_id)
-        if (!property && logAccountId && logAccountId !== accountId) {
-          return
-        }
-        const completedAtIso = parseDateToIso(log.done_on ?? log.created_at)
-        combinedJobs.push({
-          id: `log-${log.id}`,
-          accountId,
-          propertyId,
-          propertyName,
-          status: completedAtIso ? 'completed' : 'scheduled',
-          scheduledAt: completedAtIso ?? new Date().toISOString(),
-          etaMinutes: null,
-          startedAt: null,
-          completedAt: completedAtIso,
-          crewName: null,
-          proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
-          routePolyline: null,
-          lastLatitude: log.gps_lat ?? undefined,
-          lastLongitude: log.gps_lng ?? undefined,
-          notes: log.notes,
-          jobType: log.task_type,
-          bins: normaliseBinList(log.bins),
-        })
-      })
-
     combinedJobs.sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+    historyJobs.sort((a, b) => {
+      const first = a.completedAt ?? a.scheduledAt
+      const second = b.completedAt ?? b.scheduledAt
+      const firstTime = first ? new Date(first).getTime() : 0
+      const secondTime = second ? new Date(second).getTime() : 0
+      return secondTime - firstTime
+    })
+
     setJobs(combinedJobs)
+    setJobHistory(historyJobs)
     setJobsLoading(false)
   }, [selectedAccountId, supabase, user])
 
@@ -858,6 +890,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       properties,
       propertiesLoading,
       refreshProperties,
+      jobHistory,
       jobs,
       jobsLoading,
       refreshJobs,
@@ -872,6 +905,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       accounts,
       profile,
       error,
+      jobHistory,
       jobs,
       jobsLoading,
       loading,
