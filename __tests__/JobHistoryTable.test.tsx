@@ -8,6 +8,16 @@ vi.mock('@/components/client/ClientPortalProvider', () => ({
   useClientPortal: () => ({ selectedAccount: { name: 'Test account' } }),
 }))
 
+vi.mock('@/components/providers/SupabaseProvider', () => ({
+  useSupabase: () => ({
+    storage: {
+      from: () => ({
+        createSignedUrls: async () => ({ data: [], error: null }),
+      }),
+    },
+  }),
+}))
+
 const jobs: Job[] = [
   {
     id: '1',
@@ -56,6 +66,13 @@ describe('JobHistoryTable', () => {
     render(<JobHistoryTable jobs={jobs} properties={properties} />)
     const table = screen.getByRole('table')
     expect(within(table).getByText('Alpha')).toBeInTheDocument()
-    expect(within(table).getByText(/Test account/)).toBeInTheDocument()
+    expect(screen.getByText(/Test account/)).toBeInTheDocument()
+  })
+
+  it('hides jobs that are not completed', () => {
+    const scheduledJob: Job = { ...jobs[0], id: '2', propertyName: 'Bravo', status: 'scheduled', completedAt: null }
+    render(<JobHistoryTable jobs={[...jobs, scheduledJob]} properties={properties} />)
+    const table = screen.getByRole('table')
+    expect(within(table).queryByText('Bravo')).not.toBeInTheDocument()
   })
 })

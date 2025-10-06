@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -58,9 +58,16 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
   const goPrevious = () => setIndex((current) => (current === 0 ? urls.length - 1 : current - 1))
   const goNext = () => setIndex((current) => (current + 1) % urls.length)
 
+  const handleClose = useCallback(() => {
+    setUrls([])
+    setIndex(0)
+    setLoading(false)
+    onClose()
+  }, [onClose])
+
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={onClose} className="relative z-50">
+      <Dialog onClose={handleClose} className="relative z-50">
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-200"
@@ -85,7 +92,8 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
             >
               <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/90 text-white shadow-2xl">
                 <button
-                  onClick={onClose}
+                  type="button"
+                  onClick={handleClose}
                   className="absolute right-4 top-4 rounded-full border border-white/20 bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white"
                   aria-label="Close proof of service"
                 >

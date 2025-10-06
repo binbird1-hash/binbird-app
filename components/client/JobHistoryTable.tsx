@@ -15,8 +15,12 @@ export type JobHistoryTableProps = {
   properties: Property[]
 }
 
+const HISTORY_STATUSES = ['completed', 'skipped'] as const satisfies Job['status'][]
+
+type HistoryStatus = (typeof HISTORY_STATUSES)[number]
+
 type HistoryFilters = {
-  status: 'all' | Job['status']
+  status: 'all' | HistoryStatus
   propertyId: 'all' | string
   search: string
 }
@@ -96,23 +100,25 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
   const [proofJob, setProofJob] = useState<Job | null>(null)
   const { selectedAccount } = useClientPortal()
 
+  const historyJobs = useMemo(() => jobs.filter((job) => HISTORY_STATUSES.includes(job.status)), [jobs])
+
   const propertyOptions = useMemo<HistorySelectOption[]>(() => {
     const baseOptions: HistorySelectOption[] = [
       { value: 'all', label: 'All properties' },
       ...properties.map((property) => ({ value: property.id, label: property.name })),
     ]
 
-    const unassignedJobs = jobs
+    const unassignedJobs = historyJobs
       .filter((job) => !job.propertyId)
       .map((job) => ({ value: `job-${job.id}`, label: job.propertyName }))
 
     return [...baseOptions, ...unassignedJobs]
-  }, [jobs, properties])
+  }, [historyJobs, properties])
 
   const statusOptions = useMemo<HistorySelectOption[]>(
     () => [
       { value: 'all', label: 'All statuses' },
-      ...(Object.keys(STATUS_LABELS) as Job['status'][]).map((status) => ({
+      ...HISTORY_STATUSES.map((status) => ({
         value: status,
         label: STATUS_LABELS[status],
       })),
@@ -122,7 +128,7 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
 
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
-    return jobs.filter((job) => {
+    return historyJobs.filter((job) => {
       if (filters.propertyId !== 'all') {
         if (filters.propertyId.startsWith('job-')) {
           const targetId = filters.propertyId.slice(4)
@@ -141,7 +147,7 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
       }
       return true
     })
-  }, [jobs, filters])
+  }, [historyJobs, filters])
 
   const handleDownloadCsv = () => downloadCsv(filteredJobs)
   const handleDownloadPdf = () => downloadPdf(filteredJobs)
