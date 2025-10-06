@@ -15,9 +15,20 @@ export type PropertyFiltersProps = {
 }
 
 const formatAddress = (property: Property) => {
+  const seen = new Set<string>()
   const parts = [property.addressLine, property.suburb, property.city]
     .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part))
+    .filter((part): part is string => {
+      if (!part) {
+        return false
+      }
+      const lower = part.toLowerCase()
+      if (seen.has(lower)) {
+        return false
+      }
+      seen.add(lower)
+      return true
+    })
   return parts.join(', ')
 }
 
@@ -39,8 +50,10 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
   const searchSuggestions = useMemo(() => {
     const suggestions = new Set<string>()
     properties.forEach((property) => {
-      if (property.name) {
-        suggestions.add(property.name)
+      const addressLine = property.addressLine?.trim().toLowerCase()
+      const name = property.name?.trim()
+      if (name && name.toLowerCase() !== addressLine) {
+        suggestions.add(name)
       }
       const address = formatAddress(property)
       if (address) {
