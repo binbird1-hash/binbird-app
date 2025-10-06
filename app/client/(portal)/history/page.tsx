@@ -4,7 +4,7 @@ import { useClientPortal } from '@/components/client/ClientPortalProvider'
 import { JobHistoryTable } from '@/components/client/JobHistoryTable'
 
 export default function ClientHistoryPage() {
-  const { jobs, properties, jobsLoading } = useClientPortal()
+  const { jobHistory, properties, jobsLoading } = useClientPortal()
 
   return (
     <section className="space-y-6">
@@ -21,7 +21,7 @@ export default function ClientHistoryPage() {
           </span>
         </div>
       ) : (
-        <JobHistoryTable jobs={jobs} properties={properties} />
+        <JobHistoryTable jobs={jobHistory} properties={properties} />
       )}
     </section>
   )
