@@ -37,32 +37,33 @@ function groupProperties(properties: Property[]) {
 const BIN_THEME: Record<
   'garbage' | 'recycling' | 'compost',
   {
-    surface: string
-    pill: string
+    panel: string
+    badge: string
     label: string
-    frequency: string
+    frequencyText: string
+    icon: string
   }
 > = {
   garbage: {
-    surface:
-      'border-red-500/20 bg-gradient-to-br from-red-500/15 via-red-500/5 to-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]',
-    pill: 'bg-red-500 text-white shadow-[0_5px_20px_-12px_rgba(248,113,113,0.9)]',
-    label: 'text-red-200/70',
-    frequency: 'bg-red-500/15 text-red-100/80 ring-1 ring-inset ring-red-500/30',
+    panel: 'border-red-500/30 bg-red-500/5',
+    badge: 'bg-red-500 text-white shadow-[0_5px_15px_-8px_rgba(248,113,113,0.7)]',
+    label: 'text-red-200/80',
+    frequencyText: 'text-red-100/80',
+    icon: 'text-red-200/70',
   },
   recycling: {
-    surface:
-      'border-yellow-400/30 bg-gradient-to-br from-yellow-500/20 via-yellow-500/5 to-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
-    pill: 'bg-yellow-400 text-black shadow-[0_5px_20px_-12px_rgba(234,179,8,0.9)]',
+    panel: 'border-yellow-400/40 bg-yellow-400/10',
+    badge: 'bg-yellow-400 text-black shadow-[0_5px_15px_-8px_rgba(234,179,8,0.6)]',
     label: 'text-yellow-100/80',
-    frequency: 'bg-yellow-400/20 text-yellow-950/70 ring-1 ring-inset ring-yellow-400/40',
+    frequencyText: 'text-yellow-900/70',
+    icon: 'text-yellow-100/70',
   },
   compost: {
-    surface:
-      'border-green-500/20 bg-gradient-to-br from-green-500/15 via-green-500/5 to-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
-    pill: 'bg-green-500 text-white shadow-[0_5px_20px_-12px_rgba(34,197,94,0.9)]',
-    label: 'text-green-100/80',
-    frequency: 'bg-green-500/15 text-green-100/80 ring-1 ring-inset ring-green-500/30',
+    panel: 'border-green-500/30 bg-green-500/10',
+    badge: 'bg-green-500 text-white shadow-[0_5px_15px_-8px_rgba(34,197,94,0.6)]',
+    label: 'text-green-100/70',
+    frequencyText: 'text-green-100/80',
+    icon: 'text-green-100/70',
   },
 }
 
@@ -188,37 +189,43 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                   key={bin.key}
                                   className={clsx(
                                     'flex h-full flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
-                                    BIN_THEME[bin.key].surface,
+                                    BIN_THEME[bin.key].panel,
                                   )}
                                 >
-                                  <div className="flex flex-col gap-2">
-                                    <span
-                                      className={clsx(
-                                        'inline-flex min-h-[3rem] w-full items-center justify-center rounded-full px-4 text-sm font-semibold leading-tight shadow-sm transition-colors sm:text-base',
-                                        BIN_THEME[bin.key].pill,
-                                      )}
-                                    >
-                                      {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
-                                    </span>
-                                    <span
-                                      className={clsx(
-                                        'text-[11px] font-semibold uppercase tracking-wide',
-                                        BIN_THEME[bin.key].label,
-                                      )}
-                                    >
-                                      Collection frequency
-                                    </span>
-                                  </div>
-                                  <div
-                                    className={clsx(
-                                      'mt-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium',
-                                      bin.description === 'Schedule not set'
-                                        ? 'border border-white/10 bg-white/5 text-white/60'
-                                        : BIN_THEME[bin.key].frequency,
-                                    )}
-                                  >
-                                    <CalendarIcon className="h-4 w-4" aria-hidden />
-                                    <span>{bin.description}</span>
+                                  <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-3">
+                                      <span
+                                        className={clsx(
+                                          'flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-semibold',
+                                          BIN_THEME[bin.key].badge,
+                                        )}
+                                      >
+                                        {bin.count}
+                                      </span>
+                                      <div className="space-y-1">
+                                        <p className="text-sm font-semibold text-white sm:text-base">
+                                          {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
+                                        </p>
+                                        <p className={clsx('text-[11px] font-semibold uppercase tracking-wide', BIN_THEME[bin.key].label)}>
+                                          Collection frequency
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-medium text-white/70">
+                                      <CalendarIcon
+                                        className={clsx('h-4 w-4 shrink-0', BIN_THEME[bin.key].icon)}
+                                        aria-hidden
+                                      />
+                                      <span
+                                        className={clsx(
+                                          bin.description === 'Schedule not set'
+                                            ? 'text-white/60'
+                                            : BIN_THEME[bin.key].frequencyText,
+                                        )}
+                                      >
+                                        {bin.description}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
