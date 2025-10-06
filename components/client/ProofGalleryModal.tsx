@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
-import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export type ProofGalleryModalProps = {
@@ -70,7 +70,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/70 backdrop-blur" />
+          <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur" />
         </Transition.Child>
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-6">
@@ -84,14 +84,6 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
               leaveTo="opacity-0 scale-90"
             >
               <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/90 text-white shadow-2xl">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="absolute right-4 top-4 z-10 rounded-full border border-white/20 bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white"
-                  aria-label="Close proof of service"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
                 <div className="aspect-video w-full bg-black/60">
                   {loading ? (
                     <div className="flex h-full items-center justify-center text-white/70">

@@ -1,10 +1,9 @@
 'use client'
 
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
-import jsPDF from 'jspdf'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
@@ -16,7 +15,6 @@ export type JobHistoryTableProps = {
 }
 
 type HistoryFilters = {
-  status: 'all' | Job['status']
   propertyId: 'all' | string
   search: string
 }
@@ -27,74 +25,44 @@ type HistorySelectOption = {
 }
 
 const DEFAULT_FILTERS: HistoryFilters = {
-  status: 'all',
   propertyId: 'all',
   search: '',
 }
 
-const STATUS_LABELS: Record<Job['status'], string> = {
-  scheduled: 'Scheduled',
-  en_route: 'En route',
-  on_site: 'On site',
-  completed: 'Completed',
-  skipped: 'Skipped',
+const formatJobTypeLabel = (value: string | null | undefined) => {
+  if (!value) return 'Service'
+  return value
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
-function toCsv(jobs: Job[]) {
-  const header = 'Job ID,Property,Status,Completed\n'
-  const rows = jobs
-    .map((job) =>
-      [
-        job.id,
-        job.propertyName,
-        job.status,
-        job.completedAt ? format(new Date(job.completedAt), 'yyyy-MM-dd HH:mm') : '',
-      ]
-        .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
-        .join(','),
-    )
-    .join('\n')
-  return header + rows
+const formatAddress = (property: Property | undefined) => {
+  if (!property) return null
+  const parts = [property.addressLine, property.suburb, property.city].filter(
+    (part): part is string => Boolean(part?.trim()),
+  )
+  if (parts.length === 0) return null
+  return parts.join(', ')
 }
 
-function downloadCsv(jobs: Job[]) {
-  const blob = new Blob([toCsv(jobs)], { type: 'text/csv;charset=utf-8;' })
-  saveAs(blob, `binbird-job-history-${format(new Date(), 'yyyyMMdd-HHmm')}.csv`)
-}
-
-function downloadPdf(jobs: Job[]) {
-  const doc = new jsPDF({ orientation: 'landscape' })
-  doc.setFontSize(14)
-  doc.text('BinBird job history', 14, 18)
-  doc.setFontSize(10)
-  const columnTitles = ['Property', 'Status', 'Completed']
-  const startY = 28
-  columnTitles.forEach((title, index) => {
-    doc.text(title, 14 + index * 80, startY)
-  })
-  let y = startY + 6
-  jobs.slice(0, 30).forEach((job) => {
-    const row = [
-      job.propertyName,
-      STATUS_LABELS[job.status],
-      job.completedAt ? format(new Date(job.completedAt), 'PP p') : '',
-    ]
-    row.forEach((cell, index) => {
-      doc.text(String(cell), 14 + index * 80, y)
-    })
-    y += 6
-    if (y > 190) {
-      doc.addPage()
-      y = 20
-    }
-  })
-  doc.save(`binbird-job-history-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`)
-}
+const escapeForCsv = (value: string) => `"${value.replace(/"/g, '""')}"`
 
 export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
   const [filters, setFilters] = useState<HistoryFilters>(DEFAULT_FILTERS)
   const [proofJob, setProofJob] = useState<Job | null>(null)
   const { selectedAccount } = useClientPortal()
+  const searchListId = useId()
+
+  const propertyMap = useMemo(() => {
+    const map = new Map<string, Property>()
+    properties.forEach((property) => {
+      map.set(property.id, property)
+    })
+    return map
+  }, [properties])
 
   const propertyOptions = useMemo<HistorySelectOption[]>(() => {
     const baseOptions: HistorySelectOption[] = [
@@ -109,16 +77,29 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
     return [...baseOptions, ...unassignedJobs]
   }, [jobs, properties])
 
-  const statusOptions = useMemo<HistorySelectOption[]>(
-    () => [
-      { value: 'all', label: 'All statuses' },
-      ...(Object.keys(STATUS_LABELS) as Job['status'][]).map((status) => ({
-        value: status,
-        label: STATUS_LABELS[status],
-      })),
-    ],
-    [],
-  )
+  const searchSuggestions = useMemo(() => {
+    const suggestions = new Set<string>()
+    properties.forEach((property) => {
+      if (property.name) {
+        suggestions.add(property.name)
+      }
+      const fullAddress = formatAddress(property)
+      if (fullAddress) {
+        suggestions.add(fullAddress)
+      }
+    })
+    jobs.forEach((job) => {
+      if (job.propertyName) {
+        suggestions.add(job.propertyName)
+      }
+      const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
+      const fullAddress = formatAddress(property)
+      if (fullAddress) {
+        suggestions.add(fullAddress)
+      }
+    })
+    return Array.from(suggestions)
+  }, [jobs, properties, propertyMap])
 
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
@@ -131,20 +112,40 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
           return false
         }
       }
-      if (filters.status !== 'all' && job.status !== filters.status) return false
       if (filters.search) {
+        const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
+        const fullAddress = formatAddress(property)
+        const jobTypeLabel = formatJobTypeLabel(job.jobType)
         return (
           job.propertyName.toLowerCase().includes(lowerSearch) ||
+          (fullAddress ? fullAddress.toLowerCase().includes(lowerSearch) : false) ||
+          jobTypeLabel.toLowerCase().includes(lowerSearch) ||
           job.notes?.toLowerCase().includes(lowerSearch) ||
           job.id.toLowerCase().includes(lowerSearch)
         )
       }
       return true
     })
-  }, [jobs, filters])
+  }, [filters.propertyId, filters.search, jobs, propertyMap])
 
-  const handleDownloadCsv = () => downloadCsv(filteredJobs)
-  const handleDownloadPdf = () => downloadPdf(filteredJobs)
+  const handleDownloadCsv = () => {
+    const header = ['Address', 'Job', 'Completed', 'Notes']
+    const rows = filteredJobs.map((job) => {
+      const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
+      const fullAddress = formatAddress(property) ?? job.propertyName ?? 'Property'
+      const jobTypeLabel = formatJobTypeLabel(job.jobType)
+      const bins = job.bins && job.bins.length > 0 ? job.bins.join(', ') : ''
+      const jobDescription = bins ? `${jobTypeLabel} · ${bins}` : jobTypeLabel
+      const completed = job.completedAt ? format(new Date(job.completedAt), 'yyyy-MM-dd HH:mm') : ''
+      const notes = job.notes ?? ''
+      return [fullAddress, jobDescription, completed, notes].map((value) =>
+        escapeForCsv(String(value ?? '')),
+      )
+    })
+    const csvContent = [header.map(escapeForCsv).join(','), ...rows.map((row) => row.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    saveAs(blob, `binbird-job-history-${format(new Date(), 'yyyyMMdd-HHmm')}.csv`)
+  }
 
   return (
     <div className="space-y-6 text-white">
@@ -157,25 +158,22 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
             options={propertyOptions}
             className="min-w-[200px]"
           />
-          <HistorySelect
-            label="Status"
-            value={filters.status}
-            onChange={(value) =>
-              setFilters((current) => ({ ...current, status: value as HistoryFilters['status'] }))
-            }
-            options={statusOptions}
-            className="min-w-[160px]"
-          />
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-white/60">Search</span>
             <input
               type="search"
               value={filters.search}
               onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-              placeholder="Search by property or note"
+              placeholder="Search by property, address, or notes"
               className="min-w-[220px] rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              list={searchListId}
             />
           </label>
+          <datalist id={searchListId}>
+            {searchSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
@@ -185,34 +183,27 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
           >
             <DocumentArrowDownIcon className="h-5 w-5" /> Export CSV
           </button>
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red"
-          >
-            <DocumentArrowDownIcon className="h-5 w-5" /> Export PDF
-          </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-white/10 text-left text-sm">
+      <div className="relative overflow-x-auto rounded-3xl border border-white/10 bg-black/20">
+        <table className="min-w-[720px] divide-y divide-white/10 text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-white/40">
             <tr>
               <th scope="col" className="px-4 py-3">
-                Property
+                Address
               </th>
               <th scope="col" className="px-4 py-3">
-                Status
+                Job
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Photo
               </th>
               <th scope="col" className="px-4 py-3">
                 Completed
               </th>
               <th scope="col" className="px-4 py-3">
                 Notes
-              </th>
-              <th scope="col" className="px-4 py-3 text-right">
-                Proof
               </th>
             </tr>
           </thead>
@@ -227,18 +218,27 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
               filteredJobs.map((job) => (
                 <tr key={job.id} className="hover:bg-white/5">
                   <td className="px-4 py-3 text-white">
-                    <div className="font-semibold">{job.propertyName}</div>
-                    <p className="mt-1 text-xs text-white/50">
-                      {job.jobType ? job.jobType.replace('_', ' ') : 'service'}
-                      {job.bins && job.bins.length > 0 ? ` · ${job.bins.join(', ')}` : ''}
+                    {(() => {
+                      const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
+                      const propertyName = property?.name ?? job.propertyName
+                      const fullAddress = formatAddress(property) ?? job.propertyName
+                      return (
+                        <>
+                          <div className="font-semibold">{propertyName}</div>
+                          {fullAddress && (
+                            <p className="mt-1 text-xs text-white/60">{fullAddress}</p>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </td>
+                  <td className="px-4 py-3 text-white">
+                    <div className="font-semibold">{formatJobTypeLabel(job.jobType)}</div>
+                    <p className="mt-1 text-xs text-white/60">
+                      {job.bins && job.bins.length > 0 ? job.bins.join(', ') : 'No bins recorded'}
                     </p>
                   </td>
-                  <td className="px-4 py-3 text-white/70">{STATUS_LABELS[job.status]}</td>
-                  <td className="px-4 py-3 text-white/70">
-                    {job.completedAt ? format(new Date(job.completedAt), 'PP p') : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-white/60">{job.notes ?? '—'}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-center">
                     <button
                       type="button"
                       onClick={() => setProofJob(job)}
@@ -248,12 +248,18 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
                       <PhotoIcon className="h-4 w-4" /> View
                     </button>
                   </td>
+                  <td className="px-4 py-3 text-white/70">
+                    {job.completedAt ? format(new Date(job.completedAt), 'PP p') : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-white/60">{job.notes ?? '—'}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      <p className="text-xs text-white/40 sm:hidden">Swipe horizontally to view more job details.</p>
 
       <ProofGalleryModal
         isOpen={Boolean(proofJob)}
