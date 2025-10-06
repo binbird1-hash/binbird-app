@@ -48,17 +48,24 @@ export async function middleware(req: NextRequest) {
   }
 
   if (session) {
-    if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
+    const { data: role, error } = await supabase.rpc<string>('get_my_role')
+    const hasStaffAccess = !error && (role === 'staff' || role === 'admin')
+    const defaultSignedInRedirect = hasStaffAccess ? '/staff/run' : '/'
+
+    if (hasActiveRunCookie && hasStaffAccess && activeRunBlockedPaths.has(normalizedPathname)) {
       return NextResponse.redirect(new URL('/staff/route', req.url))
     }
 
-    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
-      return NextResponse.redirect(new URL('/staff/run', req.url))
+    if (
+      !hasActiveRunCookie &&
+      signedInRestrictedPaths.has(normalizedPathname) &&
+      normalizedPathname !== defaultSignedInRedirect
+    ) {
+      return NextResponse.redirect(new URL(defaultSignedInRedirect, req.url))
     }
 
-    const { data: role, error } = await supabase.rpc('get_my_role')
     if (!error) {
-      if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
+      if (pathname.startsWith('/staff') && !hasStaffAccess) {
         return NextResponse.redirect(new URL('/', req.url))
       }
       if (pathname.startsWith('/ops') && role !== 'admin') {
