@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
@@ -37,9 +38,14 @@ export type PropertyDashboardProps = {
 
 export function PropertyDashboard({ properties, isLoading }: PropertyDashboardProps) {
   const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_FILTERS)
+  const router = useRouter()
 
   const filtered = useMemo(() => properties.filter((property) => matchesFilters(property, filters)), [properties, filters])
   const grouped = useMemo(() => groupProperties(filtered), [filtered])
+
+  const navigateToPropertyHistory = (propertyId: string) => {
+    router.push(`/client/history?propertyId=${propertyId}`)
+  }
 
   return (
     <div className="space-y-6 text-white">
@@ -73,7 +79,17 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                 {groupProperties.map((property) => (
                   <article
                     key={property.id}
-                    className="group flex flex-col rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-binbird-red hover:bg-binbird-red/10"
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`View job history for ${property.name}`}
+                    onClick={() => navigateToPropertyHistory(property.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        navigateToPropertyHistory(property.id)
+                      }
+                    }}
+                    className="group flex flex-col rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-binbird-red hover:bg-binbird-red/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-binbird-red/50"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -114,6 +130,8 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                           href={`https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
                         >
                           Open map
                           <ArrowTopRightOnSquareIcon className="h-4 w-4" />

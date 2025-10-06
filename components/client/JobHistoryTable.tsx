@@ -1,12 +1,13 @@
 'use client'
 
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
 import jsPDF from 'jspdf'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
 import { ProofGalleryModal } from './ProofGalleryModal'
 
@@ -92,9 +93,11 @@ function downloadPdf(jobs: Job[]) {
 }
 
 export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
-  const [filters, setFilters] = useState<HistoryFilters>(DEFAULT_FILTERS)
-  const [proofJob, setProofJob] = useState<Job | null>(null)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const { selectedAccount } = useClientPortal()
+  const propertyIdFromQuery = searchParams.get('propertyId')
 
   const propertyOptions = useMemo<HistorySelectOption[]>(() => {
     const baseOptions: HistorySelectOption[] = [
@@ -119,6 +122,49 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
     ],
     [],
   )
+
+  const [filters, setFilters] = useState<HistoryFilters>(() => ({
+    ...DEFAULT_FILTERS,
+    propertyId: propertyIdFromQuery ?? DEFAULT_FILTERS.propertyId,
+  }))
+  const [proofJob, setProofJob] = useState<Job | null>(null)
+
+  useEffect(() => {
+    if (propertyIdFromQuery === null) {
+      setFilters((current) =>
+        current.propertyId === DEFAULT_FILTERS.propertyId
+          ? current
+          : { ...current, propertyId: DEFAULT_FILTERS.propertyId },
+      )
+      return
+    }
+
+    const isValidOption = propertyOptions.some((option) => option.value === propertyIdFromQuery)
+    if (!isValidOption) return
+
+    setFilters((current) => {
+      if (current.propertyId === propertyIdFromQuery) {
+        return current
+      }
+      return { ...current, propertyId: propertyIdFromQuery }
+    })
+  }, [propertyIdFromQuery, propertyOptions])
+
+  const handlePropertyFilterChange = (value: string) => {
+    setFilters((current) => ({ ...current, propertyId: value }))
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    if (value === 'all') {
+      nextParams.delete('propertyId')
+    } else {
+      nextParams.set('propertyId', value)
+    }
+
+    const queryString = nextParams.toString()
+    if (queryString === searchParams.toString()) return
+
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false })
+  }
 
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
@@ -153,7 +199,7 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
           <HistorySelect
             label="Property"
             value={filters.propertyId}
-            onChange={(value) => setFilters((current) => ({ ...current, propertyId: value }))}
+            onChange={handlePropertyFilterChange}
             options={propertyOptions}
             className="min-w-[200px]"
           />
