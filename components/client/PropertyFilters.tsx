@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useMemo } from 'react'
-import { FunnelIcon } from '@heroicons/react/24/outline'
+import { FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
 
 export type PropertyFilterState = {
@@ -34,6 +34,28 @@ const formatAddress = (property: Property) => {
 
 const formatBinTotal = (value: number) => (value > 0 ? value : 0)
 
+const isRedundantPropertyLabel = (label: string, property: Property, fullAddress: string | null) => {
+  const normalizedLabel = label.trim().toLowerCase()
+  if (!normalizedLabel) return true
+
+  const normalizedAddressLine = property.addressLine?.trim().toLowerCase()
+  if (normalizedAddressLine && normalizedAddressLine === normalizedLabel) {
+    return true
+  }
+
+  if (fullAddress) {
+    const normalizedFullAddress = fullAddress.toLowerCase()
+    if (normalizedFullAddress === normalizedLabel) {
+      return true
+    }
+    if (normalizedFullAddress.startsWith(`${normalizedLabel},`)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 export function PropertyFilters({ filters, onChange, properties }: PropertyFiltersProps) {
   const totals = useMemo(() => {
     return properties.reduce(
@@ -49,17 +71,19 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
 
   const searchSuggestions = useMemo(() => {
     const suggestions = new Set<string>()
+
     properties.forEach((property) => {
-      const addressLine = property.addressLine?.trim().toLowerCase()
+      const fullAddress = formatAddress(property)
+      if (fullAddress) {
+        suggestions.add(fullAddress)
+      }
+
       const name = property.name?.trim()
-      if (name && name.toLowerCase() !== addressLine) {
+      if (name && !isRedundantPropertyLabel(name, property, fullAddress)) {
         suggestions.add(name)
       }
-      const address = formatAddress(property)
-      if (address) {
-        suggestions.add(address)
-      }
     })
+
     return Array.from(suggestions).sort((a, b) => a.localeCompare(b))
   }, [properties])
 
@@ -91,7 +115,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
         <span>Filter properties</span>
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full flex-col gap-2 text-sm md:max-w-sm">
+        <div className="flex w-full max-w-2xl flex-col gap-2 text-sm">
           <label className="text-white/60" htmlFor={searchInputId}>
             Search
           </label>
@@ -103,10 +127,20 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
               placeholder="Search by name or suburb"
               value={filters.search}
               onChange={(event) => update({ search: event.target.value })}
-              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              className="w-full appearance-none rounded-2xl border border-white/10 bg-black/40 px-4 py-2 pr-12 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             />
+            {filters.search ? (
+              <button
+                type="button"
+                onClick={() => update({ search: '' })}
+                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                aria-label="Clear search"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            ) : null}
             {matchingSuggestions.length > 0 && (
-              <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
+              <ul className="absolute left-0 right-0 z-20 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
                 {matchingSuggestions.map((suggestion) => (
                   <li key={suggestion}>
                     <button

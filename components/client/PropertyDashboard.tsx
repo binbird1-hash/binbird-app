@@ -47,16 +47,20 @@ const BIN_THEME: Record<
   'garbage' | 'recycling' | 'compost',
   {
     panel: string
+    muted: string
   }
 > = {
   garbage: {
-    panel: 'border-red-500/60 bg-red-600/15',
+    panel: 'border-red-500/70 bg-red-600 text-white',
+    muted: 'text-red-100/80',
   },
   recycling: {
-    panel: 'border-amber-300/60 bg-amber-300/15',
+    panel: 'border-amber-300/70 bg-amber-300 text-black',
+    muted: 'text-black/70',
   },
   compost: {
-    panel: 'border-emerald-500/60 bg-emerald-600/15',
+    panel: 'border-emerald-500/70 bg-emerald-600 text-white',
+    muted: 'text-emerald-100/80',
   },
 }
 
@@ -186,24 +190,27 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                               )}
                             </div>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                              {binSummaries.map((bin) => (
-                                <div
-                                  key={bin.key}
-                                  className={clsx(
-                                    'flex h-full min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
-                                    BIN_THEME[bin.key].panel,
-                                  )}
-                                >
-                                  <div className="space-y-1.5">
-                                    <p className="text-base font-semibold leading-tight text-white sm:text-lg">
-                                      {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
-                                    </p>
-                                    <p className="text-sm text-white/70">
-                                      {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
-                                    </p>
+                              {binSummaries.map((bin) => {
+                                const theme = BIN_THEME[bin.key]
+                                return (
+                                  <div
+                                    key={bin.key}
+                                    className={clsx(
+                                      'flex h-full min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
+                                      theme.panel,
+                                    )}
+                                  >
+                                    <div className="space-y-1.5">
+                                      <p className="text-base font-semibold leading-tight sm:text-lg">
+                                        {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
+                                      </p>
+                                      <p className={clsx('text-sm', theme.muted)}>
+                                        {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
+                                      </p>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           </div>
                         </div>
