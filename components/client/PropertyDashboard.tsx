@@ -153,7 +153,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full min-h-[280px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[320px] sm:p-6"
+                        className="group flex h-full min-h-[320px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[380px] sm:p-7 lg:min-h-[400px]"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-1 flex-col gap-6">
@@ -171,7 +171,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <div
                                   key={bin.key}
                                   className={clsx(
-                                    'flex h-full flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
+                                    'flex h-full min-h-[120px] flex-col justify-between rounded-2xl border px-5 py-6 transition-colors',
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
