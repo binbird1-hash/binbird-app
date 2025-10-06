@@ -172,12 +172,12 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
                                   className={clsx(
-                                    'flex h-full min-h-[80px] min-w-0 flex-col justify-between rounded-2xl border px-3 py-3 text-xs transition-colors sm:px-4 sm:py-4 sm:text-sm',
+                                    'flex h-full min-h-[72px] min-w-0 flex-col justify-between rounded-2xl border px-3 py-2 text-xs transition-colors sm:px-4 sm:py-3 sm:text-sm',
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
@@ -194,7 +194,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                             </div>
                           </div>
                         </div>
-                        <div className="mt-6 space-y-2 text-sm text-white/60">
+                        <div className="mt-4 space-y-2 text-sm text-white/60">
                           <p>
                             Next service:
                             <span className="ml-2 font-medium text-white">

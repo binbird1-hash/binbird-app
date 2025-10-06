@@ -118,17 +118,23 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
           </div>
         </div>
         <dl className="grid w-full gap-2 sm:max-w-xl sm:grid-cols-3 sm:gap-3">
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Garbage bins</dt>
-            <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.garbage)}</dd>
+          <div
+            className="flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2"
+          >
+            <dt className="text-xs font-medium uppercase tracking-wide text-white/60">Garbage bins</dt>
+            <dd className="text-lg font-semibold">{formatBinTotal(totals.garbage)}</dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Recycling bins</dt>
-            <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.recycling)}</dd>
+          <div
+            className="flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2"
+          >
+            <dt className="text-xs font-medium uppercase tracking-wide text-white/60">Recycling bins</dt>
+            <dd className="text-lg font-semibold">{formatBinTotal(totals.recycling)}</dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Compost bins</dt>
-            <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.compost)}</dd>
+          <div
+            className="flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2"
+          >
+            <dt className="text-xs font-medium uppercase tracking-wide text-white/60">Compost bins</dt>
+            <dd className="text-lg font-semibold">{formatBinTotal(totals.compost)}</dd>
           </div>
         </dl>
       </div>
