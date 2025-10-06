@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
@@ -84,7 +84,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
   }))
   const [proofJob, setProofJob] = useState<Job | null>(null)
   const { selectedAccount } = useClientPortal()
-  const searchListId = useId()
+  const searchInputId = useId()
 
   useEffect(() => {
     setFilters((current) => {
@@ -120,26 +120,40 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
   const searchSuggestions = useMemo(() => {
     const suggestions = new Set<string>()
     properties.forEach((property) => {
-      if (property.name) {
-        suggestions.add(property.name)
-      }
       const fullAddress = formatAddress(property)
       if (fullAddress) {
         suggestions.add(fullAddress)
+      } else if (property.name) {
+        suggestions.add(property.name)
       }
     })
     jobs.forEach((job) => {
-      if (job.propertyName) {
-        suggestions.add(job.propertyName)
-      }
       const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
       const fullAddress = formatAddress(property)
       if (fullAddress) {
         suggestions.add(fullAddress)
+      } else if (job.propertyName) {
+        suggestions.add(job.propertyName)
       }
     })
-    return Array.from(suggestions)
+    return Array.from(suggestions).sort((a, b) => a.localeCompare(b))
   }, [jobs, properties, propertyMap])
+
+  const matchingSuggestions = useMemo(() => {
+    const term = filters.search.trim().toLowerCase()
+    if (!term) {
+      return []
+    }
+    return searchSuggestions
+      .filter((suggestion) => {
+        const normalized = suggestion.toLowerCase()
+        if (normalized === term) {
+          return false
+        }
+        return normalized.includes(term)
+      })
+      .slice(0, 10)
+  }, [filters.search, searchSuggestions])
 
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
@@ -200,20 +214,46 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
           />
           <label className="flex w-full flex-col gap-1 text-sm">
             <span className="text-white/60">Search</span>
-            <input
-              type="search"
-              value={filters.search}
-              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-              placeholder="Search by property, address, or notes"
-              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
-              list={searchListId}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+                placeholder="Search for an address or property"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 pr-10 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
+                id={searchInputId}
+                autoComplete="off"
+              />
+              {filters.search.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilters((current) => ({ ...current, search: '' }))}
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                >
+                  <span className="sr-only">Clear search</span>
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              )}
+              {matchingSuggestions.length > 0 && (
+                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 text-sm text-white shadow-lg backdrop-blur">
+                  {matchingSuggestions.map((suggestion) => (
+                    <li key={suggestion}>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          setFilters((current) => ({ ...current, search: suggestion }))
+                        }}
+                        className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
+                      >
+                        {suggestion}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </label>
-          <datalist id={searchListId}>
-            {searchSuggestions.map((suggestion) => (
-              <option key={suggestion} value={suggestion} />
-            ))}
-          </datalist>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button
