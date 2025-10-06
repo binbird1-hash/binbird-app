@@ -1,7 +1,6 @@
 'use client'
 
 import { useId, useMemo } from 'react'
-import { FunnelIcon } from '@heroicons/react/24/outline'
 import type { Property } from './ClientPortalProvider'
 
 export type PropertyFilterState = {
@@ -86,24 +85,17 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
 
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-4 text-white shadow-inner shadow-black/30">
-      <div className="mb-4 flex items-center gap-2 text-sm text-white/60">
-        <FunnelIcon className="h-5 w-5" />
-        <span>Filter properties</span>
-      </div>
-      <div className="flex flex-col gap-6">
-        <div className="flex w-full flex-col gap-2 text-sm">
-          <label className="text-white/60" htmlFor={searchInputId}>
-            Search
-          </label>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="w-full sm:max-w-md">
           <div className="relative">
             <input
               id={searchInputId}
               type="search"
               autoComplete="off"
-              placeholder="Search for property address"
+              placeholder="Search properties"
               value={filters.search}
               onChange={(event) => update({ search: event.target.value })}
-              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             />
             {matchingSuggestions.length > 0 && (
               <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
@@ -125,7 +117,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
             )}
           </div>
         </div>
-        <dl className="grid gap-3 sm:grid-cols-3">
+        <dl className="grid w-full gap-2 sm:max-w-xl sm:grid-cols-3 sm:gap-3">
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
             <dt className="text-xs uppercase tracking-wide text-white/50">Garbage bins</dt>
             <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.garbage)}</dd>

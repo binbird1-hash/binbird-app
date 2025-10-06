@@ -172,20 +172,20 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 gap-3 sm:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
                                   className={clsx(
-                                    'flex h-full min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
+                                    'flex h-full min-h-[80px] min-w-0 flex-col justify-between rounded-2xl border px-3 py-3 text-xs transition-colors sm:px-4 sm:py-4 sm:text-sm',
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
-                                  <div className="space-y-1.5">
-                                    <p className="whitespace-nowrap text-base font-semibold leading-tight text-white sm:text-lg">
+                                  <div className="space-y-1">
+                                    <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white sm:text-base">
                                       {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
                                     </p>
-                                    <p className="text-sm text-white/70">
+                                    <p className="text-xs text-white/70 sm:text-sm">
                                       {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
                                     </p>
                                   </div>
