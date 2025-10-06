@@ -141,6 +141,9 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                       addressParts.push(trimmed)
                     })
                     const address = addressParts.join(', ')
+                    const propertyName = property.name?.trim()
+                    const isNameDistinct =
+                      Boolean(propertyName && address) && !address.toLowerCase().includes(propertyName.toLowerCase())
                     const binSummaries: Array<{
                       key: 'garbage' | 'recycling' | 'compost'
                       label: string
@@ -181,11 +184,11 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                               <h4 className="text-xl font-semibold text-white">
                                 {address || property.name}
                               </h4>
-                              {property.name && address && property.name !== address && (
+                              {property.name && address && isNameDistinct && (
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 sm:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
@@ -195,7 +198,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                   )}
                                 >
                                   <div className="space-y-1.5">
-                                    <p className="text-base font-semibold leading-tight text-white sm:text-lg">
+                                    <p className="whitespace-nowrap text-base font-semibold leading-tight text-white sm:text-lg">
                                       {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
                                     </p>
                                     <p className="text-sm text-white/70">
@@ -219,8 +222,8 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                           </p>
                         </div>
                         <div className="mt-6 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
-                          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white">
-                            Total bins: {property.binCounts.total}
+                          <span className="text-white/70">
+                            Total bins · <span className="text-white">{property.binCounts.total}</span>
                           </span>
                           <span className="flex items-center gap-2 text-white/70 transition group-hover:text-white">
                             View job history <span aria-hidden>→</span>
