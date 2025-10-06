@@ -170,7 +170,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full min-h-[320px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+                        className="group flex h-full min-h-[280px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[320px] sm:p-6"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-1 flex-col gap-6">
@@ -183,7 +183,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
@@ -202,30 +202,34 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                       >
                                         {bin.count}
                                       </span>
-                                      <div className="space-y-1">
+                                      <div className="space-y-1.5">
                                         <p className="text-sm font-semibold text-white sm:text-base">
                                           {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
                                         </p>
-                                        <p className={clsx('text-[11px] font-semibold uppercase tracking-wide', BIN_THEME[bin.key].label)}>
-                                          Collection frequency
+                                        <p
+                                          className={clsx(
+                                            'inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide',
+                                            BIN_THEME[bin.key].label,
+                                            bin.description === 'Schedule not set'
+                                              ? 'bg-white/5 text-white/60'
+                                              : 'bg-white/10',
+                                          )}
+                                        >
+                                          {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
                                         </p>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs font-medium text-white/70">
-                                      <CalendarIcon
-                                        className={clsx('h-4 w-4 shrink-0', BIN_THEME[bin.key].icon)}
-                                        aria-hidden
-                                      />
-                                      <span
-                                        className={clsx(
-                                          bin.description === 'Schedule not set'
-                                            ? 'text-white/60'
-                                            : BIN_THEME[bin.key].frequencyText,
-                                        )}
-                                      >
-                                        {bin.description}
-                                      </span>
-                                    </div>
+                                    {bin.description !== 'Schedule not set' && (
+                                      <div className="flex items-center gap-2 text-xs font-medium text-white/70">
+                                        <CalendarIcon
+                                          className={clsx('h-4 w-4 shrink-0', BIN_THEME[bin.key].icon)}
+                                          aria-hidden
+                                        />
+                                        <span className={BIN_THEME[bin.key].frequencyText}>
+                                          {bin.description}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               ))}
