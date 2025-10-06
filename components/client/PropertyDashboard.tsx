@@ -1,7 +1,6 @@
 
 'use client'
 
-import { CalendarIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { useCallback, useMemo, useState } from 'react'
 import { format } from 'date-fns'
@@ -38,32 +37,16 @@ const BIN_THEME: Record<
   'garbage' | 'recycling' | 'compost',
   {
     panel: string
-    badge: string
-    label: string
-    frequencyText: string
-    icon: string
   }
 > = {
   garbage: {
     panel: 'border-red-500/30 bg-red-500/5',
-    badge: 'bg-red-500 text-white shadow-[0_5px_15px_-8px_rgba(248,113,113,0.7)]',
-    label: 'text-red-200/80',
-    frequencyText: 'text-red-100/80',
-    icon: 'text-red-200/70',
   },
   recycling: {
     panel: 'border-yellow-400/40 bg-yellow-400/10',
-    badge: 'bg-yellow-400 text-black shadow-[0_5px_15px_-8px_rgba(234,179,8,0.6)]',
-    label: 'text-yellow-100/80',
-    frequencyText: 'text-yellow-900/70',
-    icon: 'text-yellow-100/70',
   },
   compost: {
     panel: 'border-green-500/30 bg-green-500/10',
-    badge: 'bg-green-500 text-white shadow-[0_5px_15px_-8px_rgba(34,197,94,0.6)]',
-    label: 'text-green-100/70',
-    frequencyText: 'text-green-100/80',
-    icon: 'text-green-100/70',
   },
 }
 
@@ -170,10 +153,10 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full min-h-[320px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+                        className="group flex h-full min-h-[280px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[320px] sm:p-6 lg:min-h-[360px]"
                         aria-label={`View job history for ${property.name}`}
                       >
-                        <div className="flex flex-1 flex-col gap-6">
+                        <div className="flex flex-1 flex-col gap-5">
                           <div className="space-y-3">
                             <div className="space-y-2">
                               <h4 className="text-xl font-semibold text-white">
@@ -183,49 +166,22 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
                                   className={clsx(
-                                    'flex h-full flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
+                                    'flex h-full min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-5 transition-colors',
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
-                                  <div className="flex flex-col gap-4">
-                                    <div className="flex items-center gap-3">
-                                      <span
-                                        className={clsx(
-                                          'flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-semibold',
-                                          BIN_THEME[bin.key].badge,
-                                        )}
-                                      >
-                                        {bin.count}
-                                      </span>
-                                      <div className="space-y-1">
-                                        <p className="text-sm font-semibold text-white sm:text-base">
-                                          {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
-                                        </p>
-                                        <p className={clsx('text-[11px] font-semibold uppercase tracking-wide', BIN_THEME[bin.key].label)}>
-                                          Collection frequency
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs font-medium text-white/70">
-                                      <CalendarIcon
-                                        className={clsx('h-4 w-4 shrink-0', BIN_THEME[bin.key].icon)}
-                                        aria-hidden
-                                      />
-                                      <span
-                                        className={clsx(
-                                          bin.description === 'Schedule not set'
-                                            ? 'text-white/60'
-                                            : BIN_THEME[bin.key].frequencyText,
-                                        )}
-                                      >
-                                        {bin.description}
-                                      </span>
-                                    </div>
+                                  <div className="space-y-1.5">
+                                    <p className="text-base font-semibold leading-tight text-white sm:text-lg">
+                                      {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
+                                    </p>
+                                    <p className="text-sm text-white/70">
+                                      {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
+                                    </p>
                                   </div>
                                 </div>
                               ))}
