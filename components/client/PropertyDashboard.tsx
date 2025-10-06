@@ -130,7 +130,16 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                 </header>
                 <div className="grid auto-rows-fr gap-4 md:grid-cols-2">
                   {groupProperties.map((property) => {
-                    const addressParts = [property.addressLine, property.suburb].filter((part) => part && part.trim().length > 0)
+                    const seenAddressParts = new Set<string>()
+                    const addressParts: string[] = []
+                    ;[property.addressLine, property.suburb, property.city].forEach((part) => {
+                      const trimmed = part?.trim()
+                      if (!trimmed) return
+                      const key = trimmed.toLowerCase()
+                      if (seenAddressParts.has(key)) return
+                      seenAddressParts.add(key)
+                      addressParts.push(trimmed)
+                    })
                     const address = addressParts.join(', ')
                     const binSummaries: Array<{
                       key: 'garbage' | 'recycling' | 'compost'
