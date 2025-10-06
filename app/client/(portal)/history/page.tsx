@@ -11,7 +11,7 @@ export default function ClientHistoryPage() {
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold text-white">Job history</h2>
         <p className="text-sm text-white/60">
-          View the last 60 days of service events, export detailed reports, and access proof-of-service photos.
+          View the last 60 days of service events and access proof-of-service photos.
         </p>
       </div>
       {jobsLoading ? (
