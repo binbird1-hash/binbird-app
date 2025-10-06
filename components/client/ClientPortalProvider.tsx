@@ -301,9 +301,22 @@ const deriveAccountId = (row: ClientListRow): string =>
 const deriveAccountName = (row: ClientListRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'My Properties'
 
+const parseAddress = (
+  address: string | null | undefined,
+): { addressLine: string; suburb: string; city: string } => {
+  const parts = (address ?? '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+
+  const [addressLine = '', suburb = '', ...rest] = parts
+  const city = rest.join(', ') || suburb
+
+  return { addressLine, suburb, city }
+}
+
 const toProperty = (row: ClientListRow): Property => {
-  const [addressLine, suburbRaw = ''] = (row.address ?? '').split(',')
-  const suburb = suburbRaw.trim()
+  const { addressLine, suburb, city } = parseAddress(row.address)
   const garbageDescription = describeBinFrequency('Garbage', row.red_freq, row.red_flip)
   const recyclingDescription = describeBinFrequency('Recycling', row.yellow_freq, row.yellow_flip)
   const compostDescription = describeBinFrequency('Compost', row.green_freq, row.green_flip)
@@ -337,9 +350,9 @@ const toProperty = (row: ClientListRow): Property => {
   return {
     id: row.property_id,
     name: addressLine || row.client_name || 'Property',
-    addressLine: (addressLine ?? '').trim(),
+    addressLine,
     suburb,
-    city: suburb,
+    city,
     status: isActive ? 'active' : 'paused',
     binTypes,
     binCounts: {
