@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { JobHistoryTable } from '@/components/client/JobHistoryTable'
@@ -6,6 +6,10 @@ import type { Job, Property } from '@/components/client/ClientPortalProvider'
 
 vi.mock('@/components/client/ClientPortalProvider', () => ({
   useClientPortal: () => ({ selectedAccount: { name: 'Test account' } }),
+}))
+
+vi.mock('@/components/client/ProofGalleryModal', () => ({
+  ProofGalleryModal: () => null,
 }))
 
 const jobs: Job[] = [
@@ -58,6 +62,15 @@ describe('JobHistoryTable', () => {
     render(<JobHistoryTable jobs={jobs} properties={properties} />)
     const table = screen.getByRole('table')
     expect(within(table).getByText('Alpha')).toBeInTheDocument()
-    expect(within(table).getByText(/Test account/)).toBeInTheDocument()
+    expect(screen.getByText(/Test account/)).toBeInTheDocument()
+  })
+
+  it('shows inline search suggestions matching the dashboard style', () => {
+    render(<JobHistoryTable jobs={jobs} properties={properties} />)
+    const searchInput = screen.getByRole('searchbox', { name: /search/i })
+    fireEvent.change(searchInput, { target: { value: 'mai' } })
+
+    expect(screen.getByRole('button', { name: /clear search/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '1 Main, Richmond, Melbourne' })).toBeInTheDocument()
   })
 })
