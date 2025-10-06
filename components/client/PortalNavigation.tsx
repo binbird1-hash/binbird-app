@@ -25,7 +25,7 @@ export function PortalNavigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex w-full flex-wrap items-center gap-2 rounded-3xl border border-white/10 bg-black/60 p-2 text-sm text-white shadow-2xl shadow-black/20 backdrop-blur">
+    <nav className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-white/10 bg-black/60 p-2 text-sm text-white shadow-2xl shadow-black/20 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
       {NAV_ITEMS.map((item) => {
         const active = pathname.startsWith(item.href)
         return (
@@ -33,7 +33,7 @@ export function PortalNavigation() {
             key={item.href}
             href={item.href}
             className={clsx(
-              'flex flex-1 items-center justify-center gap-2 rounded-2xl px-3 py-2 font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:flex-none sm:px-4',
+              'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:flex-1 sm:px-4',
               active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-white/60 hover:text-white hover:bg-white/5',
             )}
             aria-current={active ? 'page' : undefined}

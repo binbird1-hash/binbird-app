@@ -32,13 +32,13 @@ function PortalScaffold({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-screen bg-black px-4 py-10 text-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+    <div className="relative min-h-screen bg-black px-4 pb-24 pt-8 text-white sm:px-6 sm:pb-12 sm:pt-12 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 sm:gap-8">
         <PortalHeader />
         <PortalNavigation />
       </div>
-      <div className="mx-auto mt-8 w-full max-w-6xl">
-        <div className="rounded-3xl border border-white/10 bg-black/80 p-6 text-white shadow-2xl shadow-black/25 backdrop-blur">
+      <div className="mx-auto mt-6 w-full max-w-6xl sm:mt-8">
+        <div className="rounded-3xl border border-white/10 bg-black/80 p-4 text-white shadow-2xl shadow-black/25 backdrop-blur sm:p-6">
           {children}
         </div>
       </div>

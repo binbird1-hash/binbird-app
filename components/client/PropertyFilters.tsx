@@ -59,19 +59,19 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
             placeholder="Search by name or suburb"
             value={filters.search}
             onChange={(event) => update({ search: event.target.value })}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
           />
         </label>
         <label className="flex flex-col gap-2 text-sm">
           <span className="text-white/60">Status</span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {(Object.keys(STATUS_LABELS) as PropertyFilterState['status'][]).map((status) => (
               <button
                 key={status}
                 type="button"
                 onClick={() => update({ status })}
                 className={clsx(
-                  'flex-1 rounded-2xl border px-4 py-2 text-sm font-medium transition',
+                  'flex-1 rounded-2xl border px-4 py-2 text-sm font-medium transition sm:flex-none sm:px-6 min-w-[120px]',
                   filters.status === status
                     ? 'border-binbird-red bg-binbird-red/20 text-white'
                     : 'border-white/10 bg-black/40 text-white/60 hover:border-binbird-red/40 hover:text-white',
