@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import type { Property } from './ClientPortalProvider'
 import { PropertyFilters, type PropertyFilterState } from './PropertyFilters'
+import { BIN_THEME, type BinThemeKey } from './binThemes'
 
 const DEFAULT_FILTERS: PropertyFilterState = {
   search: '',
@@ -41,23 +42,6 @@ function groupProperties(properties: Property[]) {
     groups[key] = groups[key] ? [...groups[key], property] : [property]
     return groups
   }, {})
-}
-
-const BIN_THEME: Record<
-  'garbage' | 'recycling' | 'compost',
-  {
-    panel: string
-  }
-> = {
-  garbage: {
-    panel: 'border-red-500/30 bg-red-500/5',
-  },
-  recycling: {
-    panel: 'border-yellow-400/40 bg-yellow-400/10',
-  },
-  compost: {
-    panel: 'border-green-500/30 bg-green-500/10',
-  },
 }
 
 const formatBinFrequency = (description: string | null) => {
@@ -145,7 +129,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                     const isNameDistinct =
                       Boolean(propertyName && address) && !address.toLowerCase().includes(propertyName.toLowerCase())
                     const binSummaries: Array<{
-                      key: 'garbage' | 'recycling' | 'compost'
+                      key: BinThemeKey
                       label: string
                       count: number
                       description: string
