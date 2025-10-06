@@ -90,8 +90,8 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
         <FunnelIcon className="h-5 w-5" />
         <span>Filter properties</span>
       </div>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full flex-col gap-2 text-sm md:max-w-sm">
+      <div className="flex flex-col gap-6">
+        <div className="flex w-full flex-col gap-2 text-sm">
           <label className="text-white/60" htmlFor={searchInputId}>
             Search
           </label>
@@ -125,7 +125,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
             )}
           </div>
         </div>
-        <dl className="grid flex-1 gap-3 sm:grid-cols-3 md:auto-cols-fr md:grid-flow-col">
+        <dl className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
             <dt className="text-xs uppercase tracking-wide text-white/50">Garbage bins</dt>
             <dd className="mt-1 text-2xl font-semibold">{formatBinTotal(totals.garbage)}</dd>
