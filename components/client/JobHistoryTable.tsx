@@ -156,16 +156,16 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
             value={filters.propertyId}
             onChange={(value) => setFilters((current) => ({ ...current, propertyId: value }))}
             options={propertyOptions}
-            className="min-w-[200px]"
+            className="w-full md:min-w-[200px]"
           />
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex w-full flex-col gap-1 text-sm">
             <span className="text-white/60">Search</span>
             <input
               type="search"
               value={filters.search}
               onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
               placeholder="Search by property, address, or notes"
-              className="min-w-[220px] rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
               list={searchListId}
             />
           </label>
@@ -175,11 +175,11 @@ export function JobHistoryTable({ jobs, properties }: JobHistoryTableProps) {
             ))}
           </datalist>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button
             type="button"
             onClick={handleDownloadCsv}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red md:w-auto"
           >
             <DocumentArrowDownIcon className="h-5 w-5" /> Export CSV
           </button>

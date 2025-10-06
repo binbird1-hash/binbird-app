@@ -11,7 +11,7 @@ export function AccountSwitcher() {
 
   if (accounts.length <= 1 || !selectedAccount) {
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
+      <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
         <UserCircleIcon className="h-5 w-5" />
         <div>
           <p className="font-medium text-white">{selectedAccount?.name ?? 'Primary Account'}</p>
@@ -24,7 +24,7 @@ export function AccountSwitcher() {
   return (
     <Listbox value={selectedAccount?.id} onChange={selectAccount}>
       {({ open }) => (
-        <div className="relative w-full max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Listbox.Button className="relative flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-left text-sm font-medium text-white shadow-lg shadow-black/20 transition hover:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
             <span className="flex flex-col">
               <span>{selectedAccount?.name}</span>
