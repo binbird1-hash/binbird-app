@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from 'react'
 import { BoltIcon, CheckIcon, MapIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { useClientPortal, type Job } from './ClientPortalProvider'
+import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
 import { TrackerMap } from './TrackerMap'
 import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -23,28 +23,55 @@ const PROGRESS_INDEX: Record<Job['status'], number> = {
   skipped: 3,
 }
 
-const formatJobDetail = (job: Job): string => {
-  const bins = job.bins && job.bins.length > 0 ? job.bins.join(', ') : null
-  const jobType = job.jobType
-    ? job.jobType
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ')
-    : null
+const formatJobTypeLabel = (value: string | null | undefined): string | null => {
+  if (!value) return null
+  return value
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
 
-  if (jobType && bins) {
-    return `${jobType}: ${bins}`
+const getBinStyles = (bin: string | undefined) => {
+  const key = (bin ?? '').toLowerCase()
+  if (key.includes('garbage') || key.includes('landfill') || key.includes('red')) {
+    return { pill: 'border-red-500/70 bg-red-600 text-white' }
+  }
+  if (key.includes('recycling') || key.includes('yellow')) {
+    return { pill: 'border-amber-300/70 bg-amber-300 text-black' }
+  }
+  if (key.includes('compost') || key.includes('green') || key.includes('organic')) {
+    return { pill: 'border-emerald-500/70 bg-emerald-600 text-white' }
+  }
+  return { pill: 'border-white/20 bg-white/10 text-white' }
+}
+
+const formatPropertyAddress = (property: Property | null, fallback: string | null) => {
+  const parts: string[] = []
+  const seen = new Set<string>()
+  const register = (value: string | null | undefined) => {
+    if (!value) return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    const normalized = trimmed.toLowerCase()
+    if (seen.has(normalized)) return
+    seen.add(normalized)
+    parts.push(trimmed)
   }
 
-  if (jobType) {
-    return jobType
+  if (property) {
+    register(property.addressLine)
+    register(property.suburb)
+    register(property.city)
+  } else if (fallback) {
+    register(fallback)
   }
 
-  if (bins) {
-    return `Bins: ${bins}`
+  if (!parts.length && fallback) {
+    parts.push(fallback)
   }
 
-  return 'Service details coming soon'
+  return parts.join(', ')
 }
 
 export function LiveTracker() {
@@ -147,12 +174,9 @@ export function LiveTracker() {
               const progressIndex = PROGRESS_INDEX[job.status]
               const isSkipped = job.status === 'skipped'
               const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
-              const fullAddress = property
-                ?
-                  [property.addressLine, property.suburb, property.city].filter(Boolean).join(', ') ||
-                  property.name ||
-                  job.propertyName
-                : job.propertyName
+              const fullAddress = formatPropertyAddress(property ?? null, job.propertyName)
+              const jobTypeLabel = formatJobTypeLabel(job.jobType)
+              const bins = job.bins && job.bins.length > 0 ? job.bins : []
               return (
                 <article
                   key={job.id}
@@ -163,7 +187,27 @@ export function LiveTracker() {
                       <div className="space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
                         <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
-                        <p className="text-sm text-white/70">{formatJobDetail(job)}</p>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-white/70">
+                          {jobTypeLabel ? (
+                            <span className="font-medium text-white/80">{jobTypeLabel}</span>
+                          ) : (
+                            <span className="text-white/50">Service details coming soon</span>
+                          )}
+                          {bins.map((bin) => {
+                            const { pill } = getBinStyles(bin)
+                            return (
+                              <span
+                                key={`${job.id}-${bin}`}
+                                className={clsx(
+                                  'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                                  pill,
+                                )}
+                              >
+                                {bin}
+                              </span>
+                            )
+                          })}
+                        </div>
                       </div>
                       {job.crewName ? (
                         <dl className="grid gap-3 text-sm text-white/70 sm:grid-cols-2">

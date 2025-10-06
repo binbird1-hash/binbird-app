@@ -227,23 +227,23 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
       </div>
 
       <div className="relative overflow-x-auto rounded-3xl border border-white/10 bg-black/20">
-        <table className="min-w-[720px] w-full table-fixed divide-y divide-white/10 text-left text-sm">
+        <table className="min-w-[760px] w-full table-auto divide-y divide-white/10 text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-white/40">
             <tr>
-              <th scope="col" className="w-1/5 px-4 py-3">
+              <th scope="col" className="px-4 py-3">
                 Address
               </th>
-              <th scope="col" className="w-1/5 px-4 py-3">
+              <th scope="col" className="px-4 py-3">
                 Job
               </th>
-              <th scope="col" className="w-1/5 px-4 py-3 text-center">
-                Photo
-              </th>
-              <th scope="col" className="w-1/5 px-4 py-3">
+              <th scope="col" className="px-4 py-3">
                 Completed
               </th>
-              <th scope="col" className="w-1/5 px-4 py-3">
+              <th scope="col" className="px-4 py-3">
                 Notes
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Photo
               </th>
             </tr>
           </thead>
@@ -257,28 +257,49 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
             ) : (
               filteredJobs.map((job) => (
                 <tr key={job.id} className="hover:bg-white/5">
-                  <td className="w-1/5 px-4 py-3 align-top text-white">
+                  <td className="min-w-[220px] px-4 py-4 align-middle text-white">
                     {(() => {
                       const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
                       const propertyName = property?.name ?? job.propertyName
                       const fullAddress = formatAddress(property) ?? job.propertyName
                       return (
                         <>
-                          <div className="font-semibold">{propertyName}</div>
+                          <div className="font-semibold truncate">{propertyName}</div>
                           {fullAddress && (
-                            <p className="mt-1 text-xs text-white/60">{fullAddress}</p>
+                            <p
+                              className="mt-1 max-w-xs text-xs text-white/60"
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: '2',
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {fullAddress}
+                            </p>
                           )}
                         </>
                       )
                     })()}
                   </td>
-                  <td className="w-1/5 px-4 py-3 align-top text-white">
+                  <td className="px-4 py-4 align-middle text-white">
                     <div className="font-semibold">{formatJobTypeLabel(job.jobType)}</div>
                     <p className="mt-1 text-xs text-white/60">
                       {job.bins && job.bins.length > 0 ? job.bins.join(', ') : 'No bins recorded'}
                     </p>
                   </td>
-                  <td className="w-1/5 px-4 py-3 text-center">
+                  <td className="px-4 py-4 align-middle text-white/70">
+                    {(() => {
+                      const proofUploadedAt = job.proofUploadedAt
+                        ? new Date(job.proofUploadedAt)
+                        : job.completedAt
+                          ? new Date(job.completedAt)
+                          : null
+                      return proofUploadedAt ? format(proofUploadedAt, 'PP p') : '—'
+                    })()}
+                  </td>
+                  <td className="px-4 py-4 align-middle text-white/60">{job.notes ?? '—'}</td>
+                  <td className="px-4 py-4 align-middle text-center">
                     <button
                       type="button"
                       onClick={() => setProofJob(job)}
@@ -288,10 +309,6 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                       <PhotoIcon className="h-4 w-4" /> View
                     </button>
                   </td>
-                  <td className="w-1/5 px-4 py-3 align-top text-white/70">
-                    {job.completedAt ? format(new Date(job.completedAt), 'PP p') : '—'}
-                  </td>
-                  <td className="w-1/5 px-4 py-3 align-top text-white/60">{job.notes ?? '—'}</td>
                 </tr>
               ))
             )}
