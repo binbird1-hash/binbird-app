@@ -1,10 +1,13 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useClientPortal } from '@/components/client/ClientPortalProvider'
 import { JobHistoryTable } from '@/components/client/JobHistoryTable'
 
 export default function ClientHistoryPage() {
   const { jobHistory, properties, jobsLoading } = useClientPortal()
+  const searchParams = useSearchParams()
+  const initialPropertyId = searchParams.get('propertyId')
 
   return (
     <section className="space-y-6">
@@ -21,7 +24,7 @@ export default function ClientHistoryPage() {
           </span>
         </div>
       ) : (
-        <JobHistoryTable jobs={jobHistory} properties={properties} />
+        <JobHistoryTable jobs={jobHistory} properties={properties} initialPropertyId={initialPropertyId} />
       )}
     </section>
   )
