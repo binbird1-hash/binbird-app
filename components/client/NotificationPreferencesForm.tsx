@@ -125,7 +125,7 @@ export function NotificationPreferencesForm() {
           return (
             <section
               key={field.key}
-              className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/30"
+              className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black/30 p-5 shadow-inner shadow-black/30"
             >
               <div className="flex items-start gap-3">
                 <span className="rounded-2xl border border-white/20 bg-black/40 p-3 text-white/60">
