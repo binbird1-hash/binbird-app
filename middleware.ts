@@ -47,17 +47,31 @@ export async function middleware(req: NextRequest) {
     return redirect
   }
 
+  let role: string | null = null
+
   if (session) {
+    const { data, error } = await supabase.rpc('get_my_role')
+    if (!error) {
+      role = data
+    }
+
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
-      return NextResponse.redirect(new URL('/staff/route', req.url))
+      if (role === 'staff' || role === 'admin') {
+        return NextResponse.redirect(new URL('/staff/route', req.url))
+      }
+
+      const redirect = NextResponse.redirect(new URL('/client', req.url))
+      redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
+      return redirect
     }
 
     if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
-      return NextResponse.redirect(new URL('/staff/run', req.url))
+      const isStaffRole = role === 'staff' || role === 'admin'
+      const destination = isStaffRole ? '/staff/run' : '/client'
+      return NextResponse.redirect(new URL(destination, req.url))
     }
 
-    const { data: role, error } = await supabase.rpc('get_my_role')
-    if (!error) {
+    if (role) {
       if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
         return NextResponse.redirect(new URL('/', req.url))
       }
