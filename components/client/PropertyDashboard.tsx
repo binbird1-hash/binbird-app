@@ -45,7 +45,11 @@ function groupProperties(properties: Property[]) {
   }, {})
 }
 
-const getBinFrequencyInfo = (description: string | null) => {
+const getBinFrequencyInfo = (description: string | null, isFlip?: boolean) => {
+  if (isFlip) {
+    return { label: 'Alternate Fortnight', showCalendarIcon: true }
+  }
+
   if (!description) {
     return { label: 'Schedule not set', showCalendarIcon: false }
   }
@@ -65,9 +69,12 @@ const getBinFrequencyInfo = (description: string | null) => {
   const cleaned = frequency.charAt(0).toUpperCase() + frequency.slice(1)
   const normalized = cleaned.toLowerCase()
 
+  const isFortnightly = normalized.includes('fortnight')
+  const isWeekly = normalized.includes('week')
+
   return {
     label: cleaned,
-    showCalendarIcon: normalized === 'fortnightly' || normalized === 'weekly',
+    showCalendarIcon: isFortnightly || isWeekly,
   }
 }
 
@@ -146,19 +153,28 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key: 'garbage',
                         label: 'Garbage',
                         count: property.binCounts.garbage,
-                        frequency: getBinFrequencyInfo(property.binDescriptions.garbage),
+                        frequency: getBinFrequencyInfo(
+                          property.binDescriptions.garbage,
+                          property.binFlips.garbage,
+                        ),
                       },
                       {
                         key: 'recycling',
                         label: 'Recycling',
                         count: property.binCounts.recycling,
-                        frequency: getBinFrequencyInfo(property.binDescriptions.recycling),
+                        frequency: getBinFrequencyInfo(
+                          property.binDescriptions.recycling,
+                          property.binFlips.recycling,
+                        ),
                       },
                       {
                         key: 'compost',
                         label: 'Compost',
                         count: property.binCounts.compost,
-                        frequency: getBinFrequencyInfo(property.binDescriptions.compost),
+                        frequency: getBinFrequencyInfo(
+                          property.binDescriptions.compost,
+                          property.binFlips.compost,
+                        ),
                       },
                     ]
 

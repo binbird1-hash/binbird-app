@@ -10,9 +10,6 @@ export default function ClientDashboardPage() {
     <section className="space-y-8">
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold text-white">Property overview</h2>
-        <p className="text-sm text-white/60">
-          Filter and organise your properties to keep tabs on service readiness across your portfolio.
-        </p>
       </div>
       <PropertyDashboard properties={properties} isLoading={propertiesLoading} />
     </section>
