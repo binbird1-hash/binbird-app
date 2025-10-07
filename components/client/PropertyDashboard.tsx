@@ -124,7 +124,6 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                 key={groupName}
                 className={clsx(
                   'relative overflow-hidden rounded-3xl border border-white/10 bg-black/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
-                  'before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent before:opacity-80 before:content-[\'\']',
                   {
                     'mt-2': groupIndex > 0,
                   },
