@@ -450,7 +450,7 @@ function CompletedRunContent() {
                         {nextAssignment.dateParts.weekday},{" "}
                         {nextAssignment.dateParts.month}{" "}
                         {nextAssignment.dateParts.day}
-                        <sup>{nextAssignment.dateParts.ordinalSuffix}</sup>.
+                        <sup>{nextAssignment.dateParts.ordinalSuffix}</sup>
                       </>
                     )}
                   </p>
