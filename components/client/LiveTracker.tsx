@@ -137,7 +137,7 @@ export function LiveTracker() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
+      <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">Property map</h3>
@@ -149,7 +149,7 @@ export function LiveTracker() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
+      <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm text-white/60">
             <UserGroupIcon className="h-5 w-5" />
@@ -189,7 +189,7 @@ export function LiveTracker() {
               return (
                 <article
                   key={job.id}
-                  className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/60 via-black/40 to-black/20 p-6"
+                  className="rounded-3xl border border-white/10 bg-black/30 p-6"
                 >
                   <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-5">
@@ -250,17 +250,17 @@ export function LiveTracker() {
                             <div
                               key={`${job.id}-${step.key}-compact`}
                               className={clsx(
-                                'flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-colors',
+                                'flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition-colors',
                                 completed
                                   ? 'border-binbird-red/70 bg-binbird-red/10'
                                   : reached
                                     ? 'border-binbird-red/40 bg-binbird-red/5'
-                                    : 'border-white/10 bg-transparent',
+                                    : 'border-white/10 bg-black/20',
                               )}
                             >
                               <span
                                 className={clsx(
-                                  'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold',
+                                'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold',
                                   completed
                                     ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                     : reached

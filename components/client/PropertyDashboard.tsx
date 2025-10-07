@@ -95,7 +95,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
       <PropertyFilters filters={filters} onChange={setFilters} properties={properties} />
 
       {isLoading ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/10 bg-white/5">
+        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/10 bg-black/30">
           <span className="flex items-center gap-3 text-white/60">
             <span className="h-2 w-2 animate-ping rounded-full bg-binbird-red" />
             Loading properties…
@@ -168,7 +168,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full min-h-[220px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[260px] sm:p-6"
+                        className="group flex h-full min-h-[220px] flex-col justify-between rounded-3xl border border-white/10 bg-black/30 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[260px] sm:p-6"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-1 flex-col gap-5">

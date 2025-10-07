@@ -67,7 +67,7 @@ export function BillingOverview() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
         <div className="flex flex-col gap-2">
           <span className="text-xs uppercase tracking-wide text-white/50">Current plan</span>
           <h3 className="text-2xl font-semibold text-white">{planName}</h3>
@@ -95,7 +95,7 @@ export function BillingOverview() {
         </dl>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
         <header className="mb-4 flex items-center justify-between text-sm text-white/60">
           <span className="inline-flex items-center gap-3">
             <CreditCardIcon className="h-5 w-5" /> Property billing summary

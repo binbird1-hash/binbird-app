@@ -70,7 +70,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/5 p-4 text-white shadow-inner shadow-black/30">
+    <section className="rounded-3xl border border-white/10 bg-black/30 p-4 text-white shadow-inner shadow-black/30">
       <div className="w-full sm:max-w-md">
         <div className="relative">
           <input
