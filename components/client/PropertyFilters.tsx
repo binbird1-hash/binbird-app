@@ -70,7 +70,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
   }
 
   return (
-    <div className="w-full sm:max-w-md">
+    <div className="w-full">
       <div className="relative">
         <input
           id={searchInputId}
