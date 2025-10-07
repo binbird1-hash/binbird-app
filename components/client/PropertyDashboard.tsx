@@ -116,18 +116,30 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
         </div>
       ) : (
         <div className="space-y-10">
-          {Object.entries(grouped).map(([groupName, groupProperties]) => {
+          {Object.entries(grouped).map(([groupName, groupProperties], groupIndex) => {
             const propertyCount = groupProperties.length
             const propertyCountLabel = `${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'}`
             return (
-              <section key={groupName} className="space-y-4">
-                <header className="flex items-center justify-between text-sm text-white/60">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{groupName}</h3>
-                    <p>{propertyCountLabel}</p>
-                  </div>
-                </header>
-                <div className="grid auto-rows-fr grid-cols-1 gap-4">
+              <section
+                key={groupName}
+                className={clsx(
+                  'relative overflow-hidden rounded-3xl border border-white/10 bg-black/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
+                  'before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent before:opacity-80 before:content-[\'\']',
+                  {
+                    'mt-2': groupIndex > 0,
+                  },
+                )}
+              >
+                <div className="space-y-4">
+                  <header className="flex items-center justify-between text-sm text-white/60">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{groupName}</h3>
+                      <p>{propertyCountLabel}</p>
+                    </div>
+                  </header>
+                  <div className="h-px bg-white/10" />
+                </div>
+                <div className="grid auto-rows-fr grid-cols-1 gap-4 pt-4 sm:pt-6">
                   {groupProperties.map((property) => {
                     const seenAddressParts = new Set<string>()
                     const addressParts: string[] = []
