@@ -83,6 +83,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
     propertyId: initialPropertyId && initialPropertyId.length > 0 ? initialPropertyId : DEFAULT_FILTERS.propertyId,
   }))
   const [proofJob, setProofJob] = useState<Job | null>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const { selectedAccount } = useClientPortal()
   const searchInputId = useId()
 
@@ -155,6 +156,12 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
       .slice(0, 10)
   }, [filters.search, searchSuggestions])
 
+  useEffect(() => {
+    if (!filters.search.trim()) {
+      setShowSuggestions(false)
+    }
+  }, [filters.search])
+
   const filteredJobs = useMemo(() => {
     const lowerSearch = filters.search.toLowerCase()
     return jobs.filter((job) => {
@@ -218,23 +225,43 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
               <input
                 type="text"
                 value={filters.search}
-                onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+                onChange={(event) => {
+                  const value = event.target.value
+                  setFilters((current) => ({ ...current, search: value }))
+                  setShowSuggestions(value.trim().length > 0)
+                }}
                 placeholder="Search for an address or property"
                 className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 pr-10 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
                 id={searchInputId}
                 autoComplete="off"
+                onFocus={() => {
+                  if (filters.search.trim().length > 0) {
+                    setShowSuggestions(true)
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    setShowSuggestions(false)
+                  }
+                }}
+                onBlur={() => {
+                  setShowSuggestions(false)
+                }}
               />
               {filters.search.trim().length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setFilters((current) => ({ ...current, search: '' }))}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, search: '' }))
+                    setShowSuggestions(false)
+                  }}
                   className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
                 >
                   <span className="sr-only">Clear search</span>
                   <XMarkIcon className="h-4 w-4" />
                 </button>
               )}
-              {matchingSuggestions.length > 0 && (
+              {showSuggestions && matchingSuggestions.length > 0 && (
                 <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 text-sm text-white shadow-lg backdrop-blur">
                   {matchingSuggestions.map((suggestion) => (
                     <li key={suggestion}>
@@ -243,6 +270,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                         onMouseDown={(event) => {
                           event.preventDefault()
                           setFilters((current) => ({ ...current, search: suggestion }))
+                          setShowSuggestions(false)
                         }}
                         className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
                       >
