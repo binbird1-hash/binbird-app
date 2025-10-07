@@ -161,7 +161,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
   }, [])
 
   return (
-    <div className="relative h-80 overflow-hidden rounded-3xl border border-white bg-black/60">
+    <div className="relative h-80 overflow-hidden rounded-3xl border border-white/15 bg-black/60">
       {!apiKey ? (
         <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
           Add a Google Maps API key to view your properties on the map.
@@ -231,10 +231,10 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-white bg-[#0b0d12]/90 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-sm">
+                      <div className="overflow-hidden rounded-2xl border border-white/15 bg-[#0b0d12]/90 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-sm">
                         <AddressPopoverContent property={marker.property} />
                       </div>
-                      <div className="-mt-1 h-3 w-3 rotate-45 border border-white bg-[#0b0d12]/90" />
+                      <div className="-mt-1 h-3 w-3 rotate-45 border border-white/15 bg-[#0b0d12]/90" />
                     </div>
                   </div>
                 </OverlayViewF>

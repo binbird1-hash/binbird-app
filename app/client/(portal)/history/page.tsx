@@ -18,7 +18,7 @@ export default function ClientHistoryPage() {
         </p>
       </div>
       {jobsLoading ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white bg-white/5 text-white/60">
+        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/15 bg-white/5 text-white/60">
           <span className="flex items-center gap-3">
             <span className="h-2 w-2 animate-ping rounded-full bg-binbird-red" /> Loading job history…
           </span>

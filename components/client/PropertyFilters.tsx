@@ -103,10 +103,10 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
               setShowSuggestions(false)
             }
           }}
-          className="h-11 w-full rounded-2xl border border-white bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+          className="h-11 w-full rounded-2xl border border-white/15 bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
         />
         {showSuggestions && matchingSuggestions.length > 0 && (
-          <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white bg-black/80 p-2 backdrop-blur">
+          <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/15 bg-black/80 p-2 backdrop-blur">
             {matchingSuggestions.map((suggestion) => (
               <li key={suggestion}>
                 <button

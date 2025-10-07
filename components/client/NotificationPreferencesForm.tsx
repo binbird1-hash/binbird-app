@@ -125,10 +125,10 @@ export function NotificationPreferencesForm() {
           return (
             <section
               key={field.key}
-              className="flex flex-col gap-4 rounded-3xl border border-white bg-black/30 p-5"
+              className="flex flex-col gap-4 rounded-3xl border border-white/15 bg-black/30 p-5"
             >
               <div className="flex items-start gap-3">
-                <span className="rounded-2xl border border-white bg-black/40 p-3 text-white/60">
+                <span className="rounded-2xl border border-white/15 bg-black/40 p-3 text-white/60">
                   <Icon className="h-6 w-6" />
                 </span>
                 <div>
@@ -137,7 +137,7 @@ export function NotificationPreferencesForm() {
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <label className="flex items-center justify-between gap-3 rounded-2xl border border-white bg-black/40 px-4 py-3 text-sm">
+                <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-sm">
                   <span className="text-white/70">Email</span>
                   <Switch
                     checked={formState[emailKey]}
@@ -156,7 +156,7 @@ export function NotificationPreferencesForm() {
                     />
                   </Switch>
                 </label>
-                <label className="flex items-center justify-between gap-3 rounded-2xl border border-white bg-black/40 px-4 py-3 text-sm">
+                <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-sm">
                   <span className="text-white/70">Push</span>
                   <Switch
                     checked={formState[pushKey]}
