@@ -11,6 +11,7 @@ export type PlannedRunPayload = {
   endAddress: string | null;
   createdAt: string;
   hasStarted: boolean;
+  nextIdx: number;
 };
 
 const PLANNED_RUN_STORAGE_KEY = "binbird:planned-run";
@@ -92,6 +93,14 @@ function normalizeJob(value: Job): Job {
   };
 }
 
+function normalizeNextIdx(value: unknown, jobsLength: number): number {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return 0;
+  const numeric = Math.floor(numericValue);
+  if (jobsLength <= 0) return 0;
+  return Math.min(Math.max(numeric, 0), Math.max(jobsLength - 1, 0));
+}
+
 function parsePlannedRun(raw: string): PlannedRunPayload | null {
   try {
     const parsed = JSON.parse(raw) as Partial<PlannedRunPayload> | null;
@@ -114,6 +123,8 @@ function parsePlannedRun(raw: string): PlannedRunPayload | null {
       return null;
     }
 
+    const nextIdx = normalizeNextIdx(parsed.nextIdx ?? 0, normalizedJobs.length);
+
     return {
       start: parsed.start,
       end: parsed.end,
@@ -125,6 +136,7 @@ function parsePlannedRun(raw: string): PlannedRunPayload | null {
           ? parsed.createdAt
           : new Date().toISOString(),
       hasStarted: Boolean(parsed.hasStarted),
+      nextIdx,
     };
   } catch (err) {
     console.warn("Unable to parse planned run payload", err);
@@ -163,12 +175,14 @@ export function readPlannedRun(): PlannedRunPayload | null {
 export function writePlannedRun(payload: PlannedRunPayload) {
   const storages = getAvailableStorages();
 
+  const normalizedJobs = Array.isArray(payload.jobs)
+    ? payload.jobs.map((job) => normalizeJob(job))
+    : [];
+
   const normalized: PlannedRunPayload = {
     start: isLatLng(payload.start) ? payload.start : { lat: 0, lng: 0 },
     end: isLatLng(payload.end) ? payload.end : { lat: 0, lng: 0 },
-    jobs: Array.isArray(payload.jobs)
-      ? payload.jobs.map((job) => normalizeJob(job))
-      : [],
+    jobs: normalizedJobs,
     startAddress: normalizeAddress(payload.startAddress),
     endAddress: normalizeAddress(payload.endAddress),
     createdAt:
@@ -176,6 +190,7 @@ export function writePlannedRun(payload: PlannedRunPayload) {
         ? payload.createdAt
         : new Date().toISOString(),
     hasStarted: Boolean(payload.hasStarted),
+    nextIdx: normalizeNextIdx(payload.nextIdx ?? 0, normalizedJobs.length),
   };
 
   if (!normalized.jobs.length) {
