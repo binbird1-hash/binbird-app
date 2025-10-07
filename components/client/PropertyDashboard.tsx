@@ -168,11 +168,11 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full min-h-[220px] flex-col rounded-3xl border border-white/10 bg-black/30 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[260px] sm:p-6"
+                        className="group flex h-full flex-col rounded-3xl border border-white/10 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
                         aria-label={`View job history for ${property.name}`}
                       >
-                        <div className="flex flex-col gap-5">
-                          <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-4">
+                          <div className="space-y-4">
                             <div className="space-y-2">
                               <h4 className="text-xl font-semibold text-white">
                                 {address || property.name}
