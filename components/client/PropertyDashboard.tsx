@@ -180,7 +180,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
