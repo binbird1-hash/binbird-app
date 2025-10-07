@@ -51,10 +51,11 @@ const formatBinFrequency = (description: string | null) => {
   const extras: string[] = []
   if (frequency) {
     const cleaned = frequency.charAt(0).toUpperCase() + frequency.slice(1)
-    extras.push(cleaned)
+    const shouldShowCalendarIcon = /^(fortnightly|weekly)$/i.test(cleaned)
+    extras.push(`${shouldShowCalendarIcon ? '📅 ' : ''}${cleaned}`)
   }
   if (/alternate weeks/i.test(description)) {
-    extras.push('Alternate weeks')
+    extras.push('Alternate Fortnight')
   }
   if (extras.length === 0) {
     return 'Schedule not set'
@@ -204,10 +205,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
-                            <span className="text-white/70">
-                              Total bins · <span className="text-white">{property.binCounts.total}</span>
-                            </span>
+                          <div className="flex items-center justify-end text-xs font-medium uppercase tracking-wide text-white/60">
                             <span className="flex items-center gap-2 text-white/70 transition group-hover:text-white">
                               View job history <span aria-hidden>→</span>
                             </span>
