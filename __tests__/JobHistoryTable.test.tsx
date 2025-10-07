@@ -41,6 +41,7 @@ const properties: Property[] = [
     binTypes: ['General'],
     binCounts: { garbage: 1, recycling: 0, compost: 0, total: 1 },
     binDescriptions: { garbage: 'Garbage (weekly)', recycling: null, compost: null },
+    binFlips: { garbage: false, recycling: false, compost: false },
     nextServiceAt: null,
     latitude: null,
     longitude: null,

@@ -45,6 +45,11 @@ export type Property = {
     recycling: string | null
     compost: string | null
   }
+  binFlips: {
+    garbage: boolean
+    recycling: boolean
+    compost: boolean
+  }
   nextServiceAt: string | null
   latitude: number | null
   longitude: number | null
@@ -268,6 +273,14 @@ const extractEmailCandidates = (user: User): string[] => {
   return Array.from(emails)
 }
 
+const isFlipSchedule = (frequency: string | null, flip: string | null): boolean => {
+  if (!frequency) return false
+  const normalizedFrequency = frequency.trim().toLowerCase()
+  if (!normalizedFrequency) return false
+  const normalizedFlip = flip?.trim().toLowerCase()
+  return normalizedFrequency === 'fortnightly' && normalizedFlip === 'yes'
+}
+
 const describeBinFrequency = (
   label: string,
   frequency: string | null,
@@ -275,7 +288,7 @@ const describeBinFrequency = (
 ) => {
   if (!frequency) return null
   const base = `${label} (${frequency.toLowerCase()})`
-  if (frequency === 'Fortnightly' && flip === 'Yes') {
+  if (isFlipSchedule(frequency, flip)) {
     return `${base}, alternate weeks`
   }
   return base
@@ -327,6 +340,11 @@ const toProperty = (row: ClientListRow): Property => {
     recycling: recyclingDescription,
     compost: compostDescription,
   }
+  const binFlips = {
+    garbage: isFlipSchedule(row.red_freq, row.red_flip),
+    recycling: isFlipSchedule(row.yellow_freq, row.yellow_flip),
+    compost: isFlipSchedule(row.green_freq, row.green_flip),
+  }
   const parseBinCount = (value: number | string | null | undefined): number => {
     if (typeof value === 'number' && Number.isFinite(value)) {
       const rounded = Math.round(value)
@@ -363,6 +381,7 @@ const toProperty = (row: ClientListRow): Property => {
       total: garbageCount + recyclingCount + compostCount,
     },
     binDescriptions,
+    binFlips,
     nextServiceAt,
     latitude: lat,
     longitude: lng,
