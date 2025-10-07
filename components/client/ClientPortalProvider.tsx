@@ -207,6 +207,12 @@ const normaliseIdentifier = (value: string | number | null | undefined): string 
   return trimmed.length ? trimmed : null
 }
 
+const normaliseStorageKey = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : null
+}
+
 const extractIdentifierArray = (
   metadata: Record<string, unknown> | undefined,
   keys: string[],
@@ -690,7 +696,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     let logsQuery = supabase
       .from('logs')
       .select(
-        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
+        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, save_path, done_on, gps_lat, gps_lng, created_at',
       )
       .gte('done_on', formatISO(twoMonthsAgo, { representation: 'date' }))
 
@@ -733,6 +739,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     ;(logRows ?? []).forEach((log) => {
       const jobIdKey = normaliseIdentifier(log.job_id)
       const logAccountId = normaliseIdentifier(log.account_id)
+      const storedProofKey = normaliseStorageKey(log.save_path ?? log.photo_path)
 
       if (jobIdKey && (!logAccountId || logAccountId === accountId)) {
         const existing = logsByJobId.get(jobIdKey)
@@ -766,7 +773,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         startedAt: null,
         completedAt: completedAtIso,
         crewName: null,
-        proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
+        proofPhotoKeys: storedProofKey ? [storedProofKey] : [],
         proofUploadedAt: uploadedAtIso,
         routePolyline: null,
         lastLatitude: log.gps_lat ?? undefined,
@@ -803,7 +810,12 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         : latestLog
           ? 'en_route'
           : 'scheduled'
-      const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
+      const proofPhotoKeys = Array.from(
+        new Set(
+          [normaliseStorageKey(job.photo_path), normaliseStorageKey(latestLog?.save_path ?? latestLog?.photo_path)]
+            .filter((value): value is string => Boolean(value)),
+        ),
+      )
       const bins = normaliseBinList(job.bins)
       combinedJobs.push({
         id: job.id,
