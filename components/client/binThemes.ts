@@ -15,4 +15,4 @@ export const BIN_THEME: Record<BinThemeKey, { panel: string; pill: string }> = {
   },
 }
 
-export const DEFAULT_BIN_PILL = 'border-white/30 bg-white/10 text-white/80'
+export const DEFAULT_BIN_PILL = 'border-white bg-white/10 text-white/80'

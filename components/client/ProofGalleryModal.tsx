@@ -83,7 +83,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-90"
             >
-              <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/20 bg-black/90 text-white shadow-2xl">
+              <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white bg-black/90 text-white shadow-2xl">
                 <div className="aspect-video w-full bg-black/60">
                   {loading ? (
                     <div className="flex h-full items-center justify-center text-white/70">
@@ -101,7 +101,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                           <button
                             type="button"
                             onClick={goPrevious}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-white bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white"
                             aria-label="Previous photo"
                           >
                             <ArrowLeftIcon className="h-6 w-6" />
@@ -109,7 +109,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                           <button
                             type="button"
                             onClick={goNext}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full border border-white bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white"
                             aria-label="Next photo"
                           >
                             <ArrowRightIcon className="h-6 w-6" />

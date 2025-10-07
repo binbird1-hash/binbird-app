@@ -101,14 +101,14 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
       <PropertyFilters filters={filters} onChange={setFilters} properties={properties} />
 
       {isLoading ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/20 bg-black/30">
+        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white bg-black/30">
           <span className="flex items-center gap-3 text-white/60">
             <span className="h-2 w-2 animate-ping rounded-full bg-binbird-red" />
             Loading properties…
           </span>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/30 bg-black/40 px-6 py-12 text-center text-white/60">
+        <div className="rounded-3xl border border-dashed border-white bg-black/40 px-6 py-12 text-center text-white/60">
           <h3 className="text-lg font-semibold text-white">No properties found</h3>
           <p className="mt-2 text-sm">
             Adjust your filters or contact the BinBird team to connect additional properties to this account.
@@ -123,7 +123,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
               <section
                 key={groupName}
                 className={clsx(
-                  'relative overflow-hidden rounded-3xl border border-white/20 bg-black/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
+                  'relative overflow-hidden rounded-3xl border border-white bg-black/25 px-6 py-6 backdrop-blur-sm',
                   "before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-white/30 before:opacity-80 before:content-['']",
                   {
                     'mt-2': groupIndex > 0,
@@ -195,7 +195,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full w-full flex-col rounded-3xl border border-white/20 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
+                className="group flex h-full w-full flex-col rounded-3xl border border-white bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-col gap-4">
@@ -213,7 +213,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <div
                                   key={bin.key}
                                   className={clsx(
-                                    'flex h-full min-h-[72px] min-w-0 flex-col justify-center gap-2 rounded-2xl border border-white/20 px-3 py-2 text-xs transition-colors sm:px-4 sm:py-3 sm:text-sm',
+                                    'flex h-full min-h-[72px] min-w-0 flex-col justify-center gap-2 rounded-2xl border border-white px-3 py-2 text-xs transition-colors sm:px-4 sm:py-3 sm:text-sm',
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
