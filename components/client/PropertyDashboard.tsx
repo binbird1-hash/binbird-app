@@ -65,9 +65,17 @@ const getBinFrequencyInfo = (description: string | null) => {
   const cleaned = frequency.charAt(0).toUpperCase() + frequency.slice(1)
   const normalized = cleaned.toLowerCase()
 
+  const isFlip = normalized.includes('flip')
+  const isFortnightly = normalized.includes('fortnight')
+  const isWeekly = normalized.includes('week')
+
+  if (isFlip) {
+    return { label: 'Alternate Fortnight', showCalendarIcon: true }
+  }
+
   return {
     label: cleaned,
-    showCalendarIcon: normalized === 'fortnightly' || normalized === 'weekly',
+    showCalendarIcon: isFortnightly || isWeekly,
   }
 }
 
