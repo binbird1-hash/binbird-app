@@ -98,7 +98,7 @@ export function SettingsForm() {
           <input
             type="text"
             {...register('fullName', { required: 'Your name is required.' })}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="rounded-2xl border border-white/20 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
           />
           {errors.fullName && <span className="text-xs text-red-300">{errors.fullName.message}</span>}
         </label>
@@ -107,7 +107,7 @@ export function SettingsForm() {
           <input
             type="tel"
             {...register('phone')}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="rounded-2xl border border-white/20 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
           />
         </label>
         <label className="flex flex-col gap-2 text-sm">
@@ -115,14 +115,14 @@ export function SettingsForm() {
           <input
             type="text"
             {...register('companyName')}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="rounded-2xl border border-white/20 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
           />
         </label>
         <label className="flex flex-col gap-2 text-sm">
           <span className="text-white/60">Timezone</span>
           <select
             {...register('timezone')}
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="rounded-2xl border border-white/20 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
           >
             {TIMEZONES.map((zone) => (
               <option key={zone} value={zone}>
@@ -137,7 +137,7 @@ export function SettingsForm() {
             type="text"
             {...register('emergencyContact')}
             placeholder="Name & phone of on-site contact"
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="rounded-2xl border border-white/20 bg-black/40 px-4 py-2 text-white focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
           />
         </label>
       </div>

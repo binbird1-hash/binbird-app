@@ -220,7 +220,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
                 placeholder="Search for an address or property"
-                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 pr-10 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
+                className="w-full rounded-2xl border border-white/20 bg-black/40 px-4 py-2 pr-10 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
                 id={searchInputId}
                 autoComplete="off"
               />
@@ -235,7 +235,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                 </button>
               )}
               {matchingSuggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 text-sm text-white shadow-lg backdrop-blur">
+                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/20 bg-black/80 p-2 text-sm text-white shadow-lg backdrop-blur">
                   {matchingSuggestions.map((suggestion) => (
                     <li key={suggestion}>
                       <button
@@ -259,14 +259,14 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
           <button
             type="button"
             onClick={handleDownloadCsv}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red md:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red md:w-auto"
           >
             <DocumentArrowDownIcon className="h-5 w-5" /> Export CSV
           </button>
         </div>
       </div>
 
-      <div className="relative overflow-x-auto rounded-3xl border border-white/10 bg-black/20">
+      <div className="relative overflow-x-auto rounded-3xl border border-white/20 bg-black/20">
         <table className="min-w-[760px] w-full table-auto divide-y divide-white/10 text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-white/40">
             <tr>
@@ -344,7 +344,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                       type="button"
                       onClick={() => setProofJob(job)}
                       disabled={!job.proofPhotoKeys || job.proofPhotoKeys.length === 0}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white transition hover:border-binbird-red disabled:cursor-not-allowed disabled:border-white/5 disabled:text-white/30"
+                      className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white transition hover:border-binbird-red disabled:cursor-not-allowed disabled:border-white/5 disabled:text-white/30"
                     >
                       <PhotoIcon className="h-4 w-4" /> View
                     </button>
@@ -388,7 +388,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
       <Listbox value={value} onChange={onChange}>
         {({ open }) => (
           <div className="relative">
-            <Listbox.Button className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
+            <Listbox.Button className="flex w-full items-center justify-between rounded-2xl border border-white/20 bg-black/30 px-4 py-2 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
               <span className="block truncate text-white/90">{selectedOption?.label}</span>
               <ChevronUpDownIcon className="h-4 w-4 text-white/60" aria-hidden="true" />
             </Listbox.Button>
@@ -399,7 +399,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-black/90 p-1 text-sm text-white shadow-xl backdrop-blur">
+              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/20 bg-black/90 p-1 text-sm text-white shadow-xl backdrop-blur">
                 {options.map((option) => (
                   <Listbox.Option
                     key={option.value}

@@ -53,7 +53,7 @@ export default function ClientResetPasswordPage() {
           <input
             id="email"
             type="email"
-            className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="mt-2 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required

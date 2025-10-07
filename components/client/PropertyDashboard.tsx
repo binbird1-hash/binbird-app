@@ -101,7 +101,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
       <PropertyFilters filters={filters} onChange={setFilters} properties={properties} />
 
       {isLoading ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/10 bg-black/30">
+        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/20 bg-black/30">
           <span className="flex items-center gap-3 text-white/60">
             <span className="h-2 w-2 animate-ping rounded-full bg-binbird-red" />
             Loading properties…
@@ -123,7 +123,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
               <section
                 key={groupName}
                 className={clsx(
-                  'relative overflow-hidden rounded-3xl border border-white/10 bg-black/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
+                  'relative overflow-hidden rounded-3xl border border-white/20 bg-black/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
                   'before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent before:opacity-80 before:content-[\'\']',
                   {
                     'mt-2': groupIndex > 0,
@@ -195,7 +195,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full w-full flex-col rounded-3xl border border-white/10 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
+                        className="group flex h-full w-full flex-col rounded-3xl border border-white/20 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-col gap-4">

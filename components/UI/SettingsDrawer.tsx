@@ -405,7 +405,7 @@ export default function SettingsDrawer() {
                                     "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
                                     isSelected
                                       ? "border-white bg-white text-black shadow-sm"
-                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                      : "border-white/25 text-white/70 hover:border-white/35 hover:text-white"
                                   )}
                                   aria-pressed={isSelected}
                                 >
@@ -428,7 +428,7 @@ export default function SettingsDrawer() {
                                     "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-base font-semibold uppercase tracking-wide transition",
                                     isSelected
                                       ? "border-white bg-white text-black shadow-sm"
-                                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                                      : "border-white/25 text-white/70 hover:border-white/35 hover:text-white"
                                   )}
                                   aria-pressed={isSelected}
                                 >

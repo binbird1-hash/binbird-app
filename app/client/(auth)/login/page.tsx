@@ -66,7 +66,7 @@ export default function ClientLoginPage() {
             type="email"
             placeholder="Email"
             autoComplete="email"
-            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
@@ -77,7 +77,7 @@ export default function ClientLoginPage() {
           <label className="sr-only" htmlFor="password">
             Password
           </label>
-          <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
+          <div className="flex items-center rounded-xl border border-white/20 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}

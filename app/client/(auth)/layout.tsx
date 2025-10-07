@@ -12,7 +12,7 @@ export default function ClientAuthLayout({ children }: { children: ReactNode }) 
             Sign in to BinBird to manage properties, track service progress, and keep your team aligned.
           </p>
         </div>
-        <div className="w-full rounded-3xl border border-white/10 bg-black/70 p-8 shadow-2xl backdrop-blur">
+        <div className="w-full rounded-3xl border border-white/20 bg-black/70 p-8 shadow-2xl backdrop-blur">
           {children}
         </div>
         <p className="mt-10 text-center text-xs text-white/50">
