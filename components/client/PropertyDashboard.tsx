@@ -120,7 +120,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                     <p>{propertyCountLabel}</p>
                   </div>
                 </header>
-                <div className="grid auto-rows-fr gap-4 md:grid-cols-2">
+                <div className="grid auto-rows-fr grid-cols-1 gap-4">
                   {groupProperties.map((property) => {
                     const seenAddressParts = new Set<string>()
                     const addressParts: string[] = []
@@ -167,7 +167,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full flex-col rounded-3xl border border-white/10 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
+                        className="group flex h-full w-full flex-col rounded-3xl border border-white/10 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-col gap-4">
@@ -180,7 +180,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <p className="text-sm text-white/60">{property.name}</p>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                               {binSummaries.map((bin) => (
                                 <div
                                   key={bin.key}
