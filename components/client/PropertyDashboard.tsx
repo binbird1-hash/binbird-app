@@ -162,8 +162,8 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         className="group flex h-full min-h-[280px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[320px] sm:p-6 lg:min-h-[360px]"
                         aria-label={`View job history for ${property.name}`}
                       >
-                        <div className="flex flex-1 flex-col gap-4">
-                          <div className="space-y-2 sm:space-y-3">
+                        <div className="flex flex-1 flex-col gap-6">
+                          <div className="flex flex-1 flex-col gap-4">
                             <div className="space-y-2">
                               <h4 className="text-xl font-semibold text-white">
                                 {address || property.name}
@@ -190,7 +190,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 </div>
                               ))}
                             </div>
-                            <div className="text-sm text-white/60">
+                            <div className="space-y-2 text-sm text-white/60">
                               <p>
                                 Next service:
                                 <span className="ml-2 font-medium text-white">
@@ -204,14 +204,14 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                               </p>
                             </div>
                           </div>
-                        </div>
-                        <div className="mt-6 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
-                          <span className="text-white/70">
-                            Total bins · <span className="text-white">{property.binCounts.total}</span>
-                          </span>
-                          <span className="flex items-center gap-2 text-white/70 transition group-hover:text-white">
-                            View job history <span aria-hidden>→</span>
-                          </span>
+                          <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
+                            <span className="text-white/70">
+                              Total bins · <span className="text-white">{property.binCounts.total}</span>
+                            </span>
+                            <span className="flex items-center gap-2 text-white/70 transition group-hover:text-white">
+                              View job history <span aria-hidden>→</span>
+                            </span>
+                          </div>
                         </div>
                       </button>
                     )
