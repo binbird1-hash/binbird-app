@@ -29,7 +29,46 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
         setLoading(false)
         return
       }
-      const { data, error } = await supabase.storage.from('proofs').createSignedUrls(photoKeys, 60 * 60)
+      const bucket = supabase.storage.from('proofs')
+      const resolvedKeys: string[] = []
+
+      await Promise.all(
+        photoKeys.map(async (key) => {
+          const trimmedKey = key.trim()
+          if (!trimmedKey) return
+
+          // Detect keys that look like full file paths (contain an extension)
+          const hasExtension = /\.[^\/]+$/.test(trimmedKey)
+          if (hasExtension) {
+            resolvedKeys.push(trimmedKey)
+            return
+          }
+
+          const directoryPath = trimmedKey.replace(/\/+$/, '')
+          const { data: listedFiles, error: listError } = await bucket.list(directoryPath, { limit: 100 })
+
+          if (listError) {
+            console.warn('Failed to list proof directory', { key: trimmedKey, error: listError })
+            return
+          }
+
+          listedFiles
+            ?.filter((file) => Boolean(file.name) && !file.name.endsWith('/'))
+            .forEach((file) => {
+              resolvedKeys.push(`${directoryPath}${directoryPath ? '/' : ''}${file.name}`)
+            })
+        })
+      )
+
+      const uniqueKeys = Array.from(new Set(resolvedKeys))
+
+      if (uniqueKeys.length === 0) {
+        setUrls([])
+        setLoading(false)
+        return
+      }
+
+      const { data, error } = await bucket.createSignedUrls(uniqueKeys, 60 * 60)
       if (error) {
         console.warn('Failed to fetch proof URLs', error)
         setUrls([])
