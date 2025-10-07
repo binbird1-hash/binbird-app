@@ -203,8 +203,11 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                               ))}
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-white/60">
-                            <div className="space-y-1">
+                          <div className="flex flex-col gap-2 text-sm text-white/60">
+                            <p className="text-xs text-white/50">
+                              Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
+                            </p>
+                            <div className="flex flex-wrap items-center justify-between gap-3">
                               <p>
                                 Next service:
                                 <span className="ml-2 font-medium text-white">
@@ -213,13 +216,10 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                     : 'Awaiting schedule'}
                                 </span>
                               </p>
-                              <p className="text-xs text-white/50">
-                                Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
-                              </p>
+                              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition group-hover:text-white">
+                                View job history <span aria-hidden>→</span>
+                              </span>
                             </div>
-                            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition group-hover:text-white">
-                              View job history <span aria-hidden>→</span>
-                            </span>
                           </div>
                         </div>
                       </button>
