@@ -162,8 +162,8 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         className="group flex h-full min-h-[280px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[320px] sm:p-6 lg:min-h-[360px]"
                         aria-label={`View job history for ${property.name}`}
                       >
-                        <div className="flex flex-1 flex-col gap-5">
-                          <div className="space-y-3">
+                        <div className="flex flex-1 flex-col gap-4">
+                          <div className="space-y-2 sm:space-y-3">
                             <div className="space-y-2">
                               <h4 className="text-xl font-semibold text-white">
                                 {address || property.name}
@@ -177,33 +177,33 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 <div
                                   key={bin.key}
                                   className={clsx(
-                                    'flex h-full min-h-[72px] min-w-0 flex-col justify-between rounded-2xl border px-3 py-2 text-xs transition-colors sm:px-4 sm:py-3 sm:text-sm',
+                                    'flex h-full min-h-[72px] min-w-0 flex-col justify-center gap-2 rounded-2xl border px-3 py-2 text-xs transition-colors sm:px-4 sm:py-3 sm:text-sm',
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
-                                  <div className="space-y-1">
-                                    <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white sm:text-base">
-                                      {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
-                                    </p>
-                                    <p className="text-xs text-white/70 sm:text-sm">
-                                      {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
-                                    </p>
-                                  </div>
+                                  <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white sm:text-base">
+                                    {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
+                                  </p>
+                                  <p className="text-xs text-white/70 sm:text-sm">
+                                    {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
+                                  </p>
                                 </div>
                               ))}
                             </div>
+                            <div className="text-sm text-white/60">
+                              <p>
+                                Next service:
+                                <span className="ml-2 font-medium text-white">
+                                  {property.nextServiceAt
+                                    ? format(new Date(property.nextServiceAt), 'EEE, MMM d')
+                                    : 'Awaiting schedule'}
+                                </span>
+                              </p>
+                              <p className="text-xs text-white/50">
+                                Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="mt-4 space-y-2 text-sm text-white/60">
-                          <p>
-                            Next service:
-                            <span className="ml-2 font-medium text-white">
-                              {property.nextServiceAt ? format(new Date(property.nextServiceAt), 'EEE, MMM d') : 'Awaiting schedule'}
-                            </span>
-                          </p>
-                          <p className="text-xs text-white/50">
-                            Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
-                          </p>
                         </div>
                         <div className="mt-6 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
                           <span className="text-white/70">
