@@ -82,6 +82,29 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
 
   const filtered = useMemo(() => properties.filter((property) => matchesFilters(property, filters)), [properties, filters])
   const grouped = useMemo(() => groupProperties(filtered), [filtered])
+  const portfolioSummary = useMemo(() => {
+    const totalProperties = properties.length
+    let totalBins = 0
+    let propertiesWithSchedules = 0
+
+    properties.forEach((property) => {
+      totalBins += property.binCounts.garbage + property.binCounts.recycling + property.binCounts.compost
+
+      if (Object.values(property.binDescriptions).some(Boolean)) {
+        propertiesWithSchedules += 1
+      }
+    })
+
+    const scheduleCoverage =
+      totalProperties === 0 ? 0 : Math.round((propertiesWithSchedules / totalProperties) * 100)
+
+    return {
+      totalProperties,
+      totalBins,
+      propertiesWithSchedules,
+      scheduleCoverage,
+    }
+  }, [properties])
 
   const handlePropertyClick = useCallback(
     (propertyId: string) => {
@@ -92,7 +115,28 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
 
   return (
     <div className="space-y-6 text-white">
-      <PropertyFilters filters={filters} onChange={setFilters} properties={properties} />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <PropertyFilters filters={filters} onChange={setFilters} properties={properties} />
+        <dl className="grid w-full max-w-xl grid-cols-2 gap-3 rounded-3xl border border-white/10 bg-black/30 p-4 text-sm text-white/70 sm:grid-cols-3 sm:text-base lg:max-w-2xl">
+          <div className="rounded-2xl bg-white/5 p-3">
+            <dt className="text-xs font-medium uppercase tracking-wide text-white/50">Managed properties</dt>
+            <dd className="mt-2 text-2xl font-semibold text-white">{portfolioSummary.totalProperties}</dd>
+          </div>
+          <div className="rounded-2xl bg-white/5 p-3">
+            <dt className="text-xs font-medium uppercase tracking-wide text-white/50">Total bins tracked</dt>
+            <dd className="mt-2 text-2xl font-semibold text-white">{portfolioSummary.totalBins}</dd>
+          </div>
+          <div className="rounded-2xl bg-white/5 p-3">
+            <dt className="text-xs font-medium uppercase tracking-wide text-white/50">Schedule coverage</dt>
+            <dd className="mt-2 text-2xl font-semibold text-white">
+              {portfolioSummary.scheduleCoverage}%
+              <span className="ml-2 text-xs font-medium text-white/60">
+                ({portfolioSummary.propertiesWithSchedules} properties)
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </div>
 
       {isLoading ? (
         <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/10 bg-black/30">
