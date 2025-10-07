@@ -31,21 +31,7 @@ const formatAddress = (property: Property) => {
   return parts.join(', ')
 }
 
-const formatBinTotal = (value: number) => (value > 0 ? value : 0)
-
 export function PropertyFilters({ filters, onChange, properties }: PropertyFiltersProps) {
-  const totals = useMemo(() => {
-    return properties.reduce(
-      (accumulator, property) => {
-        accumulator.garbage += property.binCounts?.garbage ?? 0
-        accumulator.recycling += property.binCounts?.recycling ?? 0
-        accumulator.compost += property.binCounts?.compost ?? 0
-        return accumulator
-      },
-      { garbage: 0, recycling: 0, compost: 0 },
-    )
-  }, [properties])
-
   const searchSuggestions = useMemo(() => {
     const suggestions = new Set<string>()
     properties.forEach((property) => {
@@ -85,58 +71,36 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
 
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-4 text-white shadow-inner shadow-black/30">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="w-full sm:max-w-md">
-          <div className="relative">
-            <input
-              id={searchInputId}
-              type="search"
-              autoComplete="off"
-              placeholder="Search properties"
-              value={filters.search}
-              onChange={(event) => update({ search: event.target.value })}
-              className="h-11 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-            />
-            {matchingSuggestions.length > 0 && (
-              <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
-                {matchingSuggestions.map((suggestion) => (
-                  <li key={suggestion}>
-                    <button
-                      type="button"
-                      onMouseDown={(event) => {
-                        event.preventDefault()
-                        update({ search: suggestion })
-                      }}
-                      className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
-                    >
-                      {suggestion}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      <div className="w-full sm:max-w-md">
+        <div className="relative">
+          <input
+            id={searchInputId}
+            type="search"
+            autoComplete="off"
+            placeholder="Search properties"
+            value={filters.search}
+            onChange={(event) => update({ search: event.target.value })}
+            className="h-11 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+          />
+          {matchingSuggestions.length > 0 && (
+            <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
+              {matchingSuggestions.map((suggestion) => (
+                <li key={suggestion}>
+                  <button
+                    type="button"
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      update({ search: suggestion })
+                    }}
+                    className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
+                  >
+                    {suggestion}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <dl className="grid w-full gap-2 sm:max-w-xl sm:grid-cols-3 sm:gap-3">
-          <div
-            className="flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2"
-          >
-            <dt className="text-xs font-medium uppercase tracking-wide text-white/60">Garbage bins</dt>
-            <dd className="text-lg font-semibold">{formatBinTotal(totals.garbage)}</dd>
-          </div>
-          <div
-            className="flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2"
-          >
-            <dt className="text-xs font-medium uppercase tracking-wide text-white/60">Recycling bins</dt>
-            <dd className="text-lg font-semibold">{formatBinTotal(totals.recycling)}</dd>
-          </div>
-          <div
-            className="flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2"
-          >
-            <dt className="text-xs font-medium uppercase tracking-wide text-white/60">Compost bins</dt>
-            <dd className="text-lg font-semibold">{formatBinTotal(totals.compost)}</dd>
-          </div>
-        </dl>
       </div>
     </section>
   )
