@@ -21,7 +21,7 @@ export function PortalHeader() {
   }
 
   return (
-    <header className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black/70 p-4 text-white shadow-2xl shadow-black/30 backdrop-blur-lg sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <header className="flex flex-col gap-4 rounded-3xl border border-white/20 bg-black/70 p-4 text-white shadow-2xl shadow-black/30 backdrop-blur-lg sm:flex-row sm:items-center sm:justify-between sm:p-6">
       <div>
         <p className="text-sm uppercase tracking-[0.45em] text-white/40">{greeting}</p>
         <h1 className="mt-2 text-2xl font-semibold text-white">

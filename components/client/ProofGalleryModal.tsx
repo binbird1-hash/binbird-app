@@ -83,7 +83,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-90"
             >
-              <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/90 text-white shadow-2xl">
+              <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/20 bg-black/90 text-white shadow-2xl">
                 <div className="aspect-video w-full bg-black/60">
                   {loading ? (
                     <div className="flex h-full items-center justify-center text-white/70">

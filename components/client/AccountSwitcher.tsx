@@ -11,7 +11,7 @@ export function AccountSwitcher() {
 
   if (accounts.length <= 1 || !selectedAccount) {
     return (
-      <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white/70">
+      <div className="flex w-full items-center gap-3 rounded-2xl border border-white/20 bg-black/30 px-4 py-2 text-sm text-white/70">
         <UserCircleIcon className="h-5 w-5" />
         <div>
           <p className="font-medium text-white">{selectedAccount?.name ?? 'Primary Account'}</p>
@@ -25,7 +25,7 @@ export function AccountSwitcher() {
     <Listbox value={selectedAccount?.id} onChange={selectAccount}>
       {({ open }) => (
         <div className="relative w-full sm:max-w-xs">
-          <Listbox.Button className="relative flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-left text-sm font-medium text-white shadow-lg shadow-black/20 transition hover:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
+          <Listbox.Button className="relative flex w-full items-center justify-between rounded-2xl border border-white/20 bg-black/30 px-4 py-2 text-left text-sm font-medium text-white shadow-lg shadow-black/20 transition hover:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
             <span className="flex flex-col">
               <span>{selectedAccount?.name}</span>
               <span className="text-xs uppercase tracking-wide text-white/50">{selectedAccount?.role}</span>
@@ -39,7 +39,7 @@ export function AccountSwitcher() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-gray-900/95 p-1 text-sm text-white shadow-xl backdrop-blur">
+            <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/20 bg-gray-900/95 p-1 text-sm text-white shadow-xl backdrop-blur">
               {accounts.map((account) => (
                 <Listbox.Option
                   key={account.id}

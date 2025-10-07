@@ -137,7 +137,7 @@ export function LiveTracker() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
+      <section className="rounded-3xl border border-white/20 bg-black/30 p-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">Property map</h3>
@@ -149,7 +149,7 @@ export function LiveTracker() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
+      <section className="rounded-3xl border border-white/20 bg-black/30 p-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm text-white/60">
             <UserGroupIcon className="h-5 w-5" />
@@ -160,7 +160,7 @@ export function LiveTracker() {
             onClick={() => {
               void handleRefresh()
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red hover:text-white"
           >
             <BoltIcon className="h-5 w-5" /> Refresh data
           </button>
@@ -173,7 +173,7 @@ export function LiveTracker() {
             </span>
           </div>
         ) : todaysJobs.length === 0 ? (
-          <div className="mt-6 rounded-3xl border border-dashed border-white/20 bg-black/40 px-6 py-12 text-center text-white/60">
+          <div className="mt-6 rounded-3xl border border-dashed border-white/30 bg-black/40 px-6 py-12 text-center text-white/60">
             <h4 className="text-lg font-semibold text-white">No active jobs today</h4>
             <p className="mt-2 text-sm">We’ll list your next service here once the crew is on the schedule.</p>
           </div>
@@ -189,7 +189,7 @@ export function LiveTracker() {
               return (
                 <article
                   key={job.id}
-                  className="rounded-3xl border border-white/10 bg-black/30 p-6"
+                  className="rounded-3xl border border-white/20 bg-black/30 p-6"
                 >
                   <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-5">
@@ -250,12 +250,12 @@ export function LiveTracker() {
                             <div
                               key={`${job.id}-${step.key}-compact`}
                               className={clsx(
-                                'flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition-colors',
+                                'flex flex-col gap-3 rounded-2xl border border-white/20 bg-black/30 p-4 text-left transition-colors',
                                 completed
                                   ? 'border-binbird-red/70 bg-binbird-red/10'
                                   : reached
                                     ? 'border-binbird-red/40 bg-binbird-red/5'
-                                    : 'border-white/10 bg-black/20',
+                                    : 'border-white/20 bg-black/20',
                               )}
                             >
                               <span
@@ -265,7 +265,7 @@ export function LiveTracker() {
                                     ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                     : reached
                                       ? 'border-binbird-red text-binbird-red'
-                                      : 'border-white/15 text-white/40',
+                                    : 'border-white/30 text-white/40',
                                 )}
                               >
                                 {completed ? <CheckIcon className="h-5 w-5" /> : index + 1}
@@ -298,7 +298,7 @@ export function LiveTracker() {
                                       ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                       : reached
                                         ? 'border-binbird-red text-binbird-red'
-                                        : 'border-white/15 text-white/40',
+                                        : 'border-white/30 text-white/40',
                                   )}
                                 >
                                   {completed ? <CheckIcon className="h-6 w-6" /> : index + 1}
