@@ -4,6 +4,7 @@
 import clsx from 'clsx'
 import { useCallback, useMemo, useState } from 'react'
 import { format } from 'date-fns'
+import { CalendarDaysIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import type { Property } from './ClientPortalProvider'
 import { PropertyFilters, type PropertyFilterState } from './PropertyFilters'
@@ -44,22 +45,30 @@ function groupProperties(properties: Property[]) {
   }, {})
 }
 
-const formatBinFrequency = (description: string | null) => {
-  if (!description) return 'Schedule not set'
+const getBinFrequencyInfo = (description: string | null) => {
+  if (!description) {
+    return { label: 'Schedule not set', showCalendarIcon: false }
+  }
+
   const frequencyMatch = description.match(/\(([^)]+)\)/)
   const frequency = frequencyMatch?.[1]
-  const extras: string[] = []
-  if (frequency) {
-    const cleaned = frequency.charAt(0).toUpperCase() + frequency.slice(1)
-    extras.push(cleaned)
+
+  if (!frequency) {
+    const trimmed = description.trim()
+    if (!trimmed || /alternate/i.test(trimmed)) {
+      return { label: 'Schedule not set', showCalendarIcon: false }
+    }
+
+    return { label: trimmed, showCalendarIcon: false }
   }
-  if (/alternate weeks/i.test(description)) {
-    extras.push('Alternate weeks')
+
+  const cleaned = frequency.charAt(0).toUpperCase() + frequency.slice(1)
+  const normalized = cleaned.toLowerCase()
+
+  return {
+    label: cleaned,
+    showCalendarIcon: normalized === 'fortnightly' || normalized === 'weekly',
   }
-  if (extras.length === 0) {
-    return 'Schedule not set'
-  }
-  return extras.join(', ')
 }
 
 export type PropertyDashboardProps = {
@@ -132,25 +141,25 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                       key: BinThemeKey
                       label: string
                       count: number
-                      description: string
+                      frequency: ReturnType<typeof getBinFrequencyInfo>
                     }> = [
                       {
                         key: 'garbage',
                         label: 'Garbage',
                         count: property.binCounts.garbage,
-                        description: formatBinFrequency(property.binDescriptions.garbage),
+                        frequency: getBinFrequencyInfo(property.binDescriptions.garbage),
                       },
                       {
                         key: 'recycling',
                         label: 'Recycling',
                         count: property.binCounts.recycling,
-                        description: formatBinFrequency(property.binDescriptions.recycling),
+                        frequency: getBinFrequencyInfo(property.binDescriptions.recycling),
                       },
                       {
                         key: 'compost',
                         label: 'Compost',
                         count: property.binCounts.compost,
-                        description: formatBinFrequency(property.binDescriptions.compost),
+                        frequency: getBinFrequencyInfo(property.binDescriptions.compost),
                       },
                     ]
 
@@ -159,11 +168,11 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full min-h-[280px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[320px] sm:p-6 lg:min-h-[360px]"
+                        className="group flex h-full min-h-[220px] flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-h-[260px] sm:p-6"
                         aria-label={`View job history for ${property.name}`}
                       >
-                        <div className="flex flex-1 flex-col gap-6">
-                          <div className="flex flex-1 flex-col gap-4">
+                        <div className="flex flex-1 flex-col gap-5">
+                          <div className="flex flex-1 flex-col gap-3">
                             <div className="space-y-2">
                               <h4 className="text-xl font-semibold text-white">
                                 {address || property.name}
@@ -184,13 +193,18 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                   <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white sm:text-base">
                                     {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
                                   </p>
-                                  <p className="text-xs text-white/70 sm:text-sm">
-                                    {bin.description === 'Schedule not set' ? 'Schedule not set' : bin.description}
+                                  <p className="flex items-center gap-1 text-xs text-white/70 sm:text-sm">
+                                    {bin.frequency.showCalendarIcon && (
+                                      <CalendarDaysIcon className="h-4 w-4 text-white/70" aria-hidden />
+                                    )}
+                                    <span>{bin.frequency.label}</span>
                                   </p>
                                 </div>
                               ))}
                             </div>
-                            <div className="space-y-2 text-sm text-white/60">
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-white/60">
+                            <div className="space-y-1">
                               <p>
                                 Next service:
                                 <span className="ml-2 font-medium text-white">
@@ -203,12 +217,7 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                 Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
                               </p>
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/60">
-                            <span className="text-white/70">
-                              Total bins · <span className="text-white">{property.binCounts.total}</span>
-                            </span>
-                            <span className="flex items-center gap-2 text-white/70 transition group-hover:text-white">
+                            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition group-hover:text-white">
                               View job history <span aria-hidden>→</span>
                             </span>
                           </div>
