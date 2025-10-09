@@ -373,7 +373,7 @@ export default function ProofPageContent() {
         task_type: job.job_type,
         bins: job.bins ?? null,
         notes: noteValue,
-        photo_path: savePath,
+        save_path: savePath,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
         gps_lng: gpsData.lng ?? null,
