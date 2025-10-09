@@ -63,7 +63,7 @@ export default async function ClientPortal({
     sb
       .from('logs')
       .select(
-        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
+        'id, job_id, account_id, client_name, address, task_type, bins, notes, save_path, done_on, gps_lat, gps_lng, created_at',
       )
       .eq('account_id', scope.accountId)
       .order('done_on', { ascending: false }),

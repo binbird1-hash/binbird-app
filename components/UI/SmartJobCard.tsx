@@ -75,7 +75,7 @@ export default function SmartJobCard({
         task_type: job.job_type,
         bins: job.bins ?? null,
         notes: combinedNotes,
-        photo_path: path,
+        save_path: path,
         done_on: dateStr,
         gps_lat: position?.coords.latitude ?? null,
         gps_lng: position?.coords.longitude ?? null,

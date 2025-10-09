@@ -2,6 +2,15 @@
 import { useEffect, useState } from 'react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
+const normaliseProofPath = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : null
+}
+
+const resolveLogPath = (log: any): string | null =>
+  normaliseProofPath(log?.save_path) ?? normaliseProofPath(log?.photo_path)
+
 export default function LogsPage() {
   const supabase = useSupabase()
   const [logs, setLogs] = useState<any[]>([])
@@ -24,7 +33,7 @@ export default function LogsPage() {
     if (logs.length === 0) return
 
     const photoPaths = logs
-      .map(log => log.photo_path as string | null)
+      .map(log => resolveLogPath(log))
       .filter((path): path is string => Boolean(path))
 
     const missingPaths = photoPaths.filter(path => !signedUrls[path])
@@ -71,21 +80,24 @@ export default function LogsPage() {
       <h2 className="text-xl font-bold mb-4">Logs & Proofs</h2>
       {logs.length === 0 && <p>No logs yet.</p>}
       <ul className="space-y-2">
-        {logs.map(l => (
-          <li key={l.id} className="p-3 border rounded">
-            <div><b>{l.task_type}</b> — {l.address}</div>
-            <div>{l.done_on}</div>
-            {l.photo_path && signedUrls[l.photo_path] && (
-              <a
-                href={signedUrls[l.photo_path]}
-                target="_blank"
-                className="text-blue-500 underline"
-              >
-                View Proof
-              </a>
-            )}
-          </li>
-        ))}
+        {logs.map(l => {
+          const path = resolveLogPath(l)
+          return (
+            <li key={l.id} className="p-3 border rounded">
+              <div><b>{l.task_type}</b> — {l.address}</div>
+              <div>{l.done_on}</div>
+              {path && signedUrls[path] && (
+                <a
+                  href={signedUrls[path]}
+                  target="_blank"
+                  className="text-blue-500 underline"
+                >
+                  View Proof
+                </a>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

@@ -690,7 +690,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     let logsQuery = supabase
       .from('logs')
       .select(
-        'id, job_id, account_id, client_name, address, task_type, bins, notes, photo_path, done_on, gps_lat, gps_lng, created_at',
+        'id, job_id, account_id, client_name, address, task_type, bins, notes, save_path, done_on, gps_lat, gps_lng, created_at',
       )
       .gte('done_on', formatISO(twoMonthsAgo, { representation: 'date' }))
 
@@ -730,9 +730,16 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       return parsed.toISOString()
     }
 
+    const normaliseProofPath = (value: unknown): string | null => {
+      if (typeof value !== 'string') return null
+      const trimmed = value.trim()
+      return trimmed.length ? trimmed : null
+    }
+
     ;(logRows ?? []).forEach((log) => {
       const jobIdKey = normaliseIdentifier(log.job_id)
       const logAccountId = normaliseIdentifier(log.account_id)
+      const proofPath = normaliseProofPath(log.save_path) ?? normaliseProofPath(log.photo_path)
 
       if (jobIdKey && (!logAccountId || logAccountId === accountId)) {
         const existing = logsByJobId.get(jobIdKey)
@@ -766,7 +773,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         startedAt: null,
         completedAt: completedAtIso,
         crewName: null,
-        proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
+        proofPhotoKeys: proofPath ? [proofPath] : [],
         proofUploadedAt: uploadedAtIso,
         routePolyline: null,
         lastLatitude: log.gps_lat ?? undefined,
@@ -803,7 +810,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         : latestLog
           ? 'en_route'
           : 'scheduled'
-      const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
+      const latestLogPath = normaliseProofPath(latestLog?.save_path) ?? normaliseProofPath(latestLog?.photo_path)
+      const proofPhotoKeys = [job.photo_path, latestLogPath].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
       combinedJobs.push({
         id: job.id,
