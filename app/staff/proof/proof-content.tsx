@@ -358,10 +358,11 @@ export default function ProofPageContent() {
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
-      const { error: uploadErr } = await supabase.storage
+      const { data: uploadData, error: uploadErr } = await supabase.storage
         .from("proofs")
         .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
+      const savePath = uploadData?.path ?? path;
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
       const { error: logErr } = await supabase.from("logs").insert({
@@ -372,7 +373,7 @@ export default function ProofPageContent() {
         task_type: job.job_type,
         bins: job.bins ?? null,
         notes: noteValue,
-        photo_path: path,
+        photo_path: savePath,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
         gps_lng: gpsData.lng ?? null,
