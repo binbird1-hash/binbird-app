@@ -7,6 +7,7 @@ import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { clearPlannedRun } from "@/lib/planned-run";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { getCustomWeek, toKebab } from "@/lib/proof-paths";
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -16,39 +17,6 @@ const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
 
 const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
-
-// kebab-case helper
-function toKebab(value: string | null | undefined, fallback: string): string {
-  if (!value || typeof value !== "string") return fallback;
-  return value
-    .toLowerCase()
-    .replace(/,\s*/g, "-")
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-// custom week helper (Monday-Saturday cycle, Sunday joins next week)
-function getCustomWeek(date: Date) {
-  const d = new Date(date);
-
-  // If Sunday, push to Monday (next cycle)
-  if (d.getDay() === 0) {
-    d.setDate(d.getDate() + 1);
-  }
-
-  // ISO week calc
-  const target = new Date(d.valueOf());
-  const dayNr = (target.getDay() + 6) % 7; // Monday=0 … Sunday=6
-  target.setDate(target.getDate() - dayNr + 3); // Thursday of current week
-  const firstThursday = new Date(target.getFullYear(), 0, 4);
-  const diff = target.valueOf() - firstThursday.valueOf();
-  const week = 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
-
-  return {
-    year: target.getFullYear(),
-    week: `Week-${week}`,
-  };
-}
 
 async function prepareFileAsJpeg(originalFile: File, desiredName: string): Promise<File> {
   const isAlreadyJpeg =
