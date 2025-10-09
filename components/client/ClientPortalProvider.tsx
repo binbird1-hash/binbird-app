@@ -708,7 +708,12 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       console.warn('Failed to load logs', logsError)
     }
 
-    type LogRow = NonNullable<typeof logRows>[number]
+    type LogRow = NonNullable<typeof logRows>[number] & {
+      // `photo_path` existed historically on the logs table. Some older rows may still
+      // surface through Supabase types even though the column has been renamed to
+      // `save_path`, so treat it as optional for backwards compatibility.
+      photo_path?: string | null
+    }
 
     const logsByJobId = new Map<string, LogRow>()
     ;(logRows ?? []).forEach((log) => {
@@ -739,7 +744,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     ;(logRows ?? []).forEach((log) => {
       const jobIdKey = normaliseIdentifier(log.job_id)
       const logAccountId = normaliseIdentifier(log.account_id)
-      const proofPath = normaliseProofPath(log.save_path) ?? normaliseProofPath(log.photo_path)
+      const proofPath =
+        normaliseProofPath(log.save_path) ?? normaliseProofPath(log.photo_path ?? undefined)
 
       if (jobIdKey && (!logAccountId || logAccountId === accountId)) {
         const existing = logsByJobId.get(jobIdKey)
