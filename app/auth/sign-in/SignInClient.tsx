@@ -1,24 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  BrowserCookieAuthStorageAdapter,
-  DEFAULT_COOKIE_OPTIONS,
-  createSupabaseClient,
-} from "@supabase/auth-helpers-shared";
-import type { DefaultCookieOptions } from "@supabase/auth-helpers-shared";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import packageInfo from "@supabase/auth-helpers-nextjs/package.json";
-import AuthLayout from "../layout";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SignInClient() {
   const router = useRouter();
+  const supabase = useSupabase();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -34,8 +30,6 @@ export default function SignInClient() {
     setLoading(true);
 
     try {
-      const supabase = createClientComponentClient();
-
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -69,55 +63,87 @@ export default function SignInClient() {
 
 
   return (
-    <AuthLayout>
-      <h1 className="text-2xl sm:text-[26px] font-bold text-center mb-6 text-[#ff5757]">
-        Welcome to BinBird!
-      </h1>
-      <form onSubmit={handleSignIn} className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff5757] text-black"
-          required
-        />
-        <label className="flex items-center gap-2 text-sm text-black">
-          <input
-            type="checkbox"
-            checked={stayLoggedIn}
-            onChange={(e) => setStayLoggedIn(e.target.checked)}
-            className="h-4 w-4 rounded border border-gray-400 text-[#ff5757] focus:ring-[#ff5757]"
-          />
-          Stay logged in
-        </label>
+    <div className="space-y-6">
+      <div className="space-y-2 text-center">
+        <h2 className="text-2xl font-semibold text-white">Welcome to BinBird</h2>
+        <p className="text-sm text-white/60">Use your staff credentials to jump into today&apos;s work.</p>
+      </div>
+      <form onSubmit={handleSignIn} className="flex flex-col gap-5">
+        {error && <p className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="sr-only" htmlFor="staff-email">
+              Email
+            </label>
+            <input
+              id="staff-email"
+              type="email"
+              value={email}
+              placeholder="Email"
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              autoComplete="email"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="sr-only" htmlFor="staff-password">
+              Password
+            </label>
+            <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
+              <input
+                id="staff-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                placeholder="Password"
+                onChange={(event) => setPassword(event.target.value)}
+                className="flex-1 rounded-xl bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="mr-3 rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+                onClick={() => setShowPassword((previous) => !previous)}
+                aria-label={showPassword ? "Hide password" : "Toggle password visibility"}
+              >
+                {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 text-sm text-white/70 sm:flex-row sm:items-center sm:justify-between">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={stayLoggedIn}
+              onChange={(e) => setStayLoggedIn(e.target.checked)}
+              className="h-4 w-4 rounded border border-white/30 bg-black/40 text-binbird-red focus:ring-binbird-red/60 focus:ring-offset-0"
+            />
+            Stay signed in on this device
+          </label>
+          <Link href="/auth/reset" className="text-sm font-medium text-binbird-red hover:text-[#ff6c6c]">
+            Forgot password?
+          </Link>
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 rounded-lg bg-[#ff5757] text-white font-semibold hover:opacity-90 transition"
+          className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
         >
-          {loading ? "Signing In…" : "Sign In"}
+          {loading ? "Signing in…" : "Sign In"}
         </button>
-        <p className="mt-4 flex justify-center items-center text-sm !text-black">
+        <p className="mt-2 flex justify-center text-sm text-white/60">
           <span>Don’t have an account?</span>
           <button
             type="button"
             onClick={() => router.push("/auth/sign-up")}
-            className="ml-2 text-[#ff5757] hover:underline"
+            className="ml-2 font-medium text-binbird-red hover:underline"
           >
             Sign Up
           </button>
         </p>
       </form>
-    </AuthLayout>
+    </div>
   );
 }

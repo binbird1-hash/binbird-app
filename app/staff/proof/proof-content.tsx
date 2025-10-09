@@ -1,11 +1,11 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
 const TRANSPARENT_PIXEL =
@@ -14,6 +14,8 @@ const PUT_OUT_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Put+Bins+Out";
 const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
+
+const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
 
 // kebab-case helper
 function toKebab(value: string | null | undefined, fallback: string): string {
@@ -101,10 +103,11 @@ async function prepareFileAsJpeg(originalFile: File, desiredName: string): Promi
 }
 
 export default function ProofPageContent() {
-  const supabase = useMemo(() => createClientComponentClient(), []);
+  const supabase = useSupabase();
   const params = useSearchParams();
   const router = useRouter();
 
+  const [authChecked, setAuthChecked] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [idx, setIdx] = useState<number>(0);
 
@@ -119,6 +122,54 @@ export default function ProofPageContent() {
   const [gpsError, setGpsError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const hasRedirectedRef = useRef(false);
+
+  const redirectToLogin = useCallback(() => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+    alert(SESSION_EXPIRED_MESSAGE);
+    router.replace("/auth/sign-in");
+  }, [router]);
+
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function verifySession() {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (!isActive) return;
+
+        if (error) {
+          console.error("Failed to verify staff session", error);
+          redirectToLogin();
+          return;
+        }
+
+        if (!session?.user) {
+          console.warn("[ProofPageContent] no session user found");
+          redirectToLogin();
+          return;
+        }
+
+        setAuthChecked(true);
+      } catch (unknownError) {
+        if (!isActive) return;
+        console.error("Unexpected error verifying staff session", unknownError);
+        redirectToLogin();
+      }
+    }
+
+    verifySession();
+
+    return () => {
+      isActive = false;
+    };
+  }, [redirectToLogin, supabase]);
 
   // parse jobs + idx from params
   useEffect(() => {
@@ -128,10 +179,12 @@ export default function ProofPageContent() {
       if (rawJobs) {
         const parsed = JSON.parse(rawJobs);
         if (Array.isArray(parsed)) setJobs(normalizeJobs(parsed));
+        else console.warn("[ProofPageContent] jobs param was not an array", parsed);
       }
       if (rawIdx) {
         const parsedIdx = parseInt(rawIdx, 10);
         if (!Number.isNaN(parsedIdx)) setIdx(parsedIdx);
+        else console.warn("[ProofPageContent] idx param was NaN", rawIdx);
       }
     } catch (err) {
       console.error("Parse failed:", err);
@@ -207,6 +260,7 @@ export default function ProofPageContent() {
         setGpsError(null);
       },
       (error) => {
+        console.error("[ProofPageContent] gps error", error);
         setGpsError(
           error.code === error.PERMISSION_DENIED
             ? "Location permission denied. Proofs will save without GPS data."
@@ -228,6 +282,11 @@ export default function ProofPageContent() {
 
   const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
   const job = jobs[currentIdx];
+
+  if (!authChecked) {
+    return <div className="p-6 text-white">Checking session…</div>;
+  }
+
   if (!job) return <div className="p-6 text-white">No job found.</div>;
 
   // bins helpers
@@ -275,11 +334,21 @@ export default function ProofPageContent() {
       alert("Please take a photo before marking the job done.");
       return;
     }
+    const accountId = job.account_id;
+    if (!accountId) {
+      alert("Unable to log completion: missing account identifier for job.");
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
-      if (!user) throw new Error("You must be signed in to submit proof.");
+      if (!user) {
+        console.warn("[ProofPageContent] no user returned, redirecting");
+        setSubmitting(false);
+        redirectToLogin();
+        return;
+      }
       const now = new Date();
       const dateStr = getLocalISODate(now);
       const { year, week } = getCustomWeek(now);
@@ -289,20 +358,22 @@ export default function ProofPageContent() {
       const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
-      const { error: uploadErr } = await supabase.storage
+      const { data: uploadData, error: uploadErr } = await supabase.storage
         .from("proofs")
         .upload(path, uploadFile, { upsert: true });
       if (uploadErr) throw uploadErr;
+      const savePath = uploadData?.path ?? path;
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
       const { error: logErr } = await supabase.from("logs").insert({
         job_id: job.id,
+        account_id: accountId,
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
         bins: job.bins ?? null,
         notes: noteValue,
-        photo_path: path,
+        save_path: savePath,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
         gps_lng: gpsData.lng ?? null,
@@ -353,6 +424,7 @@ export default function ProofPageContent() {
       }
     } catch (err: any) {
       setSubmitting(false);
+      console.error("[ProofPageContent] handleMarkDone error", err);
       alert(err?.message || "Unable to save proof. Please try again.");
     }
   }

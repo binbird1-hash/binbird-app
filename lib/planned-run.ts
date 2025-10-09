@@ -63,6 +63,14 @@ function normalizeAddress(value: unknown): string | null {
 function normalizeJob(value: Job): Job {
   return {
     id: String(value.id),
+    account_id:
+      typeof value.account_id === "string" && value.account_id.trim().length
+        ? value.account_id
+        : null,
+    property_id:
+      typeof value.property_id === "string" && value.property_id.trim().length
+        ? value.property_id
+        : null,
     address: typeof value.address === "string" ? value.address : "",
     lat: Number.isFinite(value.lat) ? value.lat : 0,
     lng: Number.isFinite(value.lng) ? value.lng : 0,

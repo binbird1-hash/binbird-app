@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
+import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
@@ -17,6 +17,7 @@ import {
   markPlannedRunStarted,
 } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -55,7 +56,7 @@ export default function RunPage() {
 }
 
 function RunPageContent() {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
   const router = useRouter();
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -207,7 +208,9 @@ function RunPageContent() {
         // Jobs query
         const { data, error } = await supabase
           .from("jobs")
-          .select("*")
+          .select(
+            "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week"
+          )
           .eq("assigned_to", assigneeId)
           .ilike("day_of_week", todayName)
           .is("last_completed_on", null);
@@ -517,8 +520,8 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
   };
 
-  if (loading) return <div className="p-6 text-white bg-black">Loading jobs…</div>;
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (loading) return <PortalLoadingScreen />;
+  if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
