@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getLocalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
-import { clearPlannedRun } from "@/lib/planned-run";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -406,6 +406,15 @@ export default function ProofPageContent() {
         clearPlannedRun();
         router.push("/staff/run/completed");
       } else {
+        const existingPlan = readPlannedRun();
+        if (existingPlan) {
+          writePlannedRun({
+            ...existingPlan,
+            jobs: jobs.map((plannedJob) => ({ ...plannedJob })),
+            nextIdx,
+            hasStarted: true,
+          });
+        }
         const paramsObj = new URLSearchParams({
           jobs: JSON.stringify(jobs),
           nextIdx: String(nextIdx),

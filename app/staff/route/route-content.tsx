@@ -8,8 +8,8 @@ import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { normalizeJobs, type Job } from "@/lib/jobs";
-import { readPlannedRun } from "@/lib/planned-run";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
 function RoutePageContent() {
   const supabase = useSupabase();
@@ -84,6 +84,14 @@ function RoutePageContent() {
         setLockNavigation(Boolean(stored.hasStarted));
         setJobs(stored.jobs.map((job) => ({ ...job })));
         setStart({ lat: stored.start.lat, lng: stored.start.lng });
+
+        if (!params.has("nextIdx") && stored.jobs.length) {
+          const clampedIdx = Math.min(
+            Math.max(stored.nextIdx ?? 0, 0),
+            Math.max(stored.jobs.length - 1, 0)
+          );
+          setActiveIdx(clampedIdx);
+        }
         return;
       }
       setLockNavigation(false);
@@ -136,6 +144,27 @@ function RoutePageContent() {
       if (!isNaN(parsed)) setActiveIdx(parsed);
     }
   }, [params]);
+
+  useEffect(() => {
+    if (!jobs.length || typeof window === "undefined") return;
+
+    const stored = readPlannedRun();
+    if (!stored) return;
+
+    const clampedIdx = Math.min(Math.max(activeIdx, 0), Math.max(jobs.length - 1, 0));
+    const storedIdx = Math.min(
+      Math.max(stored.nextIdx ?? 0, 0),
+      Math.max(stored.jobs.length - 1, 0)
+    );
+
+    if (storedIdx === clampedIdx) return;
+
+    writePlannedRun({
+      ...stored,
+      jobs: jobs.map((job) => ({ ...job })),
+      nextIdx: clampedIdx,
+    });
+  }, [activeIdx, jobs, jobs.length]);
 
   const activeJob = jobs[activeIdx];
   const previousJob = activeIdx > 0 ? jobs[activeIdx - 1] : null;

@@ -445,11 +445,12 @@ function CompletedRunContent() {
                       "remaining today."
                     ) : (
                       <>
-                        awaiting on {nextAssignment.dateParts.weekday},
-                        {" "}
+                        awaiting on:
+                        <br />
+                        {nextAssignment.dateParts.weekday},{" "}
                         {nextAssignment.dateParts.month}{" "}
                         {nextAssignment.dateParts.day}
-                        <sup>{nextAssignment.dateParts.ordinalSuffix}</sup>.
+                        <sup>{nextAssignment.dateParts.ordinalSuffix}</sup>
                       </>
                     )}
                   </p>

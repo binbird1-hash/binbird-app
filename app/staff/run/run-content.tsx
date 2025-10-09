@@ -402,6 +402,7 @@ function RunPageContent() {
         endAddress: normalizedEndAddress,
         createdAt: new Date().toISOString(),
         hasStarted: true,
+        nextIdx: 0,
       });
 
       hasRedirectedToRoute.current = true;
@@ -512,6 +513,7 @@ function RunPageContent() {
       endAddress: normalizedEndAddress,
       createdAt: new Date().toISOString(),
       hasStarted: false,
+      nextIdx: 0,
     });
 
     setPlannerLocked(true);
