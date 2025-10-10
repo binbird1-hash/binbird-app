@@ -94,7 +94,7 @@ export default function SignUpClient() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80" htmlFor="signup-name">
+          <label className="sr-only" htmlFor="signup-name">
             Name
           </label>
           <input
@@ -106,11 +106,12 @@ export default function SignUpClient() {
             required
             className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             placeholder="Name"
+            aria-label="Name"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80" htmlFor="signup-phone">
+          <label className="sr-only" htmlFor="signup-phone">
             Phone number
           </label>
           <input
@@ -122,11 +123,12 @@ export default function SignUpClient() {
             required
             className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             placeholder="Phone number"
+            aria-label="Phone number"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80" htmlFor="signup-email">
+          <label className="sr-only" htmlFor="signup-email">
             Email
           </label>
           <input
@@ -138,6 +140,7 @@ export default function SignUpClient() {
             required
             className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             placeholder="Email"
+            aria-label="Email"
           />
         </div>
 
@@ -163,7 +166,7 @@ export default function SignUpClient() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80" htmlFor="signup-password">
+          <label className="sr-only" htmlFor="signup-password">
             Password
           </label>
           <input
@@ -175,11 +178,12 @@ export default function SignUpClient() {
             required
             className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             placeholder="Password"
+            aria-label="Password"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80" htmlFor="signup-confirm-password">
+          <label className="sr-only" htmlFor="signup-confirm-password">
             Confirm password
           </label>
           <input
@@ -191,11 +195,16 @@ export default function SignUpClient() {
             required
             className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             placeholder="Confirm password"
+            aria-label="Confirm password"
           />
         </div>
 
         {error ? <p className="text-sm text-red-200">{error}</p> : null}
         {message ? <p className="text-sm text-green-200">{message}</p> : null}
+
+        <p className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
+          {selectedRole === 'staff' ? 'Staff Access' : 'Client Access'}
+        </p>
 
         <button
           type="submit"
