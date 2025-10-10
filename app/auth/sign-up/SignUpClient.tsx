@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { fetchRoleForEmail, getPortalDestination } from '@/app/auth/utils'
+import { fetchRole, getPortalDestination } from '@/app/auth/utils'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 type SignupRole = 'staff' | 'client'
@@ -26,8 +26,16 @@ export default function SignUpClient() {
     setSelectedRole(role)
   }
 
-  async function navigateToAssignedPortal(fallbackRole: SignupRole) {
-    const fetchedRole = await fetchRoleForEmail(supabase, email)
+  async function navigateToAssignedPortal({
+    userId,
+    fallbackRole,
+    lookupEmail,
+  }: {
+    userId?: string | null
+    fallbackRole: SignupRole
+    lookupEmail?: string
+  }) {
+    const fetchedRole = await fetchRole(supabase, { userId, email: lookupEmail ?? email })
     const destination = getPortalDestination(fetchedRole ?? fallbackRole)
 
     setLoading(false)
@@ -50,8 +58,10 @@ export default function SignUpClient() {
 
     setLoading(true)
 
+    const normalizedEmail = email.trim().toLowerCase()
+
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -74,7 +84,7 @@ export default function SignUpClient() {
           full_name: fullName,
           phone,
           role: selectedRole,
-          email,
+          email: normalizedEmail,
         })
         .select()
 
@@ -86,17 +96,25 @@ export default function SignUpClient() {
     }
 
     if (data.session) {
-      await navigateToAssignedPortal(selectedRole)
+      await navigateToAssignedPortal({
+        userId: data.session.user.id,
+        fallbackRole: selectedRole,
+        lookupEmail: normalizedEmail,
+      })
       return
     }
 
-    const { error: immediateSignInError } = await supabase.auth.signInWithPassword({
-      email,
+    const { data: immediateSignInData, error: immediateSignInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
       password,
     })
 
     if (!immediateSignInError) {
-      await navigateToAssignedPortal(selectedRole)
+      await navigateToAssignedPortal({
+        userId: immediateSignInData.user?.id,
+        fallbackRole: selectedRole,
+        lookupEmail: normalizedEmail,
+      })
       return
     }
 
@@ -211,7 +229,7 @@ export default function SignUpClient() {
                 : 'border-white/10 bg-white/5 text-white/80'
             }`}
           >
-            <span>Client access</span>
+            <span>I am a client</span>
             <input
               type="checkbox"
               className="h-4 w-4"
@@ -226,7 +244,7 @@ export default function SignUpClient() {
                 : 'border-white/10 bg-white/5 text-white/80'
             }`}
           >
-            <span>Staff tools</span>
+            <span>I am a BinBuddy</span>
             <input
               type="checkbox"
               className="h-4 w-4"
@@ -235,10 +253,6 @@ export default function SignUpClient() {
             />
           </label>
         </div>
-
-        <p className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
-          {selectedRole === 'staff' ? 'Staff Access' : 'Client Access'}
-        </p>
 
         <button
           type="submit"

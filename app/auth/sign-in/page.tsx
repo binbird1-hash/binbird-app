@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { fetchRoleForEmail, getPortalDestination } from '@/app/auth/utils'
+import { fetchRole, getPortalDestination } from '@/app/auth/utils'
 
 export default function UnifiedSignInPage() {
   const router = useRouter()
@@ -47,8 +47,10 @@ export default function UnifiedSignInPage() {
     setError(null)
     setLoading(true)
 
+    const normalizedEmail = email.trim().toLowerCase()
+
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     })
 
@@ -66,12 +68,12 @@ export default function UnifiedSignInPage() {
       return
     }
 
-    const role = await fetchRoleForEmail(supabase, email)
+    const role = await fetchRole(supabase, { userId: user.id, email: normalizedEmail })
 
     if (!role) {
+      await supabase.auth.signOut()
       setLoading(false)
       router.replace('/auth/unauthorized')
-      router.refresh()
       return
     }
 
@@ -85,7 +87,6 @@ export default function UnifiedSignInPage() {
       }
     }
 
-    setLoading(false)
     router.push(destination)
 
     if (typeof window !== 'undefined') {
