@@ -13,7 +13,9 @@ import {
   ClockIcon,
   Bars3Icon,
   XMarkIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 const NAV_ITEMS = [
   { href: '/client/dashboard', label: 'Dashboard', icon: BuildingOffice2Icon },
@@ -27,6 +29,8 @@ const NAV_ITEMS = [
 export function PortalNavigation() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+  const supabase = useSupabase()
 
   useEffect(() => {
     setMobileOpen(false)
@@ -37,21 +41,40 @@ export function PortalNavigation() {
     [pathname],
   )
 
+  const handleSignOut = async () => {
+    try {
+      setSigningOut(true)
+      await supabase.auth.signOut()
+    } finally {
+      setSigningOut(false)
+      setMobileOpen(false)
+    }
+  }
+
   return (
     <div className="w-full">
       <div className="sm:hidden">
-        <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-black/60 px-4 py-3 text-white shadow-2xl shadow-black/25 backdrop-blur">
+        <div className="relative z-50 flex items-center justify-between rounded-3xl border border-white/10 bg-black/60 px-4 py-3 text-white shadow-2xl shadow-black/25 backdrop-blur">
           <button
             type="button"
-            onClick={() => setMobileOpen(true)}
-            className="inline-flex items-center justify-center rounded-full border border-white/20 p-2 transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
-            aria-label="Open navigation menu"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="inline-flex items-center justify-center p-2 text-white transition hover:text-binbird-red focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={mobileOpen}
             aria-controls="client-portal-mobile-nav"
           >
-            <Bars3Icon className="h-5 w-5" aria-hidden />
+            {mobileOpen ? (
+              <XMarkIcon className="h-5 w-5" aria-hidden />
+            ) : (
+              <Bars3Icon className="h-5 w-5" aria-hidden />
+            )}
           </button>
-          <span className="text-sm font-medium text-white/80">{activeItem.label}</span>
+          <div className="flex flex-col items-end text-right">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/40">
+              Current page
+            </span>
+            <span className="text-sm font-semibold text-white">{activeItem.label}</span>
+          </div>
         </div>
 
         <div
@@ -71,18 +94,6 @@ export function PortalNavigation() {
           )}
           aria-label="Client portal navigation"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">Menu</span>
-            <button
-              type="button"
-              onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center justify-center rounded-full border border-white/10 p-1.5 text-white/70 transition hover:border-binbird-red hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
-              aria-label="Close navigation menu"
-            >
-              <XMarkIcon className="h-5 w-5" aria-hidden />
-            </button>
-          </div>
-
           <nav className="flex flex-1 flex-col gap-2 text-sm font-medium text-white/80">
             {NAV_ITEMS.map((item) => {
               const active = pathname.startsWith(item.href)
@@ -103,6 +114,21 @@ export function PortalNavigation() {
               )
             })}
           </nav>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className={clsx(
+              'inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
+              signingOut
+                ? 'cursor-wait bg-white/5 text-white/70'
+                : 'text-white hover:border-binbird-red hover:bg-binbird-red/20',
+            )}
+          >
+            <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </button>
         </aside>
       </div>
       <nav className="hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-white/10 bg-black/60 p-2 text-sm text-white shadow-2xl shadow-black/20 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
