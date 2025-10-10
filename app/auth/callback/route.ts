@@ -1,4 +1,3 @@
-// app/auth/callback/route.ts
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
@@ -7,7 +6,7 @@ import type { Session } from '@supabase/supabase-js'
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') ?? '/staff/today'
+  const next = url.searchParams.get('next') ?? '/auth/sign-in'
 
   if (code) {
     const supabase = createRouteHandlerClient({ cookies })
