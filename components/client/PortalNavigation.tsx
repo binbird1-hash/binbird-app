@@ -12,10 +12,8 @@ import {
   Cog6ToothIcon,
   ClockIcon,
   Bars3Icon,
-  ArrowRightOnRectangleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
-import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 const NAV_ITEMS = [
   { href: '/client/dashboard', label: 'Dashboard', icon: BuildingOffice2Icon },
@@ -29,8 +27,6 @@ const NAV_ITEMS = [
 export function PortalNavigation() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const supabase = useSupabase()
-  const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => {
     setMobileOpen(false)
@@ -40,16 +36,6 @@ export function PortalNavigation() {
     () => NAV_ITEMS.find((item) => pathname.startsWith(item.href)) ?? NAV_ITEMS[0],
     [pathname],
   )
-
-  const handleSignOut = async () => {
-    setSigningOut(true)
-    try {
-      await supabase.auth.signOut()
-    } finally {
-      setSigningOut(false)
-      setMobileOpen(false)
-    }
-  }
 
   return (
     <div className="w-full">
@@ -97,11 +83,6 @@ export function PortalNavigation() {
             </button>
           </div>
 
-          <div>
-            <p className="text-lg font-semibold text-white">Jabel Property owner</p>
-            <p className="mt-1 text-sm text-white/60">Client portal</p>
-          </div>
-
           <nav className="flex flex-1 flex-col gap-2 text-sm font-medium text-white/80">
             {NAV_ITEMS.map((item) => {
               const active = pathname.startsWith(item.href)
@@ -122,16 +103,6 @@ export function PortalNavigation() {
               )
             })}
           </nav>
-
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="inline-flex items-center justify-center gap-3 rounded-2xl border border-white/20 px-4 py-3 text-sm font-medium text-white transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:opacity-60"
-            disabled={signingOut}
-          >
-            <ArrowRightOnRectangleIcon className="h-5 w-5" aria-hidden />
-            {signingOut ? 'Signing out…' : 'Sign out'}
-          </button>
         </aside>
       </div>
       <nav className="hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-white/10 bg-black/60 p-2 text-sm text-white shadow-2xl shadow-black/20 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
