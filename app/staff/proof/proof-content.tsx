@@ -128,7 +128,7 @@ export default function ProofPageContent() {
     if (hasRedirectedRef.current) return;
     hasRedirectedRef.current = true;
     alert(SESSION_EXPIRED_MESSAGE);
-    router.replace("/auth/sign-in");
+    router.replace("/staff/login");
   }, [router]);
 
 

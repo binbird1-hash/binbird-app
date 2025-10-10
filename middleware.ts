@@ -31,6 +31,9 @@ export async function middleware(req: NextRequest) {
     '/auth',
     '/auth/sign-in',
     '/auth/sign-up',
+    '/staff',
+    '/staff/login',
+    '/staff/sign-up',
   ])
 
   const activeRunBlockedPaths = new Set([
@@ -40,7 +43,7 @@ export async function middleware(req: NextRequest) {
 
   // Staff & Ops routes → require login
   if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops'))) {
-    const redirect = NextResponse.redirect(new URL('/auth', req.url))
+    const redirect = NextResponse.redirect(new URL('/staff/login', req.url))
     if (hasActiveRunCookie) {
       redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
     }

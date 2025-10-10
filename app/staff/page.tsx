@@ -1,6 +1,5 @@
-// app/auth/page.tsx
 import { redirect } from "next/navigation";
 
-export default function AuthIndexPage() {
+export default function StaffIndexPage() {
   redirect("/staff/login");
 }
