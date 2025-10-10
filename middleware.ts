@@ -69,7 +69,11 @@ export async function middleware(req: NextRequest) {
     .maybeSingle()
 
   if (!profileError) {
-    role = (profile?.role as UserRole | null) ?? null
+    const rawRole = typeof profile?.role === 'string' ? profile.role.trim().toLowerCase() : null
+
+    if (rawRole === 'staff' || rawRole === 'admin' || rawRole === 'client') {
+      role = rawRole
+    }
   }
 
   const destination = resolvePortalDestination(role)
