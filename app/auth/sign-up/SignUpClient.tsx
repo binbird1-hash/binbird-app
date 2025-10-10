@@ -1,273 +1,274 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { fetchRole, getPortalDestination } from '@/app/auth/utils'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
+
+type SignupRole = 'staff' | 'client'
 
 export default function SignUpClient() {
-  const router = useRouter();
-  const supabase = useSupabase();
+  const supabase = useSupabase()
+  const router = useRouter()
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("+61");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [selectedRole, setSelectedRole] = useState<SignupRole>('client')
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  function validate() {
-    const newErrors: { [key: string]: string } = {};
-    if (!name.trim()) newErrors.name = "Full name is required";
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      newErrors.email = "Enter a valid email";
-    }
-    if (!phone.trim()) newErrors.phone = "Phone number is required";
-    if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  function toggleRole(role: SignupRole) {
+    setSelectedRole(role)
   }
 
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
+  async function navigateToAssignedPortal({
+    userId,
+    fallbackRole,
+    lookupEmail,
+  }: {
+    userId?: string | null
+    fallbackRole: SignupRole
+    lookupEmail?: string
+  }) {
+    const fetchedRole = await fetchRole(supabase, { userId, email: lookupEmail ?? email })
+    const destination = getPortalDestination(fetchedRole ?? fallbackRole)
 
-    setLoading(true);
-    setErrors({});
+    setLoading(false)
+    router.push(destination)
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
+    if (typeof window !== 'undefined') {
+      window.location.assign(destination)
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setMessage(null)
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    setLoading(true)
+
+    const normalizedEmail = email.trim().toLowerCase()
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          full_name: name,
-          phone: `${countryCode}${phone}`,
-        },
       },
-    });
+    })
 
-    if (error) {
-      if (error.message.toLowerCase().includes("password")) {
-        setErrors({ password: error.message });
-      } else if (error.message.toLowerCase().includes("email")) {
-        setErrors({ email: error.message });
-      } else {
-        setErrors({ general: error.message });
-      }
-      setLoading(false);
-      return;
+    if (signUpError) {
+      setError(signUpError.message)
+      setLoading(false)
+      return
     }
 
-    if (!data.session) {
-      setLoading(false);
-      setErrors({
-        general: "Please check your email to confirm your account before signing in.",
-      });
-      return;
-    }
-
-    const userId = data.user?.id;
+    const userId = data.user?.id ?? null
 
     if (userId) {
-      const { error: insertError } = await supabase
-        .from("user_profile")
+      const { error: profileError } = await supabase
+        .from('user_profile')
         .upsert({
           user_id: userId,
-          full_name: name,
-          phone: `${countryCode}${phone}`,
-          email,
+          full_name: fullName,
+          phone,
+          role: selectedRole,
+          email: normalizedEmail,
         })
-        .select();
+        .select()
 
-      if (insertError) {
-        setErrors({
-          general: "Account created, but failed to save profile.",
-        });
-        setLoading(false);
-        return;
+      if (profileError) {
+        setError('Account created, but we could not finish setting up your profile. Please contact support.')
+        setLoading(false)
+        return
       }
     }
 
-    router.push("/staff/run");
+    if (data.session) {
+      await navigateToAssignedPortal({
+        userId: data.session.user.id,
+        fallbackRole: selectedRole,
+        lookupEmail: normalizedEmail,
+      })
+      return
+    }
+
+    const { data: immediateSignInData, error: immediateSignInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    })
+
+    if (!immediateSignInError) {
+      await navigateToAssignedPortal({
+        userId: immediateSignInData.user?.id,
+        fallbackRole: selectedRole,
+        lookupEmail: normalizedEmail,
+      })
+      return
+    }
+
+    setMessage('Check your email to confirm your account, then sign in to continue.')
+    setLoading(false)
+    setTimeout(() => {
+      router.push('/auth/sign-in')
+    }, 2000)
   }
 
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">Create your staff account</h2>
-        <p className="text-sm text-white/60">Tell us a little about you to get started with BinBird.</p>
+        <h2 className="text-2xl font-semibold text-white">Create your BinBird account</h2>
+        <p className="text-sm text-white/60">Choose whether you need staff tools or client access.</p>
       </div>
-      <form onSubmit={handleSignUp} className="flex flex-col gap-4">
-        {/* Full Name */}
-        <div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="signup-name">
+            Name
+          </label>
           <input
+            id="signup-name"
             type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setErrors((prev) => ({ ...prev, name: "" }));
-            }}
-            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
             autoComplete="name"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
             required
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            placeholder="Name"
+            aria-label="Name"
           />
-          {errors.name && <p className="mt-1 text-sm text-red-200">{errors.name}</p>}
         </div>
 
-        {/* Email */}
-        <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-email">
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="signup-phone">
+            Phone number
+          </label>
+          <input
+            id="signup-phone"
+            type="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            required
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            placeholder="Phone number"
+            aria-label="Phone number"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="signup-email">
             Email
           </label>
           <input
-            id="staff-signup-email"
+            id="signup-email"
             type="email"
-            value={email}
-            placeholder="Email"
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setErrors((prev) => ({ ...prev, email: "" }));
-            }}
-            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             required
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            placeholder="Email"
+            aria-label="Email"
           />
-          {errors.email && <p className="mt-1 text-sm text-red-200">{errors.email}</p>}
         </div>
 
-        {/* Phone with country code */}
-        <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-phone">
-            Phone Number
-          </label>
-          <div className="flex overflow-hidden rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
-            <select
-              value={countryCode}
-              onChange={(event) => setCountryCode(event.target.value)}
-              className="bg-black/40 px-3 py-3 text-sm text-white outline-none focus:outline-none"
-            >
-              <option value="+61">🇦🇺 +61</option>
-              <option value="+1">🇺🇸 +1</option>
-              <option value="+44">🇬🇧 +44</option>
-              <option value="+64">🇳🇿 +64</option>
-              <option value="+91">🇮🇳 +91</option>
-            </select>
-            <input
-              id="staff-signup-phone"
-              type="tel"
-              placeholder="Phone Number"
-              value={phone}
-              onChange={(e) => {
-                setPhone(e.target.value);
-                setErrors((prev) => ({ ...prev, phone: "" }));
-              }}
-              className="flex-1 bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
-              autoComplete="tel"
-              required
-            />
-          </div>
-          {errors.phone && <p className="mt-1 text-sm text-red-200">{errors.phone}</p>}
-        </div>
-
-        {/* Password */}
-        <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-password">
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="signup-password">
             Password
           </label>
-          <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
-            <input
-              id="staff-signup-password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              placeholder="Password"
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setErrors((prev) => ({ ...prev, password: "" }));
-              }}
-              className="flex-1 rounded-xl bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
-              autoComplete="new-password"
-              required
-            />
-            <button
-              type="button"
-              className="mr-3 rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
-              onClick={() => setShowPassword((prev) => !prev)}
-              aria-label={showPassword ? "Hide password" : "Toggle password visibility"}
-            >
-              {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-            </button>
-          </div>
-          {errors.password && <p className="mt-1 text-sm text-red-200">{errors.password}</p>}
+          <input
+            id="signup-password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            placeholder="Password"
+            aria-label="Password"
+          />
         </div>
 
-        {/* Confirm Password */}
-        <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-confirm-password">
-            Confirm Password
+        <div className="space-y-2">
+          <label className="sr-only" htmlFor="signup-confirm-password">
+            Confirm password
           </label>
-          <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
-            <input
-              id="staff-signup-confirm-password"
-              type={showConfirmPassword ? "text" : "password"}
-              value={confirmPassword}
-              placeholder="Confirm Password"
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                setErrors((prev) => ({ ...prev, confirmPassword: "" }));
-              }}
-              className="flex-1 rounded-xl bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
-              autoComplete="new-password"
-              required
-            />
-            <button
-              type="button"
-              className="mr-3 rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              aria-label={showConfirmPassword ? "Hide password" : "Toggle password visibility"}
-            >
-              {showConfirmPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-            </button>
-          </div>
-          {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-200">{errors.confirmPassword}</p>
-          )}
+          <input
+            id="signup-confirm-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            placeholder="Confirm password"
+            aria-label="Confirm password"
+          />
         </div>
 
-        {/* General error */}
-        {errors.general && (
-          <p className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errors.general}</p>
-        )}
+        {error ? <p className="text-sm text-red-200">{error}</p> : null}
+        {message ? <p className="text-sm text-green-200">{message}</p> : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label
+            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+              selectedRole === 'client'
+                ? 'border-binbird-red bg-binbird-red/10 text-white'
+                : 'border-white/10 bg-white/5 text-white/80'
+            }`}
+          >
+            <span>I am a client</span>
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={selectedRole === 'client'}
+              onChange={() => toggleRole('client')}
+            />
+          </label>
+          <label
+            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+              selectedRole === 'staff'
+                ? 'border-binbird-red bg-binbird-red/10 text-white'
+                : 'border-white/10 bg-white/5 text-white/80'
+            }`}
+          >
+            <span>I am a BinBuddy</span>
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={selectedRole === 'staff'}
+              onChange={() => toggleRole('staff')}
+            />
+          </label>
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
+          className="flex w-full items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? "Creating account…" : "Sign Up"}
+          {loading ? 'Creating account…' : 'Create account'}
         </button>
-
-        <p className="mt-2 flex justify-center text-sm text-white/60">
-          <span>Already have an account?</span>
-          <button
-            type="button"
-            onClick={() => router.push("/auth/sign-in")}
-            className="ml-2 font-medium text-binbird-red hover:underline"
-          >
-            Sign In
-          </button>
-        </p>
       </form>
+
+      <p className="text-center text-sm text-white/50">
+        Already registered?{' '}
+        <Link href="/auth/sign-in" className="font-semibold text-binbird-red hover:underline">
+          Sign in instead
+        </Link>
+      </p>
     </div>
-  );
+  )
 }
