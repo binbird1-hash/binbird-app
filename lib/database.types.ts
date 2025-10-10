@@ -1,5 +1,14 @@
 // lib/database.types.ts
 
+export type UserRole = 'staff' | 'client' | 'admin'
+
+export type UserProfile = {
+  user_id: string
+  email: string | null
+  full_name: string | null
+  role: UserRole | null
+}
+
 export type Property = {
   property_id: string
   address: string | null

@@ -1,14 +1,39 @@
-// middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
-import { resolvePortalScope } from '@/lib/clientPortalAccess'
+
+type UserRole = 'staff' | 'client' | 'admin'
+
+function isStaticAsset(pathname: string) {
+  return (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/images') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.webp')
+  )
+}
+
+function resolvePortalDestination(role: UserRole | null) {
+  if (role === 'staff' || role === 'admin') {
+    return '/staff/dashboard'
+  }
+
+  if (role === 'client') {
+    return '/client/dashboard'
+  }
+
+  return '/auth/unauthorized'
+}
 
 export async function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname
+  const { pathname } = req.nextUrl
 
-  if (pathname.startsWith('/_next/')) {
+  if (isStaticAsset(pathname)) {
     return NextResponse.next()
   }
 
@@ -19,105 +44,51 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  const normalizedPathname =
-    pathname !== '/' && pathname.endsWith('/')
-      ? pathname.slice(0, -1)
-      : pathname
+  const isAuthRoute = pathname.startsWith('/auth')
+  const isStaffRoute = pathname.startsWith('/staff')
+  const isClientRoute = pathname.startsWith('/client')
+  const isProtectedRoute = isStaffRoute || isClientRoute
 
-  const hasActiveRunCookie = req.cookies.get(ACTIVE_RUN_COOKIE_NAME)?.value === 'true'
-
-  const signedInRestrictedPaths = new Set([
-    '/',
-    '/auth',
-    '/auth/sign-in',
-    '/auth/sign-up',
-    '/staff',
-    '/staff/login',
-    '/staff/sign-up',
-  ])
-
-  const activeRunBlockedPaths = new Set([
-    ...signedInRestrictedPaths,
-    '/staff/run',
-  ])
-
-  // Staff & Ops routes → require login
-  const staffAuthPaths = new Set(['/staff/login', '/staff/sign-up'])
-
-  if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops'))) {
-    const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
-
-    if (!isStaffAuthRoute) {
-      const redirect = NextResponse.redirect(new URL('/staff/login', req.url))
-      if (hasActiveRunCookie) {
-        redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
-      }
-      return redirect
+  if (!session) {
+    if (isProtectedRoute) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/auth/sign-in'
+      redirectUrl.searchParams.set('redirectedFrom', pathname)
+      return NextResponse.redirect(redirectUrl)
     }
+
+    return res
   }
 
-  let role: string | null = null
+  let role: UserRole | null = null
 
-  if (session) {
-    const { data, error } = await supabase.rpc('get_my_role')
-    if (!error) {
-      role = data
-    }
+  const { data: profile, error: profileError } = await supabase
+    .from('user_profile')
+    .select('role')
+    .eq('user_id', session.user.id)
+    .maybeSingle()
 
-    if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
-      if (role === 'staff' || role === 'admin') {
-        return NextResponse.redirect(new URL('/staff/route', req.url))
-      }
-
-      const redirect = NextResponse.redirect(new URL('/client', req.url))
-      redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
-      return redirect
-    }
-
-    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
-      const isStaffRole = role === 'staff' || role === 'admin'
-      const destination = isStaffRole ? '/staff/run' : '/client'
-      return NextResponse.redirect(new URL(destination, req.url))
-    }
-
-    if (role) {
-      if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-      if (pathname.startsWith('/ops') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-    }
+  if (!profileError) {
+    role = (profile?.role as UserRole | null) ?? null
   }
 
-  if (!session && hasActiveRunCookie) {
-    res.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
+  const destination = resolvePortalDestination(role)
+
+  if (
+    isAuthRoute &&
+    !pathname.startsWith('/auth/unauthorized') &&
+    !pathname.startsWith('/auth/callback') &&
+    !pathname.startsWith('/auth/reset')
+  ) {
+    return NextResponse.redirect(new URL(destination, req.url))
   }
 
-  // Check client portal tokens
-  if (pathname.startsWith('/c/') && !pathname.startsWith('/c/error')) {
-    const token = pathname.split('/c/')[1]
-    if (token) {
-      let decodedToken = token
-      try {
-        decodedToken = decodeURIComponent(token).trim()
-      } catch (error) {
-        console.warn('Failed to decode client portal token', error)
-        return NextResponse.redirect(new URL('/c/error', req.url))
-      }
+  if (isStaffRoute && role !== 'staff' && role !== 'admin') {
+    return NextResponse.redirect(new URL('/auth/unauthorized', req.url))
+  }
 
-      if (!decodedToken) {
-        return NextResponse.redirect(new URL('/c/error', req.url))
-      }
-
-      const scope = await resolvePortalScope(supabase, decodedToken)
-
-      if (!scope) {
-        return NextResponse.redirect(new URL('/c/error', req.url))
-      }
-    } else {
-      return NextResponse.redirect(new URL('/c/error', req.url))
-    }
+  if (isClientRoute && role !== 'client') {
+    return NextResponse.redirect(new URL('/auth/unauthorized', req.url))
   }
 
   return res
