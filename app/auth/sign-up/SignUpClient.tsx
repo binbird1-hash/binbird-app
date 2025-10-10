@@ -196,60 +196,6 @@ export default function SignUpClient() {
         </div>
 
         <div className="space-y-2 text-sm font-medium text-white/80">
-          <span>Account type</span>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                role === "client"
-                  ? "border-binbird-red bg-binbird-red/10"
-                  : "border-white/10 bg-white/10 hover:border-binbird-red/50"
-              }`}
-            >
-              <input
-                type="radio"
-                name="account-role"
-                value="client"
-                checked={role === "client"}
-                onChange={() => setRole("client")}
-                className="h-4 w-4 text-binbird-red focus:ring-binbird-red"
-              />
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  Client account
-                </p>
-                <p className="text-xs text-white/60">
-                  Access invoices, proofs, and service updates.
-                </p>
-              </div>
-            </label>
-            <label
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                role === "staff"
-                  ? "border-binbird-red bg-binbird-red/10"
-                  : "border-white/10 bg-white/10 hover:border-binbird-red/50"
-              }`}
-            >
-              <input
-                type="radio"
-                name="account-role"
-                value="staff"
-                checked={role === "staff"}
-                onChange={() => setRole("staff")}
-                className="h-4 w-4 text-binbird-red focus:ring-binbird-red"
-              />
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  Staff account
-                </p>
-                <p className="text-xs text-white/60">
-                  Plan routes, capture proof, and manage runs.
-                </p>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div className="space-y-2 text-sm font-medium text-white/80">
           <label className="sr-only" htmlFor="signup-password">
             Password
           </label>
@@ -327,6 +273,60 @@ export default function SignUpClient() {
               {errors.confirmPassword}
             </p>
           )}
+        </div>
+
+        <div className="space-y-2 text-sm font-medium text-white/80">
+          <span>Account type</span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                role === "client"
+                  ? "border-binbird-red bg-binbird-red/10"
+                  : "border-white/10 bg-white/10 hover:border-binbird-red/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="account-role"
+                value="client"
+                checked={role === "client"}
+                onChange={() => setRole("client")}
+                className="h-4 w-4 text-binbird-red focus:ring-binbird-red"
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Client account
+                </p>
+                <p className="text-xs text-white/60">
+                  Access invoices, proofs, and service updates.
+                </p>
+              </div>
+            </label>
+            <label
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                role === "staff"
+                  ? "border-binbird-red bg-binbird-red/10"
+                  : "border-white/10 bg-white/10 hover:border-binbird-red/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="account-role"
+                value="staff"
+                checked={role === "staff"}
+                onChange={() => setRole("staff")}
+                className="h-4 w-4 text-binbird-red focus:ring-binbird-red"
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Staff account
+                </p>
+                <p className="text-xs text-white/60">
+                  Plan routes, capture proof, and manage runs.
+                </p>
+              </div>
+            </label>
+          </div>
         </div>
 
         {errors.general && (
