@@ -276,7 +276,6 @@ export default function SignUpClient() {
         </div>
 
         <div className="space-y-2 text-sm font-medium text-white/80">
-          <span>Account type</span>
           <div className="grid gap-3 sm:grid-cols-2">
             <label
               className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
