@@ -4,18 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
-
-type UserRole = 'staff' | 'client' | 'admin'
-
-function getPortalDestination(role: UserRole | null): string {
-  if (role === 'staff' || role === 'admin') {
-    return '/staff/dashboard'
-  }
-  if (role === 'client') {
-    return '/client/dashboard'
-  }
-  return '/auth/unauthorized'
-}
+import { fetchRoleForEmail, getPortalDestination } from '@/app/auth/utils'
 
 export default function UnifiedSignInPage() {
   const router = useRouter()
@@ -77,20 +66,16 @@ export default function UnifiedSignInPage() {
       return
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profile')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const role = await fetchRoleForEmail(supabase, email)
 
-    if (profileError || !profile?.role) {
+    if (!role) {
       setLoading(false)
       router.replace('/auth/unauthorized')
       router.refresh()
       return
     }
 
-    const destination = getPortalDestination(profile.role as UserRole)
+    const destination = getPortalDestination(role)
 
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('binbird-auth-persist', stayLoggedIn ? 'true' : 'false')

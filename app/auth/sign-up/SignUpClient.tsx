@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { fetchRoleForEmail, getPortalDestination } from '@/app/auth/utils'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 type SignupRole = 'staff' | 'client'
@@ -23,6 +24,18 @@ export default function SignUpClient() {
 
   function toggleRole(role: SignupRole) {
     setSelectedRole(role)
+  }
+
+  async function navigateToAssignedPortal(fallbackRole: SignupRole) {
+    const fetchedRole = await fetchRoleForEmail(supabase, email)
+    const destination = getPortalDestination(fetchedRole ?? fallbackRole)
+
+    setLoading(false)
+    router.push(destination)
+
+    if (typeof window !== 'undefined') {
+      window.location.assign(destination)
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -72,16 +85,8 @@ export default function SignUpClient() {
       }
     }
 
-    const destination = selectedRole === 'staff' ? '/staff/dashboard' : '/client/dashboard'
-
     if (data.session) {
-      setLoading(false)
-      router.push(destination)
-
-      if (typeof window !== 'undefined') {
-        window.location.assign(destination)
-      }
-
+      await navigateToAssignedPortal(selectedRole)
       return
     }
 
@@ -91,13 +96,7 @@ export default function SignUpClient() {
     })
 
     if (!immediateSignInError) {
-      setLoading(false)
-      router.push(destination)
-
-      if (typeof window !== 'undefined') {
-        window.location.assign(destination)
-      }
-
+      await navigateToAssignedPortal(selectedRole)
       return
     }
 
