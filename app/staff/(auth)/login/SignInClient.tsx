@@ -31,10 +31,10 @@ export default function SignInClient() {
     setLoading(true);
 
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const trimmedEmail = email.trim();
 
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
+        email: trimmedEmail,
         password,
       });
 
@@ -52,7 +52,7 @@ export default function SignInClient() {
         return;
       }
 
-      const role = await fetchRole(supabase, { userId: user.id, email: normalizedEmail });
+      const role = await fetchRole(supabase, { userId: user.id, email: trimmedEmail });
 
       if (role !== "staff" && role !== "admin") {
         await supabase.auth.signOut();
