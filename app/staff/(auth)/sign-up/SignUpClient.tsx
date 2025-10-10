@@ -44,13 +44,16 @@ export default function SignUpClient() {
     setLoading(true);
     setErrors({});
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
-          full_name: name,
+          full_name: trimmedName,
           phone: `${countryCode}${phone}`,
         },
       },
@@ -83,9 +86,10 @@ export default function SignUpClient() {
         .from("user_profile")
         .upsert({
           user_id: userId,
-          full_name: name,
+          full_name: trimmedName,
           phone: `${countryCode}${phone}`,
-          email,
+          email: normalizedEmail,
+          role: "staff",
         })
         .select();
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { fetchRole } from "@/app/auth/utils";
 
 export default function SignInClient() {
   const router = useRouter();
@@ -30,13 +31,32 @@ export default function SignInClient() {
     setLoading(true);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
         password,
       });
 
       if (signInError) {
         setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      const user = signInData.user;
+
+      if (!user) {
+        setError("We couldn't sign you in. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      const role = await fetchRole(supabase, { userId: user.id, email: normalizedEmail });
+
+      if (role !== "staff" && role !== "admin") {
+        await supabase.auth.signOut();
+        setError("This account doesn't have staff access. Please contact your administrator.");
         setLoading(false);
         return;
       }
