@@ -80,7 +80,16 @@ export default function SignInClient() {
         return;
       }
 
-      const resolvedRole = (profile?.role as PortalRole) ?? metadataRole;
+      if (metadataRole && profile?.role !== metadataRole) {
+        await supabase
+          .from("user_profile")
+          .upsert(
+            { user_id: userId, role: metadataRole },
+            { onConflict: "user_id" },
+          );
+      }
+
+      const resolvedRole = metadataRole ?? (profile?.role as PortalRole);
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
