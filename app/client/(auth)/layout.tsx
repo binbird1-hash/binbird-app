@@ -17,7 +17,7 @@ export default function ClientAuthLayout({ children }: { children: ReactNode }) 
         </div>
         <p className="mt-10 text-center text-xs text-white/50">
           Need staff access?{' '}
-          <a className="font-medium text-binbird-red underline-offset-4 hover:underline" href="/auth/sign-in">
+          <a className="font-medium text-binbird-red underline-offset-4 hover:underline" href="/staff/login">
             Sign in here
           </a>
           .

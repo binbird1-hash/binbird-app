@@ -83,7 +83,7 @@ export default function StaffResetPasswordPage() {
 
       <p className="text-center text-sm text-white/60">
         Remembered your password?{" "}
-        <Link href="/auth/sign-in" className="font-semibold text-binbird-red hover:text-[#ff6c6c]">
+        <Link href="/staff/login" className="font-semibold text-binbird-red hover:text-[#ff6c6c]">
           Return to sign in
         </Link>
         .

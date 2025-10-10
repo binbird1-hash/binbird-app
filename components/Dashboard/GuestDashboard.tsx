@@ -3,7 +3,7 @@ import Header from '../UI/Header'
 
 export default function GuestDashboard() {
   function handleSignIn() {
-    window.location.href = '/auth'
+    window.location.href = '/staff/login'
   }
 
   return (
