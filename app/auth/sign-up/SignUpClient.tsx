@@ -17,7 +17,7 @@ export default function SignUpClient() {
   const [countryCode, setCountryCode] = useState("+61");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<AccountRole>("client");
+  const [role, setRole] = useState<AccountRole>("staff");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
