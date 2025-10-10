@@ -72,14 +72,14 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL('/staff/route', req.url))
       }
 
-      const redirect = NextResponse.redirect(new URL('/client', req.url))
+      const redirect = NextResponse.redirect(new URL('/client/dashboard', req.url))
       redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
       return redirect
     }
 
     if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
       const isStaffRole = role === 'staff' || role === 'admin'
-      const destination = isStaffRole ? '/staff/run' : '/client'
+      const destination = isStaffRole ? '/staff/run' : '/client/dashboard'
       return NextResponse.redirect(new URL(destination, req.url))
     }
 
