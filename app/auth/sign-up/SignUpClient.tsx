@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
+type AccountRole = "staff" | "client";
+
 export default function SignUpClient() {
   const router = useRouter();
   const supabase = useSupabase();
@@ -15,6 +17,7 @@ export default function SignUpClient() {
   const [countryCode, setCountryCode] = useState("+61");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<AccountRole>("client");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -52,6 +55,7 @@ export default function SignUpClient() {
         data: {
           full_name: name,
           phone: `${countryCode}${phone}`,
+          role,
         },
       },
     });
@@ -71,7 +75,8 @@ export default function SignUpClient() {
     if (!data.session) {
       setLoading(false);
       setErrors({
-        general: "Please check your email to confirm your account before signing in.",
+        general:
+          "Please check your email to confirm your account before signing in.",
       });
       return;
     }
@@ -86,6 +91,7 @@ export default function SignUpClient() {
           full_name: name,
           phone: `${countryCode}${phone}`,
           email,
+          role,
         })
         .select();
 
@@ -98,17 +104,22 @@ export default function SignUpClient() {
       }
     }
 
-    router.push("/staff/run");
+    const destination = role === "staff" ? "/staff/run" : "/client/dashboard";
+    router.push(destination);
   }
 
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">Create your staff account</h2>
-        <p className="text-sm text-white/60">Tell us a little about you to get started with BinBird.</p>
+        <h2 className="text-2xl font-semibold text-white">
+          Create your BinBird account
+        </h2>
+        <p className="text-sm text-white/60">
+          Choose the experience you need and tell us a little about yourself to
+          get started.
+        </p>
       </div>
       <form onSubmit={handleSignUp} className="flex flex-col gap-4">
-        {/* Full Name */}
         <div>
           <input
             type="text"
@@ -122,16 +133,17 @@ export default function SignUpClient() {
             autoComplete="name"
             required
           />
-          {errors.name && <p className="mt-1 text-sm text-red-200">{errors.name}</p>}
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-200">{errors.name}</p>
+          )}
         </div>
 
-        {/* Email */}
         <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-email">
+          <label className="sr-only" htmlFor="signup-email">
             Email
           </label>
           <input
-            id="staff-signup-email"
+            id="signup-email"
             type="email"
             value={email}
             placeholder="Email"
@@ -143,12 +155,13 @@ export default function SignUpClient() {
             autoComplete="email"
             required
           />
-          {errors.email && <p className="mt-1 text-sm text-red-200">{errors.email}</p>}
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-200">{errors.email}</p>
+          )}
         </div>
 
-        {/* Phone with country code */}
         <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-phone">
+          <label className="sr-only" htmlFor="signup-phone">
             Phone Number
           </label>
           <div className="flex overflow-hidden rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
@@ -164,7 +177,7 @@ export default function SignUpClient() {
               <option value="+91">🇮🇳 +91</option>
             </select>
             <input
-              id="staff-signup-phone"
+              id="signup-phone"
               type="tel"
               placeholder="Phone Number"
               value={phone}
@@ -177,17 +190,72 @@ export default function SignUpClient() {
               required
             />
           </div>
-          {errors.phone && <p className="mt-1 text-sm text-red-200">{errors.phone}</p>}
+          {errors.phone && (
+            <p className="mt-1 text-sm text-red-200">{errors.phone}</p>
+          )}
         </div>
 
-        {/* Password */}
         <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-password">
+          <span>Account type</span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                role === "client"
+                  ? "border-binbird-red bg-binbird-red/10"
+                  : "border-white/10 bg-white/10 hover:border-binbird-red/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="account-role"
+                value="client"
+                checked={role === "client"}
+                onChange={() => setRole("client")}
+                className="h-4 w-4 text-binbird-red focus:ring-binbird-red"
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Client account
+                </p>
+                <p className="text-xs text-white/60">
+                  Access invoices, proofs, and service updates.
+                </p>
+              </div>
+            </label>
+            <label
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                role === "staff"
+                  ? "border-binbird-red bg-binbird-red/10"
+                  : "border-white/10 bg-white/10 hover:border-binbird-red/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="account-role"
+                value="staff"
+                checked={role === "staff"}
+                onChange={() => setRole("staff")}
+                className="h-4 w-4 text-binbird-red focus:ring-binbird-red"
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Staff account
+                </p>
+                <p className="text-xs text-white/60">
+                  Plan routes, capture proof, and manage runs.
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div className="space-y-2 text-sm font-medium text-white/80">
+          <label className="sr-only" htmlFor="signup-password">
             Password
           </label>
           <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <input
-              id="staff-signup-password"
+              id="signup-password"
               type={showPassword ? "text" : "password"}
               value={password}
               placeholder="Password"
@@ -203,22 +271,29 @@ export default function SignUpClient() {
               type="button"
               className="mr-3 rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
               onClick={() => setShowPassword((prev) => !prev)}
-              aria-label={showPassword ? "Hide password" : "Toggle password visibility"}
+              aria-label={
+                showPassword ? "Hide password" : "Toggle password visibility"
+              }
             >
-              {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
             </button>
           </div>
-          {errors.password && <p className="mt-1 text-sm text-red-200">{errors.password}</p>}
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-200">{errors.password}</p>
+          )}
         </div>
 
-        {/* Confirm Password */}
         <div className="space-y-2 text-sm font-medium text-white/80">
-          <label className="sr-only" htmlFor="staff-signup-confirm-password">
+          <label className="sr-only" htmlFor="signup-confirm-password">
             Confirm Password
           </label>
           <div className="flex items-center rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
             <input
-              id="staff-signup-confirm-password"
+              id="signup-confirm-password"
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               placeholder="Confirm Password"
@@ -234,19 +309,30 @@ export default function SignUpClient() {
               type="button"
               className="mr-3 rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
-              aria-label={showConfirmPassword ? "Hide password" : "Toggle password visibility"}
+              aria-label={
+                showConfirmPassword
+                  ? "Hide password"
+                  : "Toggle password visibility"
+              }
             >
-              {showConfirmPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+              {showConfirmPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-200">{errors.confirmPassword}</p>
+            <p className="mt-1 text-sm text-red-200">
+              {errors.confirmPassword}
+            </p>
           )}
         </div>
 
-        {/* General error */}
         {errors.general && (
-          <p className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errors.general}</p>
+          <p className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {errors.general}
+          </p>
         )}
 
         <button
@@ -261,7 +347,7 @@ export default function SignUpClient() {
           <span>Already have an account?</span>
           <button
             type="button"
-            onClick={() => router.push("/auth/sign-in")}
+            onClick={() => router.push("/auth/login")}
             className="ml-2 font-medium text-binbird-red hover:underline"
           >
             Sign In

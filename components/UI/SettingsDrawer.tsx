@@ -263,7 +263,7 @@ export default function SettingsDrawer() {
     }
     dismissPanel();
     setIsOpen(false);
-    router.push("/staff/login");
+    router.push("/auth/login");
   };
 
   return (
