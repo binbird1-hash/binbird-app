@@ -29,8 +29,11 @@ export async function middleware(req: NextRequest) {
   const signedInRestrictedPaths = new Set([
     '/',
     '/auth',
+    '/auth/login',
     '/auth/sign-in',
     '/auth/sign-up',
+    '/client',
+    '/client/login',
     '/staff',
     '/staff/login',
     '/staff/sign-up',
@@ -42,13 +45,13 @@ export async function middleware(req: NextRequest) {
   ])
 
   // Staff & Ops routes → require login
-  const staffAuthPaths = new Set(['/staff/login', '/staff/sign-up'])
+  const staffAuthPaths = new Set(['/auth/login', '/auth/sign-up', '/staff/login', '/staff/sign-up'])
 
   if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops'))) {
     const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
 
     if (!isStaffAuthRoute) {
-      const redirect = NextResponse.redirect(new URL('/staff/login', req.url))
+      const redirect = NextResponse.redirect(new URL('/auth/login', req.url))
       if (hasActiveRunCookie) {
         redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
       }

@@ -1,9 +1,5 @@
-export const metadata = {
-  title: "Create Your BinBird Account",
-};
-
-import SignUpClient from "./SignUpClient";
+import { redirect } from "next/navigation";
 
 export default function StaffSignUpPage() {
-  return <SignUpClient />;
+  redirect("/auth/sign-up");
 }

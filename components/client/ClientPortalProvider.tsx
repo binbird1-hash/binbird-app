@@ -897,7 +897,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       }
 
       if (!initialSession?.user) {
-        router.replace('/client/login')
+        router.replace('/auth/login')
         return
       }
 
@@ -935,7 +935,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       setSession(newSession)
       setUser(newSession?.user ?? null)
       if (!newSession) {
-        router.replace('/client/login')
+        router.replace('/auth/login')
       }
     })
 

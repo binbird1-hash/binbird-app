@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
-export default function StaffResetPasswordPage() {
+export default function ResetPasswordPage() {
   const supabase = useSupabase();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
@@ -16,9 +16,12 @@ export default function StaffResetPasswordPage() {
     setError(null);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset/confirm`,
-      });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: `${window.location.origin}/auth/reset/confirm`,
+        },
+      );
 
       if (resetError) {
         setError(resetError.message);
@@ -40,9 +43,12 @@ export default function StaffResetPasswordPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">Reset staff password</h2>
+        <h2 className="text-2xl font-semibold text-white">
+          Reset your password
+        </h2>
         <p className="text-sm text-white/60">
-          Enter the email connected to your BinBird staff account and we&apos;ll send a secure password reset link.
+          Enter the email connected to your BinBird account and we&apos;ll send
+          you a secure reset link.
         </p>
       </div>
 
@@ -54,11 +60,15 @@ export default function StaffResetPasswordPage() {
 
       {status === "sent" ? (
         <div className="rounded-xl border border-green-500/40 bg-green-500/10 p-4 text-sm text-green-200">
-          Password reset instructions have been sent to <strong className="font-semibold">{email}</strong>. Check your inbox and
-          follow the link within the next 24 hours.
+          Password reset instructions have been sent to{" "}
+          <strong className="font-semibold">{email}</strong>. Check your inbox
+          and follow the link within the next 24 hours.
         </div>
       ) : (
-        <label className="block text-left text-sm font-medium text-white/80" htmlFor="email">
+        <label
+          className="block text-left text-sm font-medium text-white/80"
+          htmlFor="email"
+        >
           Email
           <input
             id="email"
@@ -83,7 +93,10 @@ export default function StaffResetPasswordPage() {
 
       <p className="text-center text-sm text-white/60">
         Remembered your password?{" "}
-        <Link href="/staff/login" className="font-semibold text-binbird-red hover:text-[#ff6c6c]">
+        <Link
+          href="/auth/login"
+          className="font-semibold text-binbird-red hover:text-[#ff6c6c]"
+        >
           Return to sign in
         </Link>
         .

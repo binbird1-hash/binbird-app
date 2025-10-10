@@ -1,9 +1,5 @@
-export const metadata = {
-  title: "Welcome to BinBird!",
-};
-
-import SignInClient from "./SignInClient";
+import { redirect } from "next/navigation";
 
 export default function StaffLoginPage() {
-  return <SignInClient />;
+  redirect("/auth/login");
 }

@@ -1,6 +1,9 @@
-// app/auth/sign-up/page.tsx
-import { redirect } from "next/navigation";
+import SignUpClient from "./SignUpClient";
 
-export default function AuthSignUpRedirectPage() {
-  redirect("/staff/sign-up");
+export const metadata = {
+  title: "Create your BinBird account",
+};
+
+export default function AuthSignUpPage() {
+  return <SignUpClient />;
 }
