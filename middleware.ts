@@ -42,12 +42,18 @@ export async function middleware(req: NextRequest) {
   ])
 
   // Staff & Ops routes → require login
+  const staffAuthPaths = new Set(['/staff/login', '/staff/sign-up'])
+
   if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops'))) {
-    const redirect = NextResponse.redirect(new URL('/staff/login', req.url))
-    if (hasActiveRunCookie) {
-      redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
+    const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
+
+    if (!isStaffAuthRoute) {
+      const redirect = NextResponse.redirect(new URL('/staff/login', req.url))
+      if (hasActiveRunCookie) {
+        redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
+      }
+      return redirect
     }
-    return redirect
   }
 
   let role: string | null = null
