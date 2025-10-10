@@ -102,7 +102,7 @@ export default function SignUpClient() {
       }
     }
 
-    router.push("/staff/run");
+    router.push("/staff/dashboard");
   }
 
   return (

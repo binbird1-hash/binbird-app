@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
-import { fetchRole } from "@/app/auth/utils";
+import { fetchRole, getPortalDestination } from "@/app/auth/utils";
 
 export default function SignInClient() {
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function SignInClient() {
 
     try {
       const trimmedEmail = email.trim();
+      const normalizedEmail = trimmedEmail.toLowerCase();
 
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
@@ -52,7 +53,7 @@ export default function SignInClient() {
         return;
       }
 
-      const role = await fetchRole(supabase, { userId: user.id, email: trimmedEmail });
+      const role = await fetchRole(supabase, { userId: user.id, email: normalizedEmail });
 
       if (role !== "staff" && role !== "admin") {
         await supabase.auth.signOut();
@@ -70,7 +71,9 @@ export default function SignInClient() {
         }
       }
 
-      router.push("/staff/run");
+      const destination = getPortalDestination(role);
+      setLoading(false);
+      router.push(destination);
     } catch (unknownError) {
       const message =
         unknownError instanceof Error

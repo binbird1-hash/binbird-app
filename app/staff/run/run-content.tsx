@@ -5,6 +5,7 @@ import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSet
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
@@ -45,22 +46,40 @@ const applyVictoriaAutocompleteLimits = (
 };
 
 export default function RunPage() {
+  const rawApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const googleMapsApiKey = rawApiKey?.trim();
+
   return (
     <MapSettingsProvider>
       <div className="relative min-h-screen overflow-hidden bg-black text-white">
         <SettingsDrawer />
-        <RunPageContent />
+        {googleMapsApiKey ? (
+          <RunPageContent googleMapsApiKey={googleMapsApiKey} />
+        ) : (
+          <MapErrorState
+            title="Google Maps is not configured"
+            description="Add a NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable to use the BinBird run planner."
+          />
+        )}
       </div>
     </MapSettingsProvider>
   );
 }
 
-function RunPageContent() {
+type RunPageContentProps = {
+  googleMapsApiKey: string;
+};
+
+function RunPageContent({ googleMapsApiKey }: RunPageContentProps) {
   const supabase = useSupabase();
   const router = useRouter();
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
   const hasRedirectedToRoute = useRef(false);
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey,
+    libraries: LIBRARIES,
+  });
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -124,11 +143,6 @@ function RunPageContent() {
   const [forceFit, setForceFit] = useState(false);
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
-
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: LIBRARIES,
-  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -521,6 +535,18 @@ function RunPageContent() {
   };
 
   if (loading) return <PortalLoadingScreen />;
+
+  if (loadError) {
+    console.error("Failed to load Google Maps", loadError);
+    return (
+      <MapErrorState
+        title="Google Maps failed to load"
+        description="We couldn't load the BinBird run planner map. Refresh the page or verify your Google Maps configuration."
+        details={loadError.message}
+      />
+    );
+  }
+
   if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
@@ -651,6 +677,30 @@ function RunPageContent() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+type MapErrorStateProps = {
+  title: string;
+  description: string;
+  details?: string;
+};
+
+function MapErrorState({ title, description, details }: MapErrorStateProps) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 py-12 text-center">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold text-white">{title}</h2>
+        <p className="max-w-md text-sm text-white/70">{description}</p>
+      </div>
+      {details ? <p className="max-w-md text-xs text-white/50">{details}</p> : null}
+      <Link
+        href="/staff/dashboard"
+        className="inline-flex items-center justify-center rounded-xl bg-binbird-red px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+      >
+        Go to staff dashboard
+      </Link>
     </div>
   );
 }
