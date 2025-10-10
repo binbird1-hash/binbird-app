@@ -72,9 +72,32 @@ export default function SignUpClient() {
       }
     }
 
+    const destination = selectedRole === 'staff' ? '/staff/dashboard' : '/client/dashboard'
+
     if (data.session) {
-      router.replace(selectedRole === 'staff' ? '/staff/dashboard' : '/client/dashboard')
-      router.refresh()
+      setLoading(false)
+      router.push(destination)
+
+      if (typeof window !== 'undefined') {
+        window.location.assign(destination)
+      }
+
+      return
+    }
+
+    const { error: immediateSignInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (!immediateSignInError) {
+      setLoading(false)
+      router.push(destination)
+
+      if (typeof window !== 'undefined') {
+        window.location.assign(destination)
+      }
+
       return
     }
 
@@ -144,27 +167,6 @@ export default function SignUpClient() {
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${selectedRole === 'client' ? 'border-binbird-red bg-binbird-red/10 text-white' : 'border-white/10 bg-white/5 text-white/80'}`}>
-            <span>Client access</span>
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              checked={selectedRole === 'client'}
-              onChange={() => toggleRole('client')}
-            />
-          </label>
-          <label className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${selectedRole === 'staff' ? 'border-binbird-red bg-binbird-red/10 text-white' : 'border-white/10 bg-white/5 text-white/80'}`}>
-            <span>Staff tools</span>
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              checked={selectedRole === 'staff'}
-              onChange={() => toggleRole('staff')}
-            />
-          </label>
-        </div>
-
         <div className="space-y-2">
           <label className="sr-only" htmlFor="signup-password">
             Password
@@ -201,6 +203,39 @@ export default function SignUpClient() {
 
         {error ? <p className="text-sm text-red-200">{error}</p> : null}
         {message ? <p className="text-sm text-green-200">{message}</p> : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label
+            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+              selectedRole === 'client'
+                ? 'border-binbird-red bg-binbird-red/10 text-white'
+                : 'border-white/10 bg-white/5 text-white/80'
+            }`}
+          >
+            <span>Client access</span>
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={selectedRole === 'client'}
+              onChange={() => toggleRole('client')}
+            />
+          </label>
+          <label
+            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+              selectedRole === 'staff'
+                ? 'border-binbird-red bg-binbird-red/10 text-white'
+                : 'border-white/10 bg-white/5 text-white/80'
+            }`}
+          >
+            <span>Staff tools</span>
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={selectedRole === 'staff'}
+              onChange={() => toggleRole('staff')}
+            />
+          </label>
+        </div>
 
         <p className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
           {selectedRole === 'staff' ? 'Staff Access' : 'Client Access'}

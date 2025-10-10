@@ -101,8 +101,11 @@ export default function UnifiedSignInPage() {
     }
 
     setLoading(false)
-    router.replace(destination)
-    router.refresh()
+    router.push(destination)
+
+    if (typeof window !== 'undefined') {
+      window.location.assign(destination)
+    }
   }
 
   return (
