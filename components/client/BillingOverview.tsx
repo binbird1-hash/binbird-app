@@ -8,8 +8,8 @@ import { useClientPortal } from './ClientPortalProvider'
 
 type BillingRow = {
   id: string
-  property: string
-  address?: string
+  propertyPrimary: string
+  propertySecondary?: string
   membershipStart: string
   monthly: string
 }
@@ -44,11 +44,47 @@ function toCsv(rows: BillingRow[]) {
   const header = 'Property,Membership start date,Monthly fee\n'
   const body = rows
     .map((row) => {
-      const property = row.address ? `${row.property} - ${row.address}` : row.property
+      const property = row.propertySecondary
+        ? `${row.propertyPrimary} - ${row.propertySecondary}`
+        : row.propertyPrimary
       return [property, row.membershipStart, row.monthly].map((cell) => `"${cell}"`).join(',')
     })
     .join('\n')
   return `${header}${body}`
+}
+
+function formatPropertyDisplay({
+  name,
+  addressLine,
+  suburb,
+  city,
+}: {
+  name: string
+  addressLine: string
+  suburb: string
+  city: string
+}) {
+  const trimmedName = name?.trim() ?? ''
+  const address = formatAddress({ addressLine, suburb, city })
+  const primaryAddressPart = addressLine?.trim() ?? ''
+
+  if (!address) {
+    return { primary: trimmedName || 'Property', secondary: undefined }
+  }
+
+  const normalizedName = trimmedName.toLowerCase()
+  const normalizedPrimaryAddress = primaryAddressPart.toLowerCase()
+  const normalizedAddress = address.toLowerCase()
+
+  const nameMatchesPrimary = normalizedName && normalizedName === normalizedPrimaryAddress
+  const nameMatchesAddressStart =
+    normalizedName && normalizedAddress.startsWith(`${normalizedName},`)
+
+  if (!trimmedName || nameMatchesPrimary || nameMatchesAddressStart) {
+    return { primary: address, secondary: undefined }
+  }
+
+  return { primary: trimmedName, secondary: address }
 }
 
 export function BillingOverview() {
@@ -64,11 +100,11 @@ export function BillingOverview() {
     }
 
     const rows = properties.map((property) => {
-      const address = formatAddress(property)
+      const { primary, secondary } = formatPropertyDisplay(property)
       return {
         id: property.id,
-        name: property.name,
-        address,
+        primary,
+        secondary,
         membership: property.membershipStart ? format(new Date(property.membershipStart), 'PP') : '—',
         monthly: property.pricePerMonth ? `$${property.pricePerMonth.toFixed(2)}` : 'Included',
         isActive: property.status === 'active',
@@ -82,10 +118,10 @@ export function BillingOverview() {
     return {
       totalMonthly,
       activeProperties,
-      rows: rows.map(({ id, name, address, membership, monthly }) => ({
+      rows: rows.map(({ id, primary, secondary, membership, monthly }) => ({
         id,
-        property: name,
-        address,
+        propertyPrimary: primary,
+        propertySecondary: secondary,
         membershipStart: membership,
         monthly,
       })),
@@ -100,17 +136,22 @@ export function BillingOverview() {
   return (
     <div className="space-y-6 text-white">
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
-        <span className="text-xs uppercase tracking-wide text-white/50">Billing overview</span>
-        <dl className="mt-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
+            <p className="mt-1 text-sm text-white/60">Current totals for your connected properties</p>
+          </div>
+        </div>
+        <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
-            <dd className="mt-1 text-2xl font-semibold">
+            <dd className="mt-2 text-3xl font-semibold tracking-tight">
               {stats.totalMonthly > 0 ? `$${stats.totalMonthly.toFixed(2)}` : 'Included'}
             </dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
-            <dd className="mt-1 text-2xl font-semibold">{stats.activeProperties}</dd>
+            <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
           </div>
         </dl>
       </section>
@@ -144,8 +185,10 @@ export function BillingOverview() {
                 {stats.rows.map((row) => (
                   <tr key={row.id} className="hover:bg-white/5">
                     <td className="px-4 py-3 align-top text-white">
-                      <div>{row.property}</div>
-                      {row.address && <div className="text-sm text-white/60">{row.address}</div>}
+                      <div>{row.propertyPrimary}</div>
+                      {row.propertySecondary && (
+                        <div className="text-sm text-white/60">{row.propertySecondary}</div>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 align-top text-white/70">{row.membershipStart}</td>
                     <td className="px-4 py-3 text-right text-white">{row.monthly}</td>
