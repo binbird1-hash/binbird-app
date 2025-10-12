@@ -211,15 +211,15 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
   return (
     <div className="space-y-6 text-white">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="flex flex-col gap-3 md:flex-1 md:flex-row md:items-end md:gap-4">
           <HistorySelect
             label="Property"
             value={filters.propertyId}
             onChange={(value) => setFilters((current) => ({ ...current, propertyId: value }))}
             options={propertyOptions}
-            className="w-full md:min-w-[200px]"
+            className="w-full md:w-[240px]"
           />
-          <div className="w-full md:min-w-[220px]">
+          <div className="w-full md:flex-1">
             <div className="relative">
               <input
                 type="search"
@@ -390,7 +390,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
       <Listbox value={value} onChange={onChange}>
         {({ open }) => (
           <div className="relative">
-            <Listbox.Button className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
+            <Listbox.Button className="flex h-11 w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
               <span className="block truncate text-white/90">{selectedOption?.label}</span>
               <ChevronUpDownIcon className="h-4 w-4 text-white/60" aria-hidden="true" />
             </Listbox.Button>
