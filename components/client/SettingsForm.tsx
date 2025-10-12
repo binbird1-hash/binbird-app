@@ -255,7 +255,7 @@ export function SettingsForm() {
         </div>
         {selectedAccount && (
           <p className="text-xs text-white/40">
-            Changes apply to <strong className="text-white">{selectedAccount.name}</strong>. Contact support to manage billing-level access.
+            Changes apply to <strong className="text-white">{selectedAccount.name}</strong>.
           </p>
         )}
       </section>
