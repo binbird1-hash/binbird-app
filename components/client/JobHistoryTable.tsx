@@ -2,8 +2,7 @@
 
 import { Fragment, useEffect, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
-import { saveAs } from 'file-saver'
+import { CheckIcon, ChevronUpDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
@@ -74,8 +73,6 @@ const formatAddress = (property: Property | undefined) => {
 
   return uniqueParts.join(', ')
 }
-
-const escapeForCsv = (value: string) => `"${value.replace(/"/g, '""')}"`
 
 export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHistoryTableProps) {
   const [filters, setFilters] = useState<HistoryFilters>(() => ({
@@ -189,31 +186,11 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
     })
   }, [filters.propertyId, filters.search, jobs, propertyMap])
 
-  const handleDownloadCsv = () => {
-    const header = ['Address', 'Job', 'Completed', 'Notes']
-    const rows = filteredJobs.map((job) => {
-      const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
-      const fullAddress = formatAddress(property) ?? job.propertyName ?? 'Property'
-      const jobTypeLabel = formatJobTypeLabel(job.jobType)
-      const bins = job.bins && job.bins.length > 0 ? job.bins.join(', ') : ''
-      const jobDescription = bins ? `${jobTypeLabel} · ${bins}` : jobTypeLabel
-      const completed = job.completedAt ? format(new Date(job.completedAt), 'yyyy-MM-dd HH:mm') : ''
-      const notes = job.notes ?? ''
-      return [fullAddress, jobDescription, completed, notes].map((value) =>
-        escapeForCsv(String(value ?? '')),
-      )
-    })
-    const csvContent = [header.map(escapeForCsv).join(','), ...rows.map((row) => row.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    saveAs(blob, `binbird-job-history-${format(new Date(), 'yyyyMMdd-HHmm')}.csv`)
-  }
-
   return (
     <div className="space-y-6 text-white">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-3 md:flex-1 md:flex-row md:items-end md:gap-4">
           <HistorySelect
-            label="Property"
             value={filters.propertyId}
             onChange={(value) => setFilters((current) => ({ ...current, propertyId: value }))}
             options={propertyOptions}
@@ -268,15 +245,6 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
               )}
             </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-          <button
-            type="button"
-            onClick={handleDownloadCsv}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red md:w-auto"
-          >
-            <DocumentArrowDownIcon className="h-5 w-5" /> Export CSV
-          </button>
         </div>
       </div>
 
@@ -374,7 +342,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
 }
 
 type HistorySelectProps = {
-  label: string
+  label?: string
   value: string
   onChange: (value: string) => void
   options: HistorySelectOption[]
@@ -386,11 +354,14 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
 
   return (
     <div className={clsx('flex flex-col gap-1 text-sm', className)}>
-      <span className="text-white/60">{label}</span>
+      {label ? <span className="text-white/60">{label}</span> : null}
       <Listbox value={value} onChange={onChange}>
         {({ open }) => (
           <div className="relative">
-            <Listbox.Button className="flex h-11 w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30">
+            <Listbox.Button
+              className="flex h-11 w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              aria-label={label ?? 'Filter jobs'}
+            >
               <span className="block truncate text-white/90">{selectedOption?.label}</span>
               <ChevronUpDownIcon className="h-4 w-4 text-white/60" aria-hidden="true" />
             </Listbox.Button>
