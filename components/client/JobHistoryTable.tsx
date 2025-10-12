@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { CheckIcon, ChevronUpDownIcon, DocumentArrowDownIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
@@ -219,19 +219,18 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
             options={propertyOptions}
             className="w-full md:min-w-[200px]"
           />
-          <label className="flex w-full flex-col gap-1 text-sm">
-            <span className="text-white/60">Search</span>
+          <div className="w-full md:min-w-[220px]">
             <div className="relative">
               <input
-                type="text"
+                type="search"
                 value={filters.search}
                 onChange={(event) => {
                   const value = event.target.value
                   setFilters((current) => ({ ...current, search: value }))
                   setShowSuggestions(value.trim().length > 0)
                 }}
-                placeholder="Search for an address or property"
-                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 pr-10 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30 md:min-w-[220px]"
+                placeholder="Search for property address"
+                className="h-11 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
                 id={searchInputId}
                 autoComplete="off"
                 onFocus={() => {
@@ -248,21 +247,8 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                   setShowSuggestions(false)
                 }}
               />
-              {filters.search.trim().length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, search: '' }))
-                    setShowSuggestions(false)
-                  }}
-                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-                >
-                  <span className="sr-only">Clear search</span>
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              )}
               {showSuggestions && matchingSuggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 text-sm text-white shadow-lg backdrop-blur">
+                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
                   {matchingSuggestions.map((suggestion) => (
                     <li key={suggestion}>
                       <button
@@ -281,7 +267,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                 </ul>
               )}
             </div>
-          </label>
+          </div>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button
@@ -328,25 +314,13 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                   <td className="min-w-[220px] px-4 py-4 align-middle text-white">
                     {(() => {
                       const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
-                      const propertyName = property?.name ?? job.propertyName
-                      const fullAddress = formatAddress(property) ?? job.propertyName
+                      const fullAddress = formatAddress(property)
+                      const fallbackName = property?.name ?? job.propertyName
+                      const displayAddress = (fullAddress && fullAddress.length > 0 ? fullAddress : fallbackName) ?? '—'
                       return (
-                        <>
-                          <div className="font-semibold truncate">{propertyName}</div>
-                          {fullAddress && (
-                            <p
-                              className="mt-1 max-w-xs text-xs text-white/60"
-                              style={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: '2',
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              {fullAddress}
-                            </p>
-                          )}
-                        </>
+                        <div className="truncate font-semibold" title={displayAddress}>
+                          {displayAddress}
+                        </div>
                       )
                     })()}
                   </td>
