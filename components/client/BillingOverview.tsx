@@ -10,7 +10,7 @@ type BillingRow = {
   id: string
   property: string
   address?: string
-  membership: string
+  membershipStart: string
   monthly: string
 }
 
@@ -41,11 +41,11 @@ function formatAddress({
 }
 
 function toCsv(rows: BillingRow[]) {
-  const header = 'Property,Membership start,Monthly fee\n'
+  const header = 'Property,Membership start date,Monthly fee\n'
   const body = rows
     .map((row) => {
       const property = row.address ? `${row.property} - ${row.address}` : row.property
-      return [property, row.membership, row.monthly].map((cell) => `"${cell}"`).join(',')
+      return [property, row.membershipStart, row.monthly].map((cell) => `"${cell}"`).join(',')
     })
     .join('\n')
   return `${header}${body}`
@@ -86,7 +86,7 @@ export function BillingOverview() {
         id,
         property: name,
         address,
-        membership,
+        membershipStart: membership,
         monthly,
       })),
     }
@@ -132,23 +132,23 @@ export function BillingOverview() {
           <p className="text-sm text-white/60">No billing data yet. Add properties to see plan details here.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10 text-left text-sm">
+            <table className="min-w-full table-fixed divide-y divide-white/10 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-white/40">
                 <tr>
-                  <th className="px-4 py-3">Property</th>
-                  <th className="px-4 py-3">Membership</th>
-                  <th className="px-4 py-3">Monthly fee</th>
+                  <th className="w-1/2 px-4 py-3">Property</th>
+                  <th className="w-1/4 px-4 py-3">Membership start date</th>
+                  <th className="w-1/4 px-4 py-3 text-right">Monthly fee</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {stats.rows.map((row) => (
                   <tr key={row.id} className="hover:bg-white/5">
-                    <td className="px-4 py-3 text-white">
+                    <td className="px-4 py-3 align-top text-white">
                       <div>{row.property}</div>
                       {row.address && <div className="text-sm text-white/60">{row.address}</div>}
                     </td>
-                    <td className="px-4 py-3 text-white/70">{row.membership}</td>
-                    <td className="px-4 py-3 text-white">{row.monthly}</td>
+                    <td className="whitespace-nowrap px-4 py-3 align-top text-white/70">{row.membershipStart}</td>
+                    <td className="px-4 py-3 text-right text-white">{row.monthly}</td>
                   </tr>
                 ))}
               </tbody>
