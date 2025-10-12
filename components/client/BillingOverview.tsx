@@ -9,7 +9,7 @@ import { useClientPortal } from './ClientPortalProvider'
 type BillingRow = {
   id: string
   property: string
-  address: string
+  address?: string
   membership: string
   monthly: string
 }
@@ -41,9 +41,12 @@ function formatAddress({
 }
 
 function toCsv(rows: BillingRow[]) {
-  const header = 'Property,Address,Membership start,Monthly fee\n'
+  const header = 'Property,Membership start,Monthly fee\n'
   const body = rows
-    .map((row) => [row.property, row.address, row.membership, row.monthly].map((cell) => `"${cell}"`).join(','))
+    .map((row) => {
+      const property = row.address ? `${row.property} - ${row.address}` : row.property
+      return [property, row.membership, row.monthly].map((cell) => `"${cell}"`).join(',')
+    })
     .join('\n')
   return `${header}${body}`
 }
@@ -64,8 +67,8 @@ export function BillingOverview() {
       const address = formatAddress(property)
       return {
         id: property.id,
-        property: property.name,
-        address: address || property.name,
+        name: property.name,
+        address,
         membership: property.membershipStart ? format(new Date(property.membershipStart), 'PP') : '—',
         monthly: property.pricePerMonth ? `$${property.pricePerMonth.toFixed(2)}` : 'Included',
         isActive: property.status === 'active',
@@ -79,9 +82,9 @@ export function BillingOverview() {
     return {
       totalMonthly,
       activeProperties,
-      rows: rows.map(({ id, property, address, membership, monthly }) => ({
+      rows: rows.map(({ id, name, address, membership, monthly }) => ({
         id,
-        property,
+        property: name,
         address,
         membership,
         monthly,
@@ -133,7 +136,6 @@ export function BillingOverview() {
               <thead className="text-xs uppercase tracking-wide text-white/40">
                 <tr>
                   <th className="px-4 py-3">Property</th>
-                  <th className="px-4 py-3">Address</th>
                   <th className="px-4 py-3">Membership</th>
                   <th className="px-4 py-3">Monthly fee</th>
                 </tr>
@@ -141,8 +143,10 @@ export function BillingOverview() {
               <tbody className="divide-y divide-white/5">
                 {stats.rows.map((row) => (
                   <tr key={row.id} className="hover:bg-white/5">
-                    <td className="px-4 py-3 text-white">{row.property}</td>
-                    <td className="px-4 py-3 text-white/70">{row.address}</td>
+                    <td className="px-4 py-3 text-white">
+                      <div>{row.property}</div>
+                      {row.address && <div className="text-sm text-white/60">{row.address}</div>}
+                    </td>
                     <td className="px-4 py-3 text-white/70">{row.membership}</td>
                     <td className="px-4 py-3 text-white">{row.monthly}</td>
                   </tr>
