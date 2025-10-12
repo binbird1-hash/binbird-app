@@ -7,7 +7,6 @@ import clsx from 'clsx'
 import {
   BuildingOffice2Icon,
   CursorArrowRaysIcon,
-  BellAlertIcon,
   CreditCardIcon,
   Cog6ToothIcon,
   ClockIcon,
@@ -21,7 +20,6 @@ const NAV_ITEMS = [
   { href: '/client/dashboard', label: 'Dashboard', icon: BuildingOffice2Icon },
   { href: '/client/tracker', label: 'Live tracker', icon: CursorArrowRaysIcon },
   { href: '/client/history', label: 'Job history', icon: ClockIcon },
-  { href: '/client/notifications', label: 'Notifications', icon: BellAlertIcon },
   { href: '/client/billing', label: 'Billing', icon: CreditCardIcon },
   { href: '/client/settings', label: 'Settings', icon: Cog6ToothIcon },
 ] as const
