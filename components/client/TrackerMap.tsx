@@ -94,7 +94,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
     () => ({
       styles: MAP_STYLE_LOOKUP[mapStylePref] ?? darkMapStyle,
       disableDefaultUI: true,
-      zoomControl: true,
+      zoomControl: false,
       fullscreenControl: false,
       streetViewControl: false,
       gestureHandling: 'greedy',

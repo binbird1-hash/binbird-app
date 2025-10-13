@@ -194,11 +194,12 @@ export function LiveTracker() {
                   <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-5">
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
                         <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
                         <div className="flex flex-col gap-3 text-sm text-white/70 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                           {jobTypeLabel ? (
-                            <span className="font-medium text-white/80">{jobTypeLabel}</span>
+                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90 sm:text-sm">
+                              {jobTypeLabel}
+                            </span>
                           ) : (
                             <span className="text-white/50">Service details coming soon</span>
                           )}
@@ -250,7 +251,7 @@ export function LiveTracker() {
                             <div
                               key={`${job.id}-${step.key}-compact`}
                               className={clsx(
-                                'flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition-colors',
+                                'flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-center transition-colors',
                                 completed
                                   ? 'border-binbird-red/70 bg-binbird-red/10'
                                   : reached
@@ -282,7 +283,7 @@ export function LiveTracker() {
                           )
                         })}
                       </div>
-                      <ol className="relative hidden flex-col gap-6 sm:flex sm:flex-row sm:items-start sm:gap-0">
+                      <ol className="relative hidden flex-col gap-6 sm:flex sm:flex-row sm:items-center sm:gap-0">
                         {PROGRESS_STEPS.map((step, index) => {
                           const reached = progressIndex >= index
                           const completed =
@@ -290,7 +291,7 @@ export function LiveTracker() {
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
                             <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
-                              <div className="flex items-center gap-4 sm:flex-col sm:text-center">
+                              <div className="flex items-center gap-4 sm:flex-col sm:items-center sm:justify-center sm:text-center">
                                 <span
                                   className={clsx(
                                     'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
@@ -303,7 +304,7 @@ export function LiveTracker() {
                                 >
                                   {completed ? <CheckIcon className="h-6 w-6" /> : index + 1}
                                 </span>
-                                <div className="flex flex-col text-left sm:text-center">
+                                <div className="flex flex-col text-left sm:items-center sm:text-center">
                                   <span
                                     className={clsx(
                                       'text-xs font-semibold uppercase tracking-wide whitespace-nowrap',
