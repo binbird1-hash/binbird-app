@@ -251,7 +251,7 @@ export function LiveTracker() {
                             <div
                               key={`${job.id}-${step.key}-compact`}
                               className={clsx(
-                                'flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-center transition-colors',
+                                'flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-center transition-colors',
                                 completed
                                   ? 'border-binbird-red/70 bg-binbird-red/10'
                                   : reached
@@ -261,7 +261,7 @@ export function LiveTracker() {
                             >
                               <span
                                 className={clsx(
-                                'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold',
+                                  'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none',
                                   completed
                                     ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                     : reached
@@ -290,11 +290,11 @@ export function LiveTracker() {
                             progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
-                            <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
+                            <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:justify-center sm:gap-3">
                               <div className="flex items-center gap-4 sm:flex-col sm:items-center sm:justify-center sm:text-center">
                                 <span
                                   className={clsx(
-                                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all',
+                                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none transition-all',
                                     completed
                                       ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                       : reached
