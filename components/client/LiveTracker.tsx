@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { BoltIcon, CheckIcon, MapIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import { BoltIcon, CheckIcon, ClockIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { BIN_THEME, DEFAULT_BIN_PILL, type BinThemeKey } from './binThemes'
 import { useClientPortal, type Job, type Property } from './ClientPortalProvider'
@@ -23,6 +23,15 @@ const PROGRESS_INDEX: Record<Job['status'], number> = {
   completed: 3,
   skipped: 3,
 }
+
+const PROGRESS_DESCRIPTIONS: Record<Exclude<Job['status'], 'skipped'>, string> = {
+  scheduled: 'Queued and waiting for your service window.',
+  en_route: 'Our crew has left the depot and is on the way.',
+  on_site: 'The team is actively servicing this property.',
+  completed: 'Service is wrapped up and logged for your records.',
+}
+
+const SKIPPED_DESCRIPTION = 'This visit was skipped by the crew.'
 
 const formatJobTypeLabel = (value: string | null | undefined): string | null => {
   if (!value) return null
@@ -53,6 +62,21 @@ const getBinStyles = (bin: string | undefined) => {
     return { pill: DEFAULT_BIN_PILL }
   }
   return { pill: BIN_THEME[themeKey].pill }
+}
+
+const formatScheduledLabel = (value: string | null | undefined): string | null => {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
 }
 
 const formatPropertyAddress = (property: Property | null, fallback: string | null) => {
@@ -185,155 +209,160 @@ export function LiveTracker() {
               const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
               const fullAddress = formatPropertyAddress(property ?? null, job.propertyName)
               const jobTypeLabel = formatJobTypeLabel(job.jobType)
+              const scheduledLabel = formatScheduledLabel(job.scheduledAt)
               const bins = job.bins && job.bins.length > 0 ? job.bins : []
+              const currentStep = PROGRESS_STEPS[Math.min(progressIndex, PROGRESS_STEPS.length - 1)]
+              const statusLabel = isSkipped
+                ? 'Skipped'
+                : currentStep
+                  ? currentStep.label
+                  : PROGRESS_STEPS[0]!.label
+              const statusDescription = isSkipped
+                ? SKIPPED_DESCRIPTION
+                : currentStep
+                  ? PROGRESS_DESCRIPTIONS[currentStep.key]
+                  : PROGRESS_DESCRIPTIONS.scheduled
+              const showCheckmark = !isSkipped && job.status === 'completed'
+              const statusBadgeValue = isSkipped ? '!' : progressIndex + 1
               return (
                 <article
                   key={job.id}
-                  className="rounded-3xl border border-white/10 bg-black/30 p-6"
+                  className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-[0_10px_45px_-20px_rgba(0,0,0,0.8)]"
                 >
-                  <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-5">
-                      <div className="space-y-2">
-                        <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
-                        <div className="flex flex-col gap-3 text-sm text-white/70 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                  <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-5">
+                        <div className="space-y-2">
+                          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Property</span>
+                          <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-white/70">
                           {jobTypeLabel ? (
-                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90 sm:text-sm">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/90 shadow-[0_0_0_1px_rgba(255,255,255,0.05)] sm:text-sm">
                               {jobTypeLabel}
                             </span>
                           ) : (
                             <span className="text-white/50">Service details coming soon</span>
                           )}
-                          {bins.length > 0 ? (
-                            <div
-                              className={clsx(
-                                'grid gap-2 text-xs sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:text-sm',
-                                bins.length === 1 ? 'grid-cols-1' : 'grid-cols-2',
-                              )}
-                            >
-                              {bins.map((bin) => {
-                                const { pill } = getBinStyles(bin)
-                                return (
-                                  <span
-                                    key={`${job.id}-${bin}`}
-                                    className={clsx(
-                                      'flex w-full items-center justify-center rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white sm:w-auto sm:min-w-[140px] sm:px-5 sm:py-3 sm:text-sm',
-                                      pill,
-                                    )}
-                                  >
-                                    {bin}
-                                  </span>
-                                )
-                              })}
-                            </div>
+                          {scheduledLabel ? (
+                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-medium text-white/80 backdrop-blur sm:text-sm">
+                              <ClockIcon className="h-4 w-4" />
+                              {scheduledLabel}
+                            </span>
+                          ) : null}
+                          {job.crewName ? (
+                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-medium text-white/80 backdrop-blur sm:text-sm">
+                              <UserGroupIcon className="h-4 w-4" />
+                              Crew: <span className="font-semibold text-white">{job.crewName}</span>
+                            </span>
                           ) : null}
                         </div>
-                      </div>
-                      {job.crewName ? (
-                        <dl className="grid gap-3 text-sm text-white/70 sm:grid-cols-2">
-                          <div className="flex items-center gap-2">
-                            <dt className="flex items-center gap-2 text-white/50">
-                              <MapIcon className="h-5 w-5" />
-                              <span>Crew</span>
-                            </dt>
-                            <dd className="font-medium text-white">{job.crewName}</dd>
+                        {bins.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {bins.map((bin) => {
+                              const { pill } = getBinStyles(bin)
+                              return (
+                                <span
+                                  key={`${job.id}-${bin}`}
+                                  className={clsx(
+                                    'inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-[0_0_15px_rgba(0,0,0,0.25)] sm:text-sm',
+                                    pill,
+                                  )}
+                                >
+                                  {bin}
+                                </span>
+                              )
+                            })}
                           </div>
-                        </dl>
-                      ) : null}
+                        ) : null}
+                      </div>
+                      <div className="flex w-full flex-col gap-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-5 text-white shadow-[0_20px_40px_-30px_rgba(0,0,0,0.8)] sm:w-auto sm:max-w-sm">
+                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Current status</span>
+                        <div className="flex items-center gap-4">
+                          <span
+                            className={clsx(
+                              'flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none transition-colors',
+                              showCheckmark
+                                ? 'border-binbird-red bg-binbird-red text-binbird-black'
+                                : 'border-binbird-red/70 text-binbird-red',
+                            )}
+                          >
+                            {showCheckmark ? <CheckIcon className="h-6 w-6" /> : statusBadgeValue}
+                          </span>
+                          <div className="space-y-1">
+                            <p className="text-lg font-semibold text-white">{statusLabel}</p>
+                            <p className="text-sm text-white/70">{statusDescription}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="relative flex flex-col gap-6">
-                      <div className="grid grid-cols-2 gap-3 sm:hidden">
-                        {PROGRESS_STEPS.map((step, index) => {
-                          const reached = progressIndex >= index
-                          const completed =
-                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
-                          const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
-                          return (
-                            <div
-                              key={`${job.id}-${step.key}-compact`}
+                    <ol className="grid gap-3 sm:grid-cols-4">
+                      {PROGRESS_STEPS.map((step, index) => {
+                        const reached = progressIndex >= index
+                        const completed =
+                          progressIndex > index || (!isSkipped && progressIndex === index && step.key === 'completed')
+                        const active = progressIndex === index && !isSkipped
+                        const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
+                        const description =
+                          step.key === 'completed' && isSkipped
+                            ? SKIPPED_DESCRIPTION
+                            : PROGRESS_DESCRIPTIONS[step.key]
+                        return (
+                          <li
+                            key={`${job.id}-${step.key}`}
+                            className={clsx(
+                              'relative flex flex-1 flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-center transition-colors sm:p-5',
+                              completed
+                                ? 'border-binbird-red/80 bg-binbird-red/10'
+                                : reached
+                                  ? 'border-binbird-red/40 bg-binbird-red/5'
+                                  : 'border-white/10 bg-black/30',
+                              index < PROGRESS_STEPS.length - 1 &&
+                                "sm:after:absolute sm:after:left-[calc(100%+0.25rem)] sm:after:top-1/2 sm:after:h-[2px] sm:after:w-6 sm:after:-translate-y-1/2 sm:after:content-['']",
+                              index < PROGRESS_STEPS.length - 1 &&
+                                (progressIndex > index
+                                  ? 'sm:after:bg-binbird-red/60'
+                                  : 'sm:after:bg-white/15'),
+                            )}
+                          >
+                            <span
                               className={clsx(
-                                'flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-center transition-colors',
+                                'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none transition-colors',
                                 completed
-                                  ? 'border-binbird-red/70 bg-binbird-red/10'
+                                  ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                   : reached
-                                    ? 'border-binbird-red/40 bg-binbird-red/5'
-                                    : 'border-white/10 bg-black/20',
+                                    ? 'border-binbird-red text-binbird-red'
+                                    : 'border-white/15 text-white/40',
                               )}
                             >
-                              <span
-                                className={clsx(
-                                  'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none',
-                                  completed
-                                    ? 'border-binbird-red bg-binbird-red text-binbird-black'
-                                    : reached
-                                      ? 'border-binbird-red text-binbird-red'
-                                      : 'border-white/15 text-white/40',
-                                )}
-                              >
-                                {completed ? <CheckIcon className="h-5 w-5" /> : index + 1}
-                              </span>
-                              <span
+                              {completed && step.key === 'completed' && !isSkipped ? (
+                                <CheckIcon className="h-5 w-5" />
+                              ) : (
+                                index + 1
+                              )}
+                            </span>
+                            <div className="space-y-1">
+                              <p
                                 className={clsx(
                                   'text-xs font-semibold uppercase tracking-wide',
-                                  reached ? 'text-white' : 'text-white/50',
+                                  reached ? 'text-white' : 'text-white/40',
                                 )}
                               >
                                 {label}
-                              </span>
+                              </p>
+                              <p
+                                className={clsx(
+                                  'text-xs leading-relaxed text-white/50 sm:text-sm',
+                                  active ? 'text-white/80' : null,
+                                )}
+                              >
+                                {description}
+                              </p>
                             </div>
-                          )
-                        })}
-                      </div>
-                      <ol className="relative hidden flex-col gap-6 sm:flex sm:flex-row sm:items-center sm:gap-0">
-                        {PROGRESS_STEPS.map((step, index) => {
-                          const reached = progressIndex >= index
-                          const completed =
-                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
-                          const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
-                          return (
-                            <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:justify-center sm:gap-3">
-                              <div className="flex items-center gap-4 sm:flex-col sm:items-center sm:justify-center sm:text-center">
-                                <span
-                                  className={clsx(
-                                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none transition-all',
-                                    completed
-                                      ? 'border-binbird-red bg-binbird-red text-binbird-black'
-                                      : reached
-                                        ? 'border-binbird-red text-binbird-red'
-                                        : 'border-white/15 text-white/40',
-                                  )}
-                                >
-                                  {completed ? <CheckIcon className="h-6 w-6" /> : index + 1}
-                                </span>
-                                <div className="flex flex-col text-left sm:items-center sm:text-center">
-                                  <span
-                                    className={clsx(
-                                      'text-xs font-semibold uppercase tracking-wide whitespace-nowrap',
-                                      reached ? 'text-white' : 'text-white/40',
-                                    )}
-                                  >
-                                    {label}
-                                  </span>
-                                </div>
-                              </div>
-                              {index < PROGRESS_STEPS.length - 1 ? (
-                                <>
-                                  <div className="ml-16 mt-6 hidden flex-1 sm:ml-4 sm:mt-0 sm:flex" aria-hidden>
-                                    <span
-                                      className={clsx(
-                                        'h-[2px] w-full rounded-full transition-all',
-                                        progressIndex > index
-                                          ? 'bg-gradient-to-r from-binbird-red/80 via-binbird-red/40 to-white/10'
-                                          : 'bg-white/10',
-                                      )}
-                                    />
-                                  </div>
-                                </>
-                              ) : null}
-                            </li>
-                          )
-                        })}
-                      </ol>
-                    </div>
+                          </li>
+                        )
+                      })}
+                    </ol>
                   </div>
                 </article>
               )
