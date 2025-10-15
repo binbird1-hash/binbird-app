@@ -295,7 +295,7 @@ export function BillingOverview() {
             <button
               type="button"
               onClick={handleManageSubscription}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-binbird-red px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
+              className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
             >
               Manage subscription
             </button>
@@ -327,7 +327,7 @@ export function BillingOverview() {
             <button
               type="button"
               onClick={handleUpdateBillingDetails}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+              className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
             >
               Update billing details
             </button>
@@ -360,13 +360,13 @@ export function BillingOverview() {
               <button
                 type="button"
                 onClick={handleAddProperty}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
               >
                 Add property
               </button>
               <Link
                 href="/client/dashboard"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
               >
                 View property list
               </Link>
@@ -383,7 +383,7 @@ export function BillingOverview() {
           <button
             type="button"
             onClick={handleDownloadCsv}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-medium uppercase tracking-wide text-white transition hover:border-binbird-red"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
           >
             <ArrowDownTrayIcon className="h-4 w-4" /> Export CSV
           </button>
