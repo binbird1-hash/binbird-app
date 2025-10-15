@@ -226,7 +226,7 @@ export function BillingOverview() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-black p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
@@ -252,7 +252,7 @@ export function BillingOverview() {
         </dl>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-black p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="text-xs uppercase tracking-wide text-white/40">Manage your account</span>
