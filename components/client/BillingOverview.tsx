@@ -236,13 +236,13 @@ export function BillingOverview() {
           </div>
         </div>
         <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div className="rounded-2xl border border-white/10 bg-black p-4">
             <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
             <dd className="mt-2 text-3xl font-semibold tracking-tight">
               {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
             </dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div className="rounded-2xl border border-white/10 bg-black p-4">
             <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
             <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
             {stats.pausedProperties > 0 && (
@@ -262,7 +262,7 @@ export function BillingOverview() {
           </div>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <ArrowPathIcon className="h-5 w-5" /> Manage subscription
@@ -278,13 +278,13 @@ export function BillingOverview() {
                 )}
               </p>
               <dl className="grid gap-2 text-xs text-white/60">
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="uppercase tracking-wide">Monthly spend</dt>
                   <dd className="font-semibold text-white">
                     {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="uppercase tracking-wide">Properties</dt>
                   <dd className="font-semibold text-white">
                     {stats.activeProperties} active · {stats.pausedProperties} paused
@@ -300,7 +300,7 @@ export function BillingOverview() {
               Manage subscription
             </button>
           </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <DocumentDuplicateIcon className="h-5 w-5" /> Billing contacts
@@ -309,13 +309,13 @@ export function BillingOverview() {
                 Confirm who receives invoices and reminders so nothing is missed.
               </p>
               <dl className="space-y-2 text-sm text-white">
-                <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="text-xs uppercase tracking-wide text-white/50">Primary email</dt>
                   <dd className="mt-1 font-medium text-white">
                     {user?.email ?? 'Not set'}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="text-xs uppercase tracking-wide text-white/50">Account contact</dt>
                   <dd className="mt-1 font-medium text-white">
                     {profile?.fullName ?? 'Add a billing contact'}
@@ -332,7 +332,7 @@ export function BillingOverview() {
               Update billing details
             </button>
           </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <BuildingOffice2Icon className="h-5 w-5" /> Property management
@@ -341,16 +341,16 @@ export function BillingOverview() {
                 Track which sites are active, request new connections, or pause locations that are on hold.
               </p>
               <ul className="space-y-2 text-xs text-white/60">
-                <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   <span className="font-semibold text-white">{stats.activeProperties}</span> active properties scheduled this
                   month
                 </li>
                 {stats.pausedProperties > 0 && (
-                  <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                  <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
                     <span className="font-semibold text-white">{stats.pausedProperties}</span> paused until reactivated
                   </li>
                 )}
-                <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   Projected monthly catalogue value:{' '}
                   {stats.catalogMonthly > 0 ? currencyFormatter.format(stats.catalogMonthly) : 'Included'}
                 </li>
