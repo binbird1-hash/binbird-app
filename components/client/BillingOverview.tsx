@@ -235,45 +235,19 @@ export function BillingOverview() {
             </p>
           </div>
         </div>
-        <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
             <dd className="mt-2 text-3xl font-semibold tracking-tight">
               {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
             </dd>
-            <dd className="mt-3 text-xs text-white/50">
-              Billable properties contribute {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'no'}
-              monthly fees
-            </dd>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
             <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
-            <dd className="mt-3 text-xs text-white/50">
-              {stats.pausedProperties > 0
-                ? `${stats.pausedProperties} paused`
-                : 'All properties currently active'}
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Projected annual spend</dt>
-            <dd className="mt-2 text-3xl font-semibold tracking-tight">
-              {stats.totalMonthly > 0 ? currencyFormatter.format(stats.annualProjection) : 'Included'}
-            </dd>
-            <dd className="mt-3 text-xs text-white/50">
-              Based on your current active property mix
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Average per property</dt>
-            <dd className="mt-2 text-3xl font-semibold tracking-tight">
-              {stats.averagePerProperty > 0 ? currencyFormatter.format(stats.averagePerProperty) : 'Included'}
-            </dd>
-            <dd className="mt-3 text-xs text-white/50">
-              {stats.includedProperties > 0
-                ? `${stats.includedProperties} properties are included`
-                : 'All active properties incur a fee'}
-            </dd>
+            {stats.pausedProperties > 0 && (
+              <dd className="mt-3 text-xs text-white/50">{stats.pausedProperties} paused</dd>
+            )}
           </div>
         </dl>
       </section>
