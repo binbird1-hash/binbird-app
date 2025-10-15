@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
@@ -12,6 +12,8 @@ import {
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
 import { saveAs } from 'file-saver'
+import { ManageSubscriptionModal, type SubscriptionPreferences } from './ManageSubscriptionModal'
+import { AddPropertyModal, type AddPropertyRequest } from './AddPropertyModal'
 import { useClientPortal } from './ClientPortalProvider'
 
 type BillingRow = {
@@ -108,7 +110,28 @@ function formatPropertyDisplay({
 }
 
 const BILLING_PORTAL_URL = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
-const PROPERTY_REQUEST_URL = process.env.NEXT_PUBLIC_PROPERTY_REQUEST_URL
+
+type PendingPropertyRequest = AddPropertyRequest & { id: string; createdAt: Date }
+
+const PLAN_NAME_TO_TIER: Record<string, SubscriptionPreferences['planTier']> = {
+  'Paused plan': 'paused',
+  'Starter plan': 'starter',
+  'Growth plan': 'growth',
+  'Enterprise plan': 'enterprise',
+}
+
+const PLAN_TIER_LABELS: Record<SubscriptionPreferences['planTier'], string> = {
+  paused: 'Paused plan',
+  starter: 'Starter plan',
+  growth: 'Growth plan',
+  enterprise: 'Enterprise plan',
+}
+
+const SERVICE_LEVEL_LABELS: Record<AddPropertyRequest['serviceLevel'], string> = {
+  standard: 'Standard servicing',
+  catalog: 'Full catalog management',
+  custom: 'Custom program',
+}
 
 export function BillingOverview() {
   const router = useRouter()
@@ -197,23 +220,65 @@ export function BillingOverview() {
     return 'Enterprise plan'
   }, [stats.activeProperties])
 
-  const handleManageSubscription = () => {
-    if (typeof window === 'undefined') return
-    if (BILLING_PORTAL_URL) {
-      window.open(BILLING_PORTAL_URL, '_blank', 'noopener,noreferrer')
+  const [isManageSubscriptionOpen, setIsManageSubscriptionOpen] = useState(false)
+  const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false)
+  const [subscriptionPreferences, setSubscriptionPreferences] = useState<SubscriptionPreferences>(() => ({
+    planTier: PLAN_NAME_TO_TIER[planName] ?? 'starter',
+    billingFrequency: 'monthly',
+    autopayEnabled: true,
+    invoiceEmail: user?.email ?? '',
+    notes: '',
+  }))
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{ message: string; timestamp: Date } | null>(null)
+  const [pendingPropertyRequests, setPendingPropertyRequests] = useState<PendingPropertyRequest[]>([])
+  const [propertyStatus, setPropertyStatus] = useState<{ message: string; timestamp: Date } | null>(null)
+
+  useEffect(() => {
+    if (subscriptionStatus) {
       return
     }
-    window.open('mailto:billing@binbird.com?subject=Manage%20my%20BinBird%20subscription', '_blank')
+    setSubscriptionPreferences((previous) => ({
+      ...previous,
+      planTier: PLAN_NAME_TO_TIER[planName] ?? previous.planTier,
+    }))
+  }, [planName, subscriptionStatus])
+
+  useEffect(() => {
+    setSubscriptionPreferences((previous) => ({
+      ...previous,
+      invoiceEmail: user?.email ?? previous.invoiceEmail,
+    }))
+  }, [user?.email])
+
+  const handleSaveSubscription = (preferences: SubscriptionPreferences) => {
+    setSubscriptionPreferences(preferences)
+    setSubscriptionStatus({
+      message: 'Subscription preferences submitted to our team.',
+      timestamp: new Date(),
+    })
+    setIsManageSubscriptionOpen(false)
   }
 
-  const handleAddProperty = () => {
-    if (typeof window === 'undefined') return
-    if (PROPERTY_REQUEST_URL) {
-      window.open(PROPERTY_REQUEST_URL, '_blank', 'noopener,noreferrer')
-      return
+  const handleCreatePropertyRequest = (request: AddPropertyRequest) => {
+    const entry: PendingPropertyRequest = {
+      ...request,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date(),
     }
-    window.open('mailto:hello@binbird.com?subject=Add%20a%20new%20property%20to%20my%20account', '_blank')
+    setPendingPropertyRequests((previous) => [entry, ...previous])
+    setPropertyStatus({
+      message: 'Property request received. We will follow up shortly.',
+      timestamp: new Date(),
+    })
+    setIsAddPropertyOpen(false)
   }
+
+  const billingFrequencyLabel =
+    subscriptionPreferences.billingFrequency === 'annual' ? 'Annual billing' : 'Monthly billing'
+  const autopayLabel = subscriptionPreferences.autopayEnabled ? 'Auto-pay enabled' : 'Manual approval'
+  const planTierLabel = PLAN_TIER_LABELS[subscriptionPreferences.planTier] ?? planName
+  const formattedMonthlySpend = stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'
+  const nextBillingDateDisplay = useMemo(() => format(stats.nextBillingDate, 'PPP'), [stats.nextBillingDate])
 
   const handleUpdateBillingDetails = () => {
     router.push('/client/settings')
@@ -226,154 +291,244 @@ export function BillingOverview() {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
-            <p className="mt-1 text-sm text-white/60">
-              Current totals for your connected properties and upcoming invoice
-            </p>
-          </div>
-        </div>
-        <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
-            <dd className="mt-2 text-3xl font-semibold tracking-tight">
-              {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
-            <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
-            {stats.pausedProperties > 0 && (
-              <dd className="mt-3 text-xs text-white/50">{stats.pausedProperties} paused</dd>
-            )}
-          </div>
-        </dl>
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <span className="text-xs uppercase tracking-wide text-white/40">Manage your account</span>
-            <p className="mt-1 text-sm text-white/60">
-              Keep your subscription current, maintain billing contacts, and request new properties
-            </p>
-          </div>
-        </div>
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
-                <ArrowPathIcon className="h-5 w-5" /> Manage subscription
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-6 shadow-inner shadow-black/40">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.2),transparent_70%)] opacity-80"
+          aria-hidden="true"
+        />
+          <div className="relative z-10">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
+                <p className="mt-1 text-sm text-white/60">
+                  Current totals for your connected properties and upcoming invoice
+                </p>
               </div>
-              <p className="text-sm text-white/60">
-                {selectedAccount ? `${selectedAccount.name} is on the ${planName}.` : 'Review your plan details.'}
-                {stats.activeProperties > 0 && (
-                  <>
-                    {' '}
-                    Next invoice {format(stats.nextBillingDate, 'PPP')} (
-                    {formatDistanceToNowStrict(stats.nextBillingDate, { addSuffix: true })}).
-                  </>
-                )}
-              </p>
-              <dl className="grid gap-2 text-xs text-white/60">
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                  <dt className="uppercase tracking-wide">Monthly spend</dt>
-                  <dd className="font-semibold text-white">
-                    {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                  <dt className="uppercase tracking-wide">Properties</dt>
-                  <dd className="font-semibold text-white">
-                    {stats.activeProperties} active · {stats.pausedProperties} paused
-                  </dd>
-                </div>
-              </dl>
             </div>
-            <button
-              type="button"
-              onClick={handleManageSubscription}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-binbird-red px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
-            >
-              Manage subscription
-            </button>
-          </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
-                <DocumentDuplicateIcon className="h-5 w-5" /> Billing contacts
+            <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
+                <dd className="mt-2 text-3xl font-semibold tracking-tight">
+                  {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
+                </dd>
               </div>
-              <p className="text-sm text-white/60">
-                Confirm who receives invoices and reminders so nothing is missed.
-              </p>
-              <dl className="space-y-2 text-sm text-white">
-                <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                  <dt className="text-xs uppercase tracking-wide text-white/50">Primary email</dt>
-                  <dd className="mt-1 font-medium text-white">
-                    {user?.email ?? 'Not set'}
-                  </dd>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                  <dt className="text-xs uppercase tracking-wide text-white/50">Account contact</dt>
-                  <dd className="mt-1 font-medium text-white">
-                    {profile?.fullName ?? 'Add a billing contact'}
-                  </dd>
-                  {profile?.phone && <dd className="text-xs text-white/50">{profile.phone}</dd>}
-                </div>
-              </dl>
-            </div>
-            <button
-              type="button"
-              onClick={handleUpdateBillingDetails}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
-            >
-              Update billing details
-            </button>
-          </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
-                <BuildingOffice2Icon className="h-5 w-5" /> Property management
-              </div>
-              <p className="text-sm text-white/60">
-                Track which sites are active, request new connections, or pause locations that are on hold.
-              </p>
-              <ul className="space-y-2 text-xs text-white/60">
-                <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                  <span className="font-semibold text-white">{stats.activeProperties}</span> active properties scheduled this
-                  month
-                </li>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
+                <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
                 {stats.pausedProperties > 0 && (
-                  <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                    <span className="font-semibold text-white">{stats.pausedProperties}</span> paused until reactivated
-                  </li>
+                  <dd className="mt-3 text-xs text-white/50">{stats.pausedProperties} paused</dd>
                 )}
-                <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-                  Projected monthly catalogue value:{' '}
-                  {stats.catalogMonthly > 0 ? currencyFormatter.format(stats.catalogMonthly) : 'Included'}
-                </li>
-              </ul>
+              </div>
+            </dl>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-6 shadow-inner shadow-black/40">
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.2),transparent_70%)] opacity-80"
+            aria-hidden="true"
+          />
+          <div className="relative z-10">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <span className="text-xs uppercase tracking-wide text-white/40">Manage your account</span>
+                <p className="mt-1 text-sm text-white/60">
+                  Keep your subscription current, maintain billing contacts, and request new properties
+                </p>
+              </div>
             </div>
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-5 shadow-inner shadow-black/50 backdrop-blur">
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(239,68,68,0.22),transparent_70%)] opacity-70"
+              aria-hidden="true"
+            />
+            <div className="relative z-10 flex h-full flex-col">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
+                  <ArrowPathIcon className="h-5 w-5" /> Manage subscription
+                </div>
+                <p className="text-sm text-white/60">
+                  {selectedAccount
+                    ? `${selectedAccount.name} is currently aligned with the ${planTierLabel}.`
+                    : 'Review your plan details.'}
+                  {stats.activeProperties > 0 && (
+                    <>
+                      {' '}
+                      Next invoice {nextBillingDateDisplay} (
+                      {formatDistanceToNowStrict(stats.nextBillingDate, { addSuffix: true })}).
+                    </>
+                  )}
+                </p>
+                <dl className="grid gap-2 text-xs text-white/60">
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <dt className="uppercase tracking-wide">Monthly spend</dt>
+                    <dd className="font-semibold text-white">{formattedMonthlySpend}</dd>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <dt className="uppercase tracking-wide">Properties</dt>
+                    <dd className="font-semibold text-white">
+                      {stats.activeProperties} active · {stats.pausedProperties} paused
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <dt className="uppercase tracking-wide">Billing</dt>
+                    <dd className="font-semibold text-white">{billingFrequencyLabel}</dd>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <dt className="uppercase tracking-wide">Payments</dt>
+                    <dd className="font-semibold text-white">{autopayLabel}</dd>
+                  </div>
+                </dl>
+                {subscriptionStatus ? (
+                  <p className="rounded-xl border border-binbird-red/40 bg-binbird-red/10 px-3 py-2 text-xs text-binbird-red/80">
+                    {subscriptionStatus.message}{' '}
+                    <span className="text-white/70">
+                      Updated {formatDistanceToNowStrict(subscriptionStatus.timestamp, { addSuffix: true })}.
+                    </span>
+                  </p>
+                ) : (
+                  <p className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/60">
+                    Manage plan updates and share context with the BinBird team.
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
-                onClick={handleAddProperty}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                onClick={() => setIsManageSubscriptionOpen(true)}
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-binbird-red px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
               >
-                Add property
+                Manage subscription
               </button>
-              <Link
-                href="/client/dashboard"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
-              >
-                View property list
-              </Link>
             </div>
           </div>
-        </div>
-      </section>
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-5 shadow-inner shadow-black/50 backdrop-blur">
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),transparent_70%)] opacity-60"
+              aria-hidden="true"
+            />
+            <div className="relative z-10 flex h-full flex-col justify-between">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
+                  <DocumentDuplicateIcon className="h-5 w-5" /> Billing contacts
+                </div>
+                <p className="text-sm text-white/60">
+                  Confirm who receives invoices and reminders so nothing is missed.
+                </p>
+                <dl className="space-y-2 text-sm text-white">
+                  <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-wide text-white/50">Primary email</dt>
+                    <dd className="mt-1 font-medium text-white">{user?.email ?? 'Not set'}</dd>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-wide text-white/50">Account contact</dt>
+                    <dd className="mt-1 font-medium text-white">{profile?.fullName ?? 'Add a billing contact'}</dd>
+                    {profile?.phone && <dd className="text-xs text-white/50">{profile.phone}</dd>}
+                  </div>
+                </dl>
+              </div>
+              <button
+                type="button"
+                onClick={handleUpdateBillingDetails}
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+              >
+                Update billing details
+              </button>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-5 shadow-inner shadow-black/50 backdrop-blur">
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(34,197,94,0.18),transparent_70%)] opacity-60"
+              aria-hidden="true"
+            />
+            <div className="relative z-10 flex h-full flex-col">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
+                  <BuildingOffice2Icon className="h-5 w-5" /> Property management
+                </div>
+                <p className="text-sm text-white/60">
+                  Track which sites are active, request new connections, or pause locations that are on hold.
+                </p>
+                <ul className="space-y-2 text-xs text-white/60">
+                  <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    <span className="font-semibold text-white">{stats.activeProperties}</span> active properties scheduled this
+                    month
+                  </li>
+                  {stats.pausedProperties > 0 && (
+                    <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                      <span className="font-semibold text-white">{stats.pausedProperties}</span> paused until reactivated
+                    </li>
+                  )}
+                  <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                    Projected monthly catalogue value{' '}
+                    {stats.catalogMonthly > 0 ? currencyFormatter.format(stats.catalogMonthly) : 'Included'}
+                  </li>
+                </ul>
+                {propertyStatus && (
+                  <p className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                    {propertyStatus.message}{' '}
+                    <span className="text-white/70">
+                      {formatDistanceToNowStrict(propertyStatus.timestamp, { addSuffix: true })}
+                    </span>
+                  </p>
+                )}
+                {pendingPropertyRequests.length > 0 && (
+                  <div className="rounded-xl border border-white/10 bg-black/45 px-3 py-3 text-xs text-white/70">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Pending submissions</p>
+                    <ul className="mt-2 space-y-2">
+                      {pendingPropertyRequests.map((request) => {
+                        const formattedAddress = formatAddress({
+                          addressLine: request.addressLine,
+                          suburb: request.suburb,
+                          city: request.city,
+                        })
+                        const requestedStart = request.desiredStart ? format(new Date(request.desiredStart), 'PPP') : null
+                        return (
+                          <li key={request.id} className="rounded-lg border border-white/10 bg-black/60 px-3 py-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-white">
+                              <span className="text-sm font-semibold">{request.name}</span>
+                              <span className="text-xs text-white/60">
+                                {formatDistanceToNowStrict(request.createdAt, { addSuffix: true })}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-xs text-white/60">{formattedAddress}</div>
+                            <div className="mt-1 text-xs text-white/60">
+                              Service:{' '}
+                              <span className="font-medium text-white">{SERVICE_LEVEL_LABELS[request.serviceLevel]}</span>
+                            </div>
+                            {requestedStart && (
+                              <div className="mt-1 text-xs text-white/60">Target start {requestedStart}</div>
+                            )}
+                            {request.notes && (
+                              <div className="mt-1 text-xs text-white/50">“{request.notes}”</div>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPropertyOpen(true)}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                >
+                  Add property
+                </button>
+                <Link
+                  href="/client/dashboard"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                >
+                  View property list
+                </Link>
+              </div>
+            </div>
+          </div>
+            </div>
+          </div>
+        </section>
 
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
         <header className="mb-4 flex items-center justify-between text-sm text-white/60">
@@ -418,6 +573,23 @@ export function BillingOverview() {
           </div>
         )}
       </section>
+      <ManageSubscriptionModal
+        isOpen={isManageSubscriptionOpen}
+        onClose={() => setIsManageSubscriptionOpen(false)}
+        onSave={handleSaveSubscription}
+        initialPreferences={subscriptionPreferences}
+        activeProperties={stats.activeProperties}
+        formattedMonthlySpend={formattedMonthlySpend}
+        nextBillingDate={stats.activeProperties > 0 ? nextBillingDateDisplay : undefined}
+        planName={planTierLabel}
+        portalUrl={BILLING_PORTAL_URL}
+      />
+      <AddPropertyModal
+        isOpen={isAddPropertyOpen}
+        onClose={() => setIsAddPropertyOpen(false)}
+        onCreate={handleCreatePropertyRequest}
+        existingPropertyCount={stats.activeProperties + stats.pausedProperties}
+      />
     </div>
   )
 }
