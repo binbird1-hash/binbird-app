@@ -6,12 +6,10 @@ import { useRouter } from 'next/navigation'
 import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
 import {
   CreditCardIcon,
-  ArrowDownTrayIcon,
   ArrowPathIcon,
   BuildingOffice2Icon,
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
-import { saveAs } from 'file-saver'
 import { useClientPortal } from './ClientPortalProvider'
 
 type BillingRow = {
@@ -60,18 +58,6 @@ function formatAddress({
   return parts.join(', ')
 }
 
-function toCsv(rows: BillingRow[]) {
-  const header = 'Property,Membership start date,Monthly fee\n'
-  const body = rows
-    .map((row) => {
-      const property = row.propertySecondary
-        ? `${row.propertyPrimary} - ${row.propertySecondary}`
-        : row.propertyPrimary
-      return [property, row.membershipStart, row.monthly].map((cell) => `"${cell}"`).join(',')
-    })
-    .join('\n')
-  return `${header}${body}`
-}
 
 function formatPropertyDisplay({
   name,
@@ -219,14 +205,9 @@ export function BillingOverview() {
     router.push('/client/settings')
   }
 
-  const handleDownloadCsv = () => {
-    const blob = new Blob([toCsv(stats.rows)], { type: 'text/csv;charset=utf-8;' })
-    saveAs(blob, `binbird-billing-${new Date().toISOString().slice(0, 10)}.csv`)
-  }
-
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-black p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
@@ -236,13 +217,13 @@ export function BillingOverview() {
           </div>
         </div>
         <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div className="rounded-2xl border border-white/10 bg-black p-4">
             <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
             <dd className="mt-2 text-3xl font-semibold tracking-tight">
               {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
             </dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div className="rounded-2xl border border-white/10 bg-black p-4">
             <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
             <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
             {stats.pausedProperties > 0 && (
@@ -252,7 +233,7 @@ export function BillingOverview() {
         </dl>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
+      <section className="rounded-3xl border border-white/10 bg-black p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="text-xs uppercase tracking-wide text-white/40">Manage your account</span>
@@ -262,7 +243,7 @@ export function BillingOverview() {
           </div>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <ArrowPathIcon className="h-5 w-5" /> Manage subscription
@@ -278,13 +259,13 @@ export function BillingOverview() {
                 )}
               </p>
               <dl className="grid gap-2 text-xs text-white/60">
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="uppercase tracking-wide">Monthly spend</dt>
                   <dd className="font-semibold text-white">
                     {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="uppercase tracking-wide">Properties</dt>
                   <dd className="font-semibold text-white">
                     {stats.activeProperties} active · {stats.pausedProperties} paused
@@ -295,12 +276,12 @@ export function BillingOverview() {
             <button
               type="button"
               onClick={handleManageSubscription}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-binbird-red px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
+              className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
             >
               Manage subscription
             </button>
           </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <DocumentDuplicateIcon className="h-5 w-5" /> Billing contacts
@@ -309,13 +290,13 @@ export function BillingOverview() {
                 Confirm who receives invoices and reminders so nothing is missed.
               </p>
               <dl className="space-y-2 text-sm text-white">
-                <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="text-xs uppercase tracking-wide text-white/50">Primary email</dt>
                   <dd className="mt-1 font-medium text-white">
                     {user?.email ?? 'Not set'}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <div className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   <dt className="text-xs uppercase tracking-wide text-white/50">Account contact</dt>
                   <dd className="mt-1 font-medium text-white">
                     {profile?.fullName ?? 'Add a billing contact'}
@@ -327,12 +308,12 @@ export function BillingOverview() {
             <button
               type="button"
               onClick={handleUpdateBillingDetails}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+              className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
             >
               Update billing details
             </button>
           </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <BuildingOffice2Icon className="h-5 w-5" /> Property management
@@ -341,16 +322,16 @@ export function BillingOverview() {
                 Track which sites are active, request new connections, or pause locations that are on hold.
               </p>
               <ul className="space-y-2 text-xs text-white/60">
-                <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   <span className="font-semibold text-white">{stats.activeProperties}</span> active properties scheduled this
                   month
                 </li>
                 {stats.pausedProperties > 0 && (
-                  <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                  <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
                     <span className="font-semibold text-white">{stats.pausedProperties}</span> paused until reactivated
                   </li>
                 )}
-                <li className="rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
                   Projected monthly catalogue value:{' '}
                   {stats.catalogMonthly > 0 ? currencyFormatter.format(stats.catalogMonthly) : 'Included'}
                 </li>
@@ -360,13 +341,13 @@ export function BillingOverview() {
               <button
                 type="button"
                 onClick={handleAddProperty}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
               >
                 Add property
               </button>
               <Link
                 href="/client/dashboard"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
               >
                 View property list
               </Link>
@@ -380,13 +361,6 @@ export function BillingOverview() {
           <span className="inline-flex items-center gap-3">
             <CreditCardIcon className="h-5 w-5" /> Property billing summary
           </span>
-          <button
-            type="button"
-            onClick={handleDownloadCsv}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-medium uppercase tracking-wide text-white transition hover:border-binbird-red"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" /> Export CSV
-          </button>
         </header>
         {stats.rows.length === 0 ? (
           <p className="text-sm text-white/60">No billing data yet. Add properties to see plan details here.</p>
