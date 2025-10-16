@@ -390,11 +390,19 @@ export default function ProofPageContent() {
       const { error: updateErr } = await jobUpdate;
       if (updateErr) throw updateErr;
 
-      const jobsAfterCompletion = jobs.map((plannedJob) =>
-        plannedJob.id === job.id
-          ? { ...plannedJob, last_completed_on: dateStr, status: "completed" }
-          : plannedJob
-      );
+      const jobsAfterCompletion = jobs.map((plannedJob) => {
+        if (plannedJob.id !== job.id) {
+          return plannedJob;
+        }
+
+        const completedJob: Job = {
+          ...plannedJob,
+          last_completed_on: dateStr,
+          status: "completed",
+        };
+
+        return completedJob;
+      });
       setJobs(jobsAfterCompletion);
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
