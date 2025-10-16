@@ -6,12 +6,10 @@ import { useRouter } from 'next/navigation'
 import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
 import {
   CreditCardIcon,
-  ArrowDownTrayIcon,
   ArrowPathIcon,
   BuildingOffice2Icon,
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
-import { saveAs } from 'file-saver'
 import { useClientPortal } from './ClientPortalProvider'
 
 type BillingRow = {
@@ -60,18 +58,6 @@ function formatAddress({
   return parts.join(', ')
 }
 
-function toCsv(rows: BillingRow[]) {
-  const header = 'Property,Membership start date,Monthly fee\n'
-  const body = rows
-    .map((row) => {
-      const property = row.propertySecondary
-        ? `${row.propertyPrimary} - ${row.propertySecondary}`
-        : row.propertyPrimary
-      return [property, row.membershipStart, row.monthly].map((cell) => `"${cell}"`).join(',')
-    })
-    .join('\n')
-  return `${header}${body}`
-}
 
 function formatPropertyDisplay({
   name,
@@ -217,11 +203,6 @@ export function BillingOverview() {
 
   const handleUpdateBillingDetails = () => {
     router.push('/client/settings')
-  }
-
-  const handleDownloadCsv = () => {
-    const blob = new Blob([toCsv(stats.rows)], { type: 'text/csv;charset=utf-8;' })
-    saveAs(blob, `binbird-billing-${new Date().toISOString().slice(0, 10)}.csv`)
   }
 
   return (
@@ -380,13 +361,6 @@ export function BillingOverview() {
           <span className="inline-flex items-center gap-3">
             <CreditCardIcon className="h-5 w-5" /> Property billing summary
           </span>
-          <button
-            type="button"
-            onClick={handleDownloadCsv}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" /> Export CSV
-          </button>
         </header>
         {stats.rows.length === 0 ? (
           <p className="text-sm text-white/60">No billing data yet. Add properties to see plan details here.</p>
