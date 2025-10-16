@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getLocalISODate } from "@/lib/date";
-import { normalizeJobs, type Job } from "@/lib/jobs";
+import { normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
@@ -382,9 +382,11 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
+      const COMPLETED_STATUS: JobStatus = "completed";
+
       let jobUpdate = supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr, status: "completed" })
+        .update({ last_completed_on: dateStr, status: COMPLETED_STATUS })
         .eq("id", job.id);
       jobUpdate = jobUpdate.eq("assigned_to", user.id);
       const { error: updateErr } = await jobUpdate;
@@ -398,7 +400,7 @@ export default function ProofPageContent() {
         const completedJob: Job = {
           ...plannedJob,
           last_completed_on: dateStr,
-          status: "completed",
+          status: COMPLETED_STATUS,
         };
 
         return completedJob;

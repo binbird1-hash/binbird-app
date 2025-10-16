@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
-import { normalizeJobs, type Job } from "@/lib/jobs";
+import { normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
 import {
   clearPlannedRun,
@@ -20,6 +20,8 @@ import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const LIBRARIES: ("places")[] = ["places"];
+
+const EN_ROUTE_STATUS: JobStatus = "en_route";
 
 const VICTORIA_BOUNDS: google.maps.LatLngBoundsLiteral = {
   north: -33.7,
@@ -112,7 +114,7 @@ function RunPageContent() {
 
       const idSet = new Set(jobIds.map((id) => String(id)));
 
-      const updateList = (list: Job[]) =>
+      const updateList = (list: Job[]): Job[] =>
         list.map((job) => (idSet.has(job.id) ? { ...job, status } : job));
 
       setJobs((prev) => updateList(prev));
@@ -472,7 +474,7 @@ function RunPageContent() {
       .filter((job) => job.status !== "completed" && job.status !== "skipped")
       .map((job) => job.id);
 
-    await updateJobStatuses(pendingJobIds, "en_route");
+    await updateJobStatuses(pendingJobIds, EN_ROUTE_STATUS);
 
     const existingSession = readRunSession();
     const nowIso = new Date().toISOString();

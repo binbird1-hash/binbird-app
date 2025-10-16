@@ -7,7 +7,7 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
-import { normalizeJobs, type Job } from "@/lib/jobs";
+import { normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
@@ -296,12 +296,17 @@ function RoutePageContent() {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
         if (dist <= 500000) {
           let nextJobsPayload: Job[] = jobs;
+          const ON_SITE_STATUS: JobStatus = "on_site";
+
           try {
             const {
               data: { user },
             } = await supabase.auth.getUser();
 
-            let updateBuilder = supabase.from("jobs").update({ status: "on_site" }).eq("id", activeJob.id);
+            let updateBuilder = supabase
+              .from("jobs")
+              .update({ status: ON_SITE_STATUS })
+              .eq("id", activeJob.id);
             if (user?.id) {
               updateBuilder = updateBuilder.eq("assigned_to", user.id);
             }
@@ -310,8 +315,8 @@ function RoutePageContent() {
             if (error) {
               console.error("Failed to update job status to on_site", error);
             } else {
-              const updatedJobs = jobs.map((job) =>
-                job.id === activeJob.id ? { ...job, status: "on_site" } : job
+              const updatedJobs: Job[] = jobs.map((job) =>
+                job.id === activeJob.id ? { ...job, status: ON_SITE_STATUS } : job
               );
               setJobs(updatedJobs);
               nextJobsPayload = updatedJobs;
@@ -321,7 +326,7 @@ function RoutePageContent() {
                 writePlannedRun({
                   ...storedPlan,
                   jobs: storedPlan.jobs.map((job) =>
-                    job.id === activeJob.id ? { ...job, status: "on_site" } : job
+                    job.id === activeJob.id ? { ...job, status: ON_SITE_STATUS } : job
                   ),
                 });
               }

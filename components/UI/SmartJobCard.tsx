@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import type { Job } from "@/lib/jobs";
+import type { Job, JobStatus } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SmartJobCard({
@@ -85,9 +85,11 @@ export default function SmartJobCard({
       });
       if (logErr) throw logErr;
 
+      const COMPLETED_STATUS: JobStatus = "completed";
+
       let jobUpdate = supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr, status: "completed" })
+        .update({ last_completed_on: dateStr, status: COMPLETED_STATUS })
         .eq("id", job.id);
       jobUpdate = jobUpdate.eq("assigned_to", user.id);
       const { error: updateErr } = await jobUpdate;
