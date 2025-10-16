@@ -60,6 +60,7 @@ type NewJobRow = {
   assigned_to: string | null
   day_of_week: string
   last_completed_on: null
+  status: 'scheduled' | 'en_route' | 'on_site' | 'completed'
 }
 
 const tokensFor = (value: string | null | undefined) =>
