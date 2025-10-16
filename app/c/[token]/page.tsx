@@ -56,7 +56,7 @@ export default async function ClientPortal({
       ? sb
           .from('jobs')
           .select(
-            'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week',
+            'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week, status',
           )
           .or(jobsFilters.join(','))
       : { data: [] as JobRecord[], error: null },

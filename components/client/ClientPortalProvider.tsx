@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { normaliseBinList } from '@/lib/binLabels'
+import { parseJobStatus } from '@/lib/jobs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   addMinutes,
@@ -629,7 +630,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const accountIdFilters = Array.from(accountCandidates)
     const jobSelectFields =
-      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type'
+      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type, status'
 
     const mergedJobRows: any[] = []
 
@@ -798,11 +799,10 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       }
       const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
       const proofUploadedAtIso = latestLog ? parseDateToIso(latestLog.created_at) : null
+      const statusFromRow = parseJobStatus(job.status)
       const status: JobStatus = completedAtIso
         ? 'completed'
-        : latestLog
-          ? 'en_route'
-          : 'scheduled'
+        : statusFromRow ?? (latestLog ? 'en_route' : 'scheduled')
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
       combinedJobs.push({

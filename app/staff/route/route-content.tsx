@@ -292,12 +292,50 @@ function RoutePageContent() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
         if (dist <= 500000) {
-          router.push(
-            `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
-          );
+          let nextJobsPayload: Job[] = jobs;
+          try {
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+
+            let updateBuilder = supabase.from("jobs").update({ status: "on_site" }).eq("id", activeJob.id);
+            if (user?.id) {
+              updateBuilder = updateBuilder.eq("assigned_to", user.id);
+            }
+
+            const { error } = await updateBuilder;
+            if (error) {
+              console.error("Failed to update job status to on_site", error);
+            } else {
+              const updatedJobs = jobs.map((job) =>
+                job.id === activeJob.id ? { ...job, status: "on_site" } : job
+              );
+              setJobs(updatedJobs);
+              nextJobsPayload = updatedJobs;
+
+              const storedPlan = readPlannedRun();
+              if (storedPlan) {
+                writePlannedRun({
+                  ...storedPlan,
+                  jobs: storedPlan.jobs.map((job) =>
+                    job.id === activeJob.id ? { ...job, status: "on_site" } : job
+                  ),
+                });
+              }
+            }
+          } catch (err) {
+            console.error("Unexpected error updating job status to on_site", err);
+          }
+
+          const params = new URLSearchParams({
+            jobs: JSON.stringify(nextJobsPayload),
+            idx: String(activeIdx),
+            total: String(nextJobsPayload.length),
+          });
+          router.push(`/staff/proof?${params.toString()}`);
         } else {
           setPopupMsg(`You are too far from the job location. (${Math.round(dist)}m away)`);
         }

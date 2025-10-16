@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js"
 import type { Job } from "@/components/client/ClientPortalProvider"
 import { normaliseBinList } from "@/lib/binLabels"
+import { parseJobStatus, type JobStatus } from "@/lib/jobs"
 import { nextDay, setHours, setMinutes, startOfToday } from "date-fns"
 import type { Day } from "date-fns"
 
@@ -52,7 +53,8 @@ const createJobFromPayload = (payload: any, fallbackAccountId: string | null): J
   const propertyId = normaliseId(payload.property_id)
   const accountId = normaliseId(payload.account_id) ?? fallbackAccountId ?? 'unknown'
   const completedAt = parseDateToIso(payload.last_completed_on)
-  const status: Job['status'] = completedAt ? 'completed' : 'scheduled'
+  const statusFromPayload = parseJobStatus(payload.status) as JobStatus | null
+  const status: Job['status'] = completedAt ? 'completed' : statusFromPayload ?? 'scheduled'
   return {
     id: String(payload.id),
     accountId,

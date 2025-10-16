@@ -1,4 +1,4 @@
-import type { Job } from "./jobs";
+import { normalizeJobStatus, type Job } from "./jobs";
 import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
 
 export type PlannedRunLocation = { lat: number; lng: number };
@@ -98,6 +98,7 @@ function normalizeJob(value: Job): Job {
       typeof value.day_of_week === "string" && value.day_of_week.trim().length
         ? value.day_of_week
         : null,
+    status: normalizeJobStatus(value.status),
   };
 }
 

@@ -31,4 +31,5 @@ export type JobRecord = {
   bins: string | null
   notes: string | null
   job_type: string | null
+  status: string | null
 }

@@ -1,5 +1,41 @@
 import type { JobRecord } from "./database.types";
 
+export type JobStatus = "scheduled" | "en_route" | "on_site" | "completed" | "skipped";
+
+const JOB_STATUS_LOOKUP: Record<string, JobStatus> = {
+  scheduled: "scheduled",
+  schedule: "scheduled",
+  pending: "scheduled",
+  en_route: "en_route",
+  enroute: "en_route",
+  "en route": "en_route",
+  on_site: "on_site",
+  onsite: "on_site",
+  "on site": "on_site",
+  completed: "completed",
+  complete: "completed",
+  done: "completed",
+  skipped: "skipped",
+};
+
+export function parseJobStatus(value: unknown): JobStatus | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (!normalized.length) {
+    return null;
+  }
+
+  const canonical = normalized.replace(/[\s-]+/g, "_");
+  return JOB_STATUS_LOOKUP[canonical] ?? null;
+}
+
+export function normalizeJobStatus(value: unknown): JobStatus {
+  return parseJobStatus(value) ?? "scheduled";
+}
+
 export type Job = {
   id: string;
   account_id: string | null;
@@ -15,6 +51,7 @@ export type Job = {
   last_completed_on: string | null;
   assigned_to: string | null;
   day_of_week: string | null;
+  status: JobStatus;
 };
 
 function normalizeString(value: unknown): string {
@@ -108,6 +145,7 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
     day_of_week: record.day_of_week
       ? String(record.day_of_week).trim()
       : null,
+    status: normalizeJobStatus(record.status),
   };
 }
 

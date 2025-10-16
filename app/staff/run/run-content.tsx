@@ -106,6 +106,58 @@ function RunPageContent() {
   const [routePath, setRoutePath] = useState<{ lat: number; lng: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const applyStatusToJobs = useCallback(
+    (jobIds: string[], status: Job["status"]) => {
+      if (!jobIds.length) return;
+
+      const idSet = new Set(jobIds.map((id) => String(id)));
+
+      const updateList = (list: Job[]) =>
+        list.map((job) => (idSet.has(job.id) ? { ...job, status } : job));
+
+      setJobs((prev) => updateList(prev));
+      setOrdered((prev) => updateList(prev));
+
+      const storedPlan = readPlannedRun();
+      if (storedPlan) {
+        writePlannedRun({
+          ...storedPlan,
+          jobs: updateList(storedPlan.jobs),
+        });
+      }
+    },
+    [setJobs, setOrdered]
+  );
+
+  const updateJobStatuses = useCallback(
+    async (jobIds: string[], status: Job["status"]) => {
+      const uniqueIds = Array.from(new Set(jobIds.map((id) => String(id))));
+      if (!uniqueIds.length) return;
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        let updateBuilder = supabase.from("jobs").update({ status }).in("id", uniqueIds);
+        if (user?.id) {
+          updateBuilder = updateBuilder.eq("assigned_to", user.id);
+        }
+
+        const { error } = await updateBuilder;
+        if (error) {
+          console.error(`Failed to update job status to ${status}`, error);
+          return;
+        }
+
+        applyStatusToJobs(uniqueIds, status);
+      } catch (err) {
+        console.error(`Unexpected error updating job status to ${status}`, err);
+      }
+    },
+    [applyStatusToJobs, supabase]
+  );
+
   const [start, setStart] = useState<{ lat: number; lng: number } | null>(null);
   const [end, setEnd] = useState<{ lat: number; lng: number } | null>(null);
   const [sameAsStart, setSameAsStart] = useState(false);
@@ -209,7 +261,7 @@ function RunPageContent() {
         const { data, error } = await supabase
           .from("jobs")
           .select(
-            "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week"
+            "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week, status"
           )
           .eq("assigned_to", assigneeId)
           .ilike("day_of_week", todayName)
@@ -413,8 +465,15 @@ function RunPageContent() {
     return false;
   }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
 
-  const handleStartRun = useCallback(() => {
+  const handleStartRun = useCallback(async () => {
     console.log("Starting run…");
+
+    const pendingJobIds = jobs
+      .filter((job) => job.status !== "completed" && job.status !== "skipped")
+      .map((job) => job.id);
+
+    await updateJobStatuses(pendingJobIds, "en_route");
+
     const existingSession = readRunSession();
     const nowIso = new Date().toISOString();
 
@@ -434,7 +493,7 @@ function RunPageContent() {
     });
 
     redirectExistingPlan();
-  }, [jobs.length, redirectExistingPlan]);
+  }, [jobs, redirectExistingPlan, updateJobStatuses]);
 
   const handleReset = useCallback(() => {
     console.log("Resetting route");
@@ -642,7 +701,9 @@ function RunPageContent() {
                 // Start Run button (accent red)
                 <button
                   className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
-                  onClick={handleStartRun}
+                  onClick={() => {
+                    void handleStartRun();
+                  }}
                 >
                   Start Run
                 </button>

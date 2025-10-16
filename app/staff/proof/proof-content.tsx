@@ -382,11 +382,24 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
-      await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
+      let jobUpdate = supabase
+        .from("jobs")
+        .update({ last_completed_on: dateStr, status: "completed" })
+        .eq("id", job.id);
+      jobUpdate = jobUpdate.eq("assigned_to", user.id);
+      const { error: updateErr } = await jobUpdate;
+      if (updateErr) throw updateErr;
+
+      const jobsAfterCompletion = jobs.map((plannedJob) =>
+        plannedJob.id === job.id
+          ? { ...plannedJob, last_completed_on: dateStr, status: "completed" }
+          : plannedJob
+      );
+      setJobs(jobsAfterCompletion);
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
       const nowIso = new Date().toISOString();
-      const totalJobs = Math.max(existingSession?.totalJobs ?? 0, jobs.length, nextIdx);
+      const totalJobs = Math.max(existingSession?.totalJobs ?? 0, jobsAfterCompletion.length, nextIdx);
       const completedAfterThisJob = Math.min(nextIdx, totalJobs);
       const startedAt =
         existingSession?.startedAt && !Number.isNaN(new Date(existingSession.startedAt).getTime())
@@ -402,7 +415,7 @@ export default function ProofPageContent() {
       const sessionToWrite: RunSessionRecord =
         nextIdx >= jobs.length ? { ...updatedSession, endedAt: nowIso } : updatedSession;
       writeRunSession(sessionToWrite);
-      if (nextIdx >= jobs.length) {
+      if (nextIdx >= jobsAfterCompletion.length) {
         clearPlannedRun();
         router.push("/staff/run/completed");
       } else {
@@ -410,15 +423,15 @@ export default function ProofPageContent() {
         if (existingPlan) {
           writePlannedRun({
             ...existingPlan,
-            jobs: jobs.map((plannedJob) => ({ ...plannedJob })),
+            jobs: jobsAfterCompletion.map((plannedJob) => ({ ...plannedJob })),
             nextIdx,
             hasStarted: true,
           });
         }
         const paramsObj = new URLSearchParams({
-          jobs: JSON.stringify(jobs),
+          jobs: JSON.stringify(jobsAfterCompletion),
           nextIdx: String(nextIdx),
-          total: String(jobs.length),
+          total: String(jobsAfterCompletion.length),
         });
         router.push(`/staff/route?${paramsObj.toString()}`);
       }

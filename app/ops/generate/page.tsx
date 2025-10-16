@@ -172,6 +172,7 @@ async function generateJobs() {
         assigned_to: client.assigned_to,
         day_of_week: dayName,
         last_completed_on: null,
+        status: 'scheduled',
       })
     }
 
@@ -190,6 +191,7 @@ async function generateJobs() {
         assigned_to: client.assigned_to,
         day_of_week: dayName,
         last_completed_on: null,
+        status: 'scheduled',
       })
     }
   }
