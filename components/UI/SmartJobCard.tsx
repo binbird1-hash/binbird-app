@@ -87,8 +87,9 @@ export default function SmartJobCard({
 
       const { error: updateErr } = await supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr })
-        .eq("id", job.id);
+        .update({ last_completed_on: dateStr, status: "completed" })
+        .eq("id", job.id)
+        .eq("assigned_to", user.id);
       if (updateErr) throw updateErr;
 
       onCompleted();

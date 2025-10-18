@@ -287,14 +287,40 @@ function RoutePageContent() {
   }
 
   function handleArrivedAtLocation() {
+    if (!activeJob) {
+      setPopupMsg("No active job selected.");
+      return;
+    }
     if (!navigator.geolocation) {
       setPopupMsg("Geolocation not supported");
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
         if (dist <= 500000) {
+          try {
+            const {
+              data: { user },
+              error: authError,
+            } = await supabase.auth.getUser();
+
+            if (authError) {
+              console.error("Failed to verify session before marking on-site", authError);
+            } else if (user) {
+              const { error: statusError } = await supabase
+                .from("jobs")
+                .update({ status: "on_site" })
+                .eq("id", activeJob.id)
+                .eq("assigned_to", user.id);
+
+              if (statusError) {
+                console.error("Failed to update job status to on_site", statusError);
+              }
+            }
+          } catch (err) {
+            console.error("Unexpected error updating job status to on_site", err);
+          }
           router.push(
             `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
           );

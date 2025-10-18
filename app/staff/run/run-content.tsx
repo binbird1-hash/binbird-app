@@ -209,7 +209,7 @@ function RunPageContent() {
         const { data, error } = await supabase
           .from("jobs")
           .select(
-            "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week"
+            "id, account_id, property_id, address, lat, lng, status, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week"
           )
           .eq("assigned_to", assigneeId)
           .ilike("day_of_week", todayName)
@@ -413,10 +413,42 @@ function RunPageContent() {
     return false;
   }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
 
-  const handleStartRun = useCallback(() => {
+  const handleStartRun = useCallback(async () => {
     console.log("Starting run…");
     const existingSession = readRunSession();
     const nowIso = new Date().toISOString();
+
+    const plannedJobs = ordered.length ? ordered : jobs;
+    const targetJob = plannedJobs.find((job) => {
+      if (!job?.id) return false;
+      const normalizedAddress = job.address?.trim().toLowerCase();
+      return normalizedAddress !== 'end' && normalizedAddress !== 'start';
+    });
+
+    try {
+      if (targetJob) {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError) {
+          console.error("Failed to read session before starting run", authError);
+        } else if (user) {
+          const { error: statusError } = await supabase
+            .from("jobs")
+            .update({ status: "en_route" })
+            .eq("id", targetJob.id)
+            .eq("assigned_to", user.id);
+
+          if (statusError) {
+            console.error("Failed to update job status to en_route", statusError);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Unexpected error updating job status to en_route", err);
+    }
 
     const hasExistingStart =
       existingSession?.startedAt &&
@@ -434,7 +466,7 @@ function RunPageContent() {
     });
 
     redirectExistingPlan();
-  }, [jobs.length, redirectExistingPlan]);
+  }, [jobs, ordered, redirectExistingPlan, supabase]);
 
   const handleReset = useCallback(() => {
     console.log("Resetting route");

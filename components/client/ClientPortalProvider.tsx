@@ -207,6 +207,17 @@ const normaliseIdentifier = (value: string | number | null | undefined): string 
   return trimmed.length ? trimmed : null
 }
 
+const JOB_STATUS_VALUES: JobStatus[] = ['scheduled', 'en_route', 'on_site', 'completed', 'skipped']
+
+const parseJobStatus = (value: unknown): JobStatus | null => {
+  if (typeof value !== 'string') return null
+  const normalised = value.trim().toLowerCase()
+  if (!normalised.length) return null
+  return JOB_STATUS_VALUES.includes(normalised as JobStatus)
+    ? (normalised as JobStatus)
+    : null
+}
+
 const extractIdentifierArray = (
   metadata: Record<string, unknown> | undefined,
   keys: string[],
@@ -629,7 +640,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const accountIdFilters = Array.from(accountCandidates)
     const jobSelectFields =
-      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type'
+      'id, account_id, property_id, lat, lng, status, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type'
 
     const mergedJobRows: any[] = []
 
@@ -798,11 +809,20 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       }
       const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
       const proofUploadedAtIso = latestLog ? parseDateToIso(latestLog.created_at) : null
-      const status: JobStatus = completedAtIso
+      const explicitStatus = parseJobStatus(job.status)
+      const status: JobStatus = explicitStatus === 'completed'
         ? 'completed'
-        : latestLog
-          ? 'en_route'
-          : 'scheduled'
+        : explicitStatus === 'on_site'
+          ? 'on_site'
+          : explicitStatus === 'en_route'
+            ? 'en_route'
+            : explicitStatus === 'skipped'
+              ? 'skipped'
+              : completedAtIso
+                ? 'completed'
+                : latestLog
+                  ? 'en_route'
+                  : 'scheduled'
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
       combinedJobs.push({
