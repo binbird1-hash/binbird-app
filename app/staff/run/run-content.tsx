@@ -15,7 +15,6 @@ import {
   normalizeJobs,
   type Job,
   type JobStatus,
-  type RawJobRow,
 } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
 import {
@@ -291,13 +290,13 @@ function RunPageContent() {
             if (fallbackError) {
               console.warn("Failed to load jobs without status column", fallbackError);
             } else {
-              rows = coerceJobStatus(fallbackData as RawJobRow[]);
+              rows = coerceJobStatus(fallbackData);
             }
           } else {
             console.warn("Failed to load jobs", error);
           }
         } else {
-          rows = coerceJobStatus(data as RawJobRow[]);
+          rows = coerceJobStatus(data);
         }
 
         if (rows) {

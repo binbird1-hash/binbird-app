@@ -4,13 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { normaliseBinList } from '@/lib/binLabels'
-import {
-  coerceJobStatus,
-  getJobSelectFields,
-  isStatusColumnMissing,
-  parseJobStatus,
-  type RawJobRow,
-} from '@/lib/jobs'
+import { coerceJobStatus, getJobSelectFields, isStatusColumnMissing, parseJobStatus } from '@/lib/jobs'
 import type { JobRecord } from '@/lib/database.types'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
@@ -645,14 +639,14 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       const { data, error } = await builderFactory(jobSelectWithStatus)
 
       if (!error && data) {
-        mergedJobRows.push(...coerceJobStatus(data as RawJobRow[]))
+        mergedJobRows.push(...coerceJobStatus(data))
         return
       }
 
       if (error && isStatusColumnMissing(error)) {
         const { data: fallbackData, error: fallbackError } = await builderFactory(jobSelectWithoutStatus)
         if (!fallbackError && fallbackData) {
-          mergedJobRows.push(...coerceJobStatus(fallbackData as RawJobRow[]))
+          mergedJobRows.push(...coerceJobStatus(fallbackData))
           return
         }
         if (fallbackError) {

@@ -1,7 +1,7 @@
 // app/c/[token]/page.tsx
 import BackButton from '@/components/UI/BackButton'
 import { buildOrFilters, resolvePortalScope, type PortalClientRow } from '@/lib/clientPortalAccess'
-import { coerceJobStatus, getJobSelectFields, isStatusColumnMissing, type RawJobRow } from '@/lib/jobs'
+import { coerceJobStatus, getJobSelectFields, isStatusColumnMissing } from '@/lib/jobs'
 import { supabaseServer } from '@/lib/supabaseServer'
 import type { JobRecord, Property } from '@/lib/database.types'
 
@@ -65,13 +65,13 @@ export default async function ClientPortal({
     ? (async () => {
         const { data, error } = await buildJobQuery(jobSelectWithStatus)
         if (!error && data) {
-          return { data: coerceJobStatus(data as RawJobRow[]), error: null }
+          return { data: coerceJobStatus(data), error: null }
         }
 
         if (error && isStatusColumnMissing(error)) {
           const { data: fallbackData, error: fallbackError } = await buildJobQuery(jobSelectWithoutStatus)
           if (!fallbackError && fallbackData) {
-            return { data: coerceJobStatus(fallbackData as RawJobRow[]), error: null }
+            return { data: coerceJobStatus(fallbackData), error: null }
           }
           return { data: [] as JobRecord[], error: fallbackError }
         }

@@ -45,13 +45,19 @@ export function normalizeJobStatus(value: unknown): JobStatus {
 
 export type RawJobRow = Omit<JobRecord, "status"> & { status?: unknown };
 
-export function coerceJobStatus(rows: RawJobRow[] | null | undefined): JobRecord[] {
-  if (!rows) return [];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
-  return rows.map((row) => ({
+export function coerceJobStatus(rows: unknown): JobRecord[] {
+  if (!Array.isArray(rows)) return [];
+
+  const typedRows: RawJobRow[] = rows.filter(isRecord) as RawJobRow[];
+
+  return typedRows.map((row) => ({
     ...row,
     status: typeof row.status === "string" ? row.status : null,
-  }));
+  })) as JobRecord[];
 }
 
 type SupabaseErrorLike = { code?: string; message?: string | null } | null | undefined;
