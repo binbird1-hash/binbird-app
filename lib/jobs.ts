@@ -2,6 +2,13 @@ import type { JobRecord } from "./database.types";
 
 export type JobStatus = "scheduled" | "en_route" | "on_site" | "completed" | "skipped";
 
+export const JOB_SELECT_BASE_FIELDS =
+  "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week";
+
+export function getJobSelectFields(includeStatus: boolean): string {
+  return includeStatus ? `${JOB_SELECT_BASE_FIELDS}, status` : JOB_SELECT_BASE_FIELDS;
+}
+
 const JOB_STATUS_LOOKUP: Record<string, JobStatus> = {
   scheduled: "scheduled",
   schedule: "scheduled",
@@ -34,6 +41,26 @@ export function parseJobStatus(value: unknown): JobStatus | null {
 
 export function normalizeJobStatus(value: unknown): JobStatus {
   return parseJobStatus(value) ?? "scheduled";
+}
+
+export type RawJobRow = Omit<JobRecord, "status"> & { status?: unknown };
+
+export function coerceJobStatus(rows: RawJobRow[] | null | undefined): JobRecord[] {
+  if (!rows) return [];
+
+  return rows.map((row) => ({
+    ...row,
+    status: typeof row.status === "string" ? row.status : null,
+  }));
+}
+
+type SupabaseErrorLike = { code?: string; message?: string | null } | null | undefined;
+
+export function isStatusColumnMissing(error: SupabaseErrorLike): boolean {
+  if (!error) return false;
+  if (error.code === "42703") return true;
+  const message = typeof error.message === "string" ? error.message.toLowerCase() : "";
+  return message.includes("column") && message.includes("status") && message.includes("does not exist");
 }
 
 export type Job = {

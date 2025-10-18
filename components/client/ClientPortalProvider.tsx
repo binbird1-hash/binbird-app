@@ -4,7 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { normaliseBinList } from '@/lib/binLabels'
-import { parseJobStatus } from '@/lib/jobs'
+import {
+  coerceJobStatus,
+  getJobSelectFields,
+  isStatusColumnMissing,
+  parseJobStatus,
+  type RawJobRow,
+} from '@/lib/jobs'
+import type { JobRecord } from '@/lib/database.types'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   addMinutes,
@@ -629,52 +636,50 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     })
 
     const accountIdFilters = Array.from(accountCandidates)
-    const jobSelectFields =
-      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type, status'
+    const jobSelectWithStatus = getJobSelectFields(true)
+    const jobSelectWithoutStatus = getJobSelectFields(false)
 
-    const mergedJobRows: any[] = []
+    const mergedJobRows: JobRecord[] = []
 
-    if (accountIdFilters.length > 0) {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select(jobSelectFields)
-        .in('account_id', accountIdFilters)
+    const runJobQuery = async (builderFactory: (columns: string) => any) => {
+      const { data, error } = await builderFactory(jobSelectWithStatus)
+
+      if (!error && data) {
+        mergedJobRows.push(...coerceJobStatus(data as RawJobRow[]))
+        return
+      }
+
+      if (error && isStatusColumnMissing(error)) {
+        const { data: fallbackData, error: fallbackError } = await builderFactory(jobSelectWithoutStatus)
+        if (!fallbackError && fallbackData) {
+          mergedJobRows.push(...coerceJobStatus(fallbackData as RawJobRow[]))
+          return
+        }
+        if (fallbackError) {
+          console.warn('Failed to load jobs', fallbackError)
+          return
+        }
+      }
 
       if (error) {
         console.warn('Failed to load jobs', error)
-      }
-
-      if (data) {
-        mergedJobRows.push(...data)
-      }
-    } else if (accountId) {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select(jobSelectFields)
-        .eq('account_id', accountId)
-
-      if (error) {
-        console.warn('Failed to load jobs', error)
-      }
-
-      if (data) {
-        mergedJobRows.push(...data)
       }
     }
 
+    if (accountIdFilters.length > 0) {
+      await runJobQuery((columns) =>
+        supabase.from('jobs').select(columns).in('account_id', accountIdFilters),
+      )
+    } else if (accountId) {
+      await runJobQuery((columns) =>
+        supabase.from('jobs').select(columns).eq('account_id', accountId),
+      )
+    }
+
     if (propertyIds.length > 0) {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select(jobSelectFields)
-        .in('property_id', propertyIds)
-
-      if (error) {
-        console.warn('Failed to load jobs', error)
-      }
-
-      if (data) {
-        mergedJobRows.push(...data)
-      }
+      await runJobQuery((columns) =>
+        supabase.from('jobs').select(columns).in('property_id', propertyIds),
+      )
     }
     const seenJobIds = new Set<string>()
     const jobRows = mergedJobRows.filter((row) => {

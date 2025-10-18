@@ -1,6 +1,7 @@
 // app/c/[token]/page.tsx
 import BackButton from '@/components/UI/BackButton'
 import { buildOrFilters, resolvePortalScope, type PortalClientRow } from '@/lib/clientPortalAccess'
+import { coerceJobStatus, getJobSelectFields, isStatusColumnMissing, type RawJobRow } from '@/lib/jobs'
 import { supabaseServer } from '@/lib/supabaseServer'
 import type { JobRecord, Property } from '@/lib/database.types'
 
@@ -51,15 +52,36 @@ export default async function ClientPortal({
   const propertyFilters = buildOrFilters('property_id', scope.propertyIds)
   const jobsFilters = [...accountFilters, ...propertyFilters]
 
+  const jobSelectWithStatus = getJobSelectFields(true)
+  const jobSelectWithoutStatus = getJobSelectFields(false)
+
+  const buildJobQuery = (columns: string) =>
+    sb
+      .from('jobs')
+      .select(columns)
+      .or(jobsFilters.join(','))
+
+  const jobsPromise = jobsFilters.length
+    ? (async () => {
+        const { data, error } = await buildJobQuery(jobSelectWithStatus)
+        if (!error && data) {
+          return { data: coerceJobStatus(data as RawJobRow[]), error: null }
+        }
+
+        if (error && isStatusColumnMissing(error)) {
+          const { data: fallbackData, error: fallbackError } = await buildJobQuery(jobSelectWithoutStatus)
+          if (!fallbackError && fallbackData) {
+            return { data: coerceJobStatus(fallbackData as RawJobRow[]), error: null }
+          }
+          return { data: [] as JobRecord[], error: fallbackError }
+        }
+
+        return { data: [] as JobRecord[], error }
+      })()
+    : Promise.resolve({ data: [] as JobRecord[], error: null })
+
   const [jobsResult, logsResult] = await Promise.all([
-    jobsFilters.length
-      ? sb
-          .from('jobs')
-          .select(
-            'id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week, status',
-          )
-          .or(jobsFilters.join(','))
-      : { data: [] as JobRecord[], error: null },
+    jobsPromise,
     sb
       .from('logs')
       .select(

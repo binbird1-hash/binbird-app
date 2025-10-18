@@ -8,7 +8,15 @@ import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
-import { normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
+import {
+  coerceJobStatus,
+  getJobSelectFields,
+  isStatusColumnMissing,
+  normalizeJobs,
+  type Job,
+  type JobStatus,
+  type RawJobRow,
+} from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
 import {
   clearPlannedRun,
@@ -260,19 +268,40 @@ function RunPageContent() {
         });
 
         // Jobs query
-        const { data, error } = await supabase
-          .from("jobs")
-          .select(
-            "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week, status"
-          )
-          .eq("assigned_to", assigneeId)
-          .ilike("day_of_week", todayName)
-          .is("last_completed_on", null);
+        const selectWithStatus = getJobSelectFields(true);
+        const selectWithoutStatus = getJobSelectFields(false);
+
+        const buildQuery = (columns: string) =>
+          supabase
+            .from("jobs")
+            .select(columns)
+            .eq("assigned_to", assigneeId)
+            .ilike("day_of_week", todayName)
+            .is("last_completed_on", null);
+
+        const { data, error } = await buildQuery(selectWithStatus);
 
         console.log("Jobs raw result:", data, "Error:", error);
 
-        if (!error && data) {
-          const normalized = normalizeJobs<JobRecord>(data);
+        let rows: JobRecord[] | null = null;
+
+        if (error) {
+          if (isStatusColumnMissing(error)) {
+            const { data: fallbackData, error: fallbackError } = await buildQuery(selectWithoutStatus);
+            if (fallbackError) {
+              console.warn("Failed to load jobs without status column", fallbackError);
+            } else {
+              rows = coerceJobStatus(fallbackData as RawJobRow[]);
+            }
+          } else {
+            console.warn("Failed to load jobs", error);
+          }
+        } else {
+          rows = coerceJobStatus(data as RawJobRow[]);
+        }
+
+        if (rows) {
+          const normalized = normalizeJobs<JobRecord>(rows);
 
           // ✅ log jobs in detail
           console.log("Normalized jobs:", normalized);
