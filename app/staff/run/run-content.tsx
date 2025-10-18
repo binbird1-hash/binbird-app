@@ -200,13 +200,12 @@ function RunPageContent() {
           "Saturday",
         ];
         const orderedDays = [
+          "Sunday",
           "Monday",
           "Tuesday",
           "Wednesday",
           "Thursday",
           "Friday",
-          "Saturday",
-          "Sunday",
         ];
         const now = new Date();
         const todayName =
@@ -214,6 +213,7 @@ function RunPageContent() {
         const todayIndex = orderedDays.findIndex(
           (day) => day.toLowerCase() === todayName.toLowerCase()
         );
+        const isSaturday = todayName.toLowerCase() === "saturday";
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
@@ -223,6 +223,7 @@ function RunPageContent() {
           todayName,
           todayIndex,
           nowISO: now.toISOString(),
+          isSaturday,
         });
 
         // Jobs query
@@ -252,7 +253,7 @@ function RunPageContent() {
           const availableJobs = normalized.filter((job) => {
             if (job.last_completed_on !== null) return false;
 
-            if (todayIndex === -1) return true;
+            if (isSaturday || todayIndex === -1) return false;
 
             const jobDayName =
               typeof job.day_of_week === "string" ? job.day_of_week : "";
@@ -260,7 +261,7 @@ function RunPageContent() {
               (day) => day.toLowerCase() === jobDayName.toLowerCase()
             );
 
-            if (jobDayIndex === -1) return true;
+            if (jobDayIndex === -1) return false;
 
             return jobDayIndex <= todayIndex;
           });
