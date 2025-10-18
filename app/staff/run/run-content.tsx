@@ -199,21 +199,25 @@ function RunPageContent() {
           "Friday",
           "Saturday",
         ];
-        const orderedDays = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-        ];
         const now = new Date();
         const todayName =
           process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE || calendarDays[now.getDay()];
-        const todayIndex = orderedDays.findIndex(
+        const todayIndex = calendarDays.findIndex(
           (day) => day.toLowerCase() === todayName.toLowerCase()
         );
         const isSaturday = todayName.toLowerCase() === "saturday";
+
+        const devAfterResetOverride =
+          process.env.NEXT_PUBLIC_DEV_IS_AFTER_SATURDAY_RESET?.toLowerCase();
+        const minutesAfterMidnight = now.getHours() * 60 + now.getMinutes();
+        const hasPassedResetTime = minutesAfterMidnight >= 18 * 60;
+        const isAfterSaturdayReset =
+          isSaturday &&
+          (devAfterResetOverride === "true"
+            ? true
+            : devAfterResetOverride === "false"
+            ? false
+            : hasPassedResetTime);
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
@@ -224,6 +228,7 @@ function RunPageContent() {
           todayIndex,
           nowISO: now.toISOString(),
           isSaturday,
+          isAfterSaturdayReset,
         });
 
         // Jobs query
@@ -250,20 +255,32 @@ function RunPageContent() {
             });
           });
 
+          const allowedDayNames = new Set<string>();
+
+          if (todayIndex !== -1) {
+            allowedDayNames.add(calendarDays[todayIndex].toLowerCase());
+
+            const includeYesterday =
+              !isSaturday || (isSaturday && !isAfterSaturdayReset);
+
+            if (includeYesterday) {
+              const yesterdayIndex =
+                (todayIndex + calendarDays.length - 1) % calendarDays.length;
+              allowedDayNames.add(
+                calendarDays[yesterdayIndex].toLowerCase()
+              );
+            }
+          }
+
           const availableJobs = normalized.filter((job) => {
             if (job.last_completed_on !== null) return false;
-
-            if (isSaturday || todayIndex === -1) return false;
+            if (todayIndex === -1) return false;
 
             const jobDayName =
               typeof job.day_of_week === "string" ? job.day_of_week : "";
-            const jobDayIndex = orderedDays.findIndex(
-              (day) => day.toLowerCase() === jobDayName.toLowerCase()
-            );
+            const jobDayNameLower = jobDayName.toLowerCase();
 
-            if (jobDayIndex === -1) return false;
-
-            return jobDayIndex <= todayIndex;
+            return allowedDayNames.has(jobDayNameLower);
           });
 
           console.log("Available jobs after filter:", availableJobs);
