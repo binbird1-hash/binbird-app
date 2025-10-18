@@ -1,4 +1,4 @@
-import type { Job } from "./jobs";
+import { normalizeJobStatus, type Job } from "./jobs";
 import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
 
 export type PlannedRunLocation = { lat: number; lng: number };
@@ -61,6 +61,15 @@ function normalizeAddress(value: unknown): string | null {
 }
 
 function normalizeJob(value: Job): Job {
+  const lastCompletedOn =
+    typeof value.last_completed_on === "string" && value.last_completed_on.trim().length
+      ? value.last_completed_on
+      : null;
+  const status =
+    lastCompletedOn && value.status !== "skipped" && value.status !== "completed"
+      ? "completed"
+      : normalizeJobStatus(value.status);
+
   return {
     id: String(value.id),
     account_id:
@@ -74,6 +83,7 @@ function normalizeJob(value: Job): Job {
     address: typeof value.address === "string" ? value.address : "",
     lat: Number.isFinite(value.lat) ? value.lat : 0,
     lng: Number.isFinite(value.lng) ? value.lng : 0,
+    status,
     job_type: value.job_type === "bring_in" ? "bring_in" : "put_out",
     bins: typeof value.bins === "string" ? value.bins : null,
     notes: typeof value.notes === "string" ? value.notes : null,
@@ -85,11 +95,7 @@ function normalizeJob(value: Job): Job {
       typeof value.photo_path === "string" && value.photo_path.trim().length
         ? value.photo_path
         : null,
-    last_completed_on:
-      typeof value.last_completed_on === "string" &&
-      value.last_completed_on.trim().length
-        ? value.last_completed_on
-        : null,
+    last_completed_on: lastCompletedOn,
     assigned_to:
       typeof value.assigned_to === "string" && value.assigned_to.trim().length
         ? value.assigned_to

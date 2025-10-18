@@ -1,5 +1,7 @@
 import type { JobRecord } from "./database.types";
 
+export type JobStatus = "scheduled" | "en_route" | "on_site" | "completed" | "skipped";
+
 export type Job = {
   id: string;
   account_id: string | null;
@@ -7,6 +9,7 @@ export type Job = {
   address: string;
   lat: number;
   lng: number;
+  status: JobStatus;
   job_type: "put_out" | "bring_in";
   bins: string | null;
   notes: string | null;
@@ -16,6 +19,26 @@ export type Job = {
   assigned_to: string | null;
   day_of_week: string | null;
 };
+
+const JOB_STATUS_VALUES: readonly JobStatus[] = [
+  "scheduled",
+  "en_route",
+  "on_site",
+  "completed",
+  "skipped",
+];
+
+const JOB_STATUS_SET = new Set<JobStatus>(JOB_STATUS_VALUES);
+
+export function normalizeJobStatus(value: unknown): JobStatus {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase() as JobStatus;
+    if (JOB_STATUS_SET.has(normalized)) {
+      return normalized;
+    }
+  }
+  return "scheduled";
+}
 
 function normalizeString(value: unknown): string {
   if (typeof value === "string") {
@@ -91,6 +114,13 @@ function normalizeJobType(value: unknown): "put_out" | "bring_in" {
 }
 
 export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
+  const lastCompletedOn = normalizeDate(record.last_completed_on);
+  const baseStatus = normalizeJobStatus(record.status);
+  const status =
+    lastCompletedOn && baseStatus !== "skipped" && baseStatus !== "completed"
+      ? "completed"
+      : baseStatus;
+
   return {
     id: normalizeString(record.id),
     account_id: normalizeOptionalString(record.account_id),
@@ -98,12 +128,13 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
     address: normalizeString(record.address),
     lat: normalizeNumber(record.lat),
     lng: normalizeNumber(record.lng),
+    status,
     job_type: normalizeJobType(record.job_type),
     bins: normalizeOptionalString(record.bins),
     notes: normalizeOptionalString(record.notes),
     client_name: normalizeOptionalString(record.client_name),
     photo_path: normalizeOptionalString(record.photo_path),
-    last_completed_on: normalizeDate(record.last_completed_on),
+    last_completed_on: lastCompletedOn,
     assigned_to: normalizeOptionalString(record.assigned_to),
     day_of_week: record.day_of_week
       ? String(record.day_of_week).trim()

@@ -45,6 +45,28 @@ const parseDateToIso = (value: string | null | undefined): string | null => {
   return parsed.toISOString()
 }
 
+const JOB_STATUS_VALUES: Job['status'][] = ['scheduled', 'en_route', 'on_site', 'completed', 'skipped']
+const JOB_STATUS_SET = new Set<Job['status']>(JOB_STATUS_VALUES)
+
+const parseStatus = (value: unknown, completedAt: string | null): Job['status'] => {
+  if (typeof value === 'string') {
+    const normalised = value.trim().toLowerCase() as Job['status']
+    if (JOB_STATUS_SET.has(normalised)) {
+      if (normalised === 'skipped') {
+        return 'skipped'
+      }
+      if (normalised === 'completed') {
+        return 'completed'
+      }
+      if (completedAt) {
+        return 'completed'
+      }
+      return normalised
+    }
+  }
+  return completedAt ? 'completed' : 'scheduled'
+}
+
 const createJobFromPayload = (payload: any, fallbackAccountId: string | null): Job | null => {
   if (!payload) return null
   const scheduledAt = computeNextOccurrence(payload.day_of_week ?? null)
@@ -52,7 +74,7 @@ const createJobFromPayload = (payload: any, fallbackAccountId: string | null): J
   const propertyId = normaliseId(payload.property_id)
   const accountId = normaliseId(payload.account_id) ?? fallbackAccountId ?? 'unknown'
   const completedAt = parseDateToIso(payload.last_completed_on)
-  const status: Job['status'] = completedAt ? 'completed' : 'scheduled'
+  const status = parseStatus(payload.status, completedAt)
   return {
     id: String(payload.id),
     accountId,

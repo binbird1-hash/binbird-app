@@ -382,10 +382,32 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
-      await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
+      const { error: jobUpdateError } = await supabase
+        .from("jobs")
+        .update({ last_completed_on: dateStr, status: "completed" })
+        .eq("id", job.id)
+        .eq("assigned_to", user.id);
+      if (jobUpdateError) throw jobUpdateError;
+
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
       const nowIso = new Date().toISOString();
+      if (nextIdx < jobs.length) {
+        const nextJob = jobs[nextIdx];
+        const normalizedAddress =
+          typeof nextJob?.address === "string" ? nextJob.address.trim().toLowerCase() : "";
+        if (nextJob?.id && normalizedAddress !== "end") {
+          const { error: nextStatusError } = await supabase
+            .from("jobs")
+            .update({ status: "en_route" })
+            .eq("id", nextJob.id)
+            .eq("assigned_to", user.id);
+
+          if (nextStatusError) {
+            console.error("Failed to update next job status to en_route", nextStatusError);
+          }
+        }
+      }
       const totalJobs = Math.max(existingSession?.totalJobs ?? 0, jobs.length, nextIdx);
       const completedAfterThisJob = Math.min(nextIdx, totalJobs);
       const startedAt =
