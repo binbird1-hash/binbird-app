@@ -5,6 +5,7 @@ export type Job = {
   address: string;
   lat: number;
   lng: number;
+  created_at: string | null;
   job_type: "put_out" | "bring_in";
   bins: string | null;
   notes: string | null;
@@ -42,6 +43,28 @@ function normalizeNumber(value: unknown): number {
   }
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeTimestamp(value: unknown): string | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed.length) return null;
+
+    const parsed = new Date(trimmed);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+
+    return trimmed;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return null;
 }
 
 function normalizeDate(value: unknown): string | null {
@@ -94,6 +117,7 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
     address: normalizeString(record.address),
     lat: normalizeNumber(record.lat),
     lng: normalizeNumber(record.lng),
+    created_at: normalizeTimestamp(record.created_at),
     job_type: normalizeJobType(record.job_type),
     bins: normalizeOptionalString(record.bins),
     notes: normalizeOptionalString(record.notes),

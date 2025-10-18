@@ -22,6 +22,7 @@ export type JobRecord = {
   address: string | null
   lat: number | null
   lng: number | null
+  created_at: string | null
   last_completed_on: string | null
   assigned_to: string | null
   day_of_week: string | null

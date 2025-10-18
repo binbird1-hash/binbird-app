@@ -190,9 +190,28 @@ function RunPageContent() {
         }
 
         // Hardcoded weekday mapping
-        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const days = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
         const now = new Date();
-        const todayName = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE || days[now.getDay()];
+        const overrideDay = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
+        const normalizedOverride = overrideDay
+          ? days.find((day) => day.toLowerCase() === overrideDay.toLowerCase())
+          : null;
+        const todayIndex = normalizedOverride ? days.indexOf(normalizedOverride) : now.getDay();
+        const todayName = normalizedOverride ?? days[todayIndex];
+        const previousDayIndex = (todayIndex + days.length - 1) % days.length;
+        const previousDayName = days[previousDayIndex];
+
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfPreviousDay = new Date(startOfToday);
+        startOfPreviousDay.setDate(startOfPreviousDay.getDate() - 1);
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
@@ -200,44 +219,75 @@ function RunPageContent() {
           assigneeId,
           email: user.email,
           todayName,
-          todayIndex: now.getDay(),
+          todayIndex,
+          previousDayName,
+          previousDayIndex,
           nowISO: now.toISOString(),
+          startOfToday: startOfToday.toISOString(),
+          startOfPreviousDay: startOfPreviousDay.toISOString(),
         });
 
-        // Jobs query
-        const { data, error } = await supabase
-          .from("jobs")
-          .select("*")
-          .eq("assigned_to", assigneeId)
-          .ilike("day_of_week", todayName)
-          .is("last_completed_on", null);
+        const fetchJobsForDay = async (dayLabel: string) => {
+          const { data, error } = await supabase
+            .from("jobs")
+            .select("*")
+            .eq("assigned_to", assigneeId)
+            .ilike("day_of_week", dayLabel)
+            .is("last_completed_on", null);
 
-        console.log("Jobs raw result:", data, "Error:", error);
+          if (error) {
+            console.warn(`Job fetch failed for ${dayLabel}:`, error);
+            return [] as JobRecord[];
+          }
 
-        if (!error && data) {
-          const normalized = normalizeJobs<JobRecord>(data);
+          return (data ?? []) as JobRecord[];
+        };
 
-          // ✅ log jobs in detail
-          console.log("Normalized jobs:", normalized);
-          normalized.forEach((j, i) => {
-            console.log(`Job[${i}]`, {
-              id: j.id,
-              address: j.address,
-              assigned_to: j.assigned_to,
-              day_of_week: j.day_of_week,
-              last_completed_on: j.last_completed_on,
-            });
-          });
+        const todayJobsRaw = await fetchJobsForDay(todayName);
+        const previousJobsRaw = previousDayName
+          ? await fetchJobsForDay(previousDayName)
+          : [];
 
-          const availableJobs = normalized.filter(
-            (job) => job.last_completed_on === null
-          );
+        console.log("Today jobs raw:", todayJobsRaw);
+        console.log("Previous day jobs raw:", previousJobsRaw);
 
-          console.log("Available jobs after filter:", availableJobs);
-          setJobs(availableJobs);
-        } else {
-          console.warn("No jobs found or error occurred");
-        }
+        const todayJobs = normalizeJobs<JobRecord>(todayJobsRaw);
+        const previousJobs = normalizeJobs<JobRecord>(previousJobsRaw);
+
+        const filteredPreviousJobs = previousJobs.filter((job) => {
+          if (job.last_completed_on !== null) return false;
+
+          if (!job.created_at) return true;
+
+          const createdAt = new Date(job.created_at);
+          if (Number.isNaN(createdAt.getTime())) return true;
+
+          if (createdAt >= startOfToday) {
+            return false;
+          }
+
+          if (previousDayName === "Saturday" && createdAt >= startOfPreviousDay) {
+            return false;
+          }
+
+          return true;
+        });
+
+        console.log("Normalized today jobs:", todayJobs);
+        console.log("Filtered previous day jobs:", filteredPreviousJobs);
+
+        const combinedJobs = [...todayJobs, ...filteredPreviousJobs];
+        const dedupedJobs = Array.from(
+          combinedJobs.reduce((acc, job) => {
+            if (!acc.has(job.id)) {
+              acc.set(job.id, job);
+            }
+            return acc;
+          }, new Map<string, Job>()).values()
+        );
+
+        console.log("Available jobs after merge:", dedupedJobs);
+        setJobs(dedupedJobs);
       } catch (err) {
         console.error("Unexpected error in job fetch:", err);
       } finally {
