@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getLocalISODate } from "@/lib/date";
-import { normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
+import { normalizeAssignee, normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
@@ -384,11 +384,15 @@ export default function ProofPageContent() {
       if (logErr) throw logErr;
       const COMPLETED_STATUS: JobStatus = "completed";
 
+      const assigneeFilter = normalizeAssignee(job.assigned_to) ?? user.id ?? null;
+
       let jobUpdate = supabase
         .from("jobs")
         .update({ last_completed_on: dateStr, status: COMPLETED_STATUS })
         .eq("id", job.id);
-      jobUpdate = jobUpdate.eq("assigned_to", user.id);
+      if (assigneeFilter) {
+        jobUpdate = jobUpdate.eq("assigned_to", assigneeFilter);
+      }
       const { error: updateErr } = await jobUpdate;
       if (updateErr) throw updateErr;
 

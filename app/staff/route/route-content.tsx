@@ -7,7 +7,7 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
-import { normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
+import { normalizeAssignee, normalizeJobs, type Job, type JobStatus } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
@@ -303,12 +303,14 @@ function RoutePageContent() {
               data: { user },
             } = await supabase.auth.getUser();
 
+            const assigneeFilter = normalizeAssignee(activeJob.assigned_to) ?? user?.id ?? null;
+
             let updateBuilder = supabase
               .from("jobs")
               .update({ status: ON_SITE_STATUS })
               .eq("id", activeJob.id);
-            if (user?.id) {
-              updateBuilder = updateBuilder.eq("assigned_to", user.id);
+            if (assigneeFilter) {
+              updateBuilder = updateBuilder.eq("assigned_to", assigneeFilter);
             }
 
             const { error } = await updateBuilder;

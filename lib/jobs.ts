@@ -108,6 +108,10 @@ function normalizeOptionalString(value: unknown): string | null {
   return normalized.length ? normalized : null;
 }
 
+export function normalizeAssignee(value: unknown): string | null {
+  return normalizeOptionalString(value);
+}
+
 function normalizeNumber(value: unknown): number {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : 0;

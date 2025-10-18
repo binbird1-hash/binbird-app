@@ -12,6 +12,7 @@ import {
   coerceJobStatus,
   getJobSelectFields,
   isStatusColumnMissing,
+  normalizeAssignee,
   normalizeJobs,
   type Job,
   type JobStatus,
@@ -140,31 +141,57 @@ function RunPageContent() {
 
   const updateJobStatuses = useCallback(
     async (jobIds: string[], status: Job["status"]) => {
-      const uniqueIds = Array.from(new Set(jobIds.map((id) => String(id))));
-      if (!uniqueIds.length) return;
+      const idSet = new Set(jobIds.map((id) => String(id)));
+      if (!idSet.size) return;
 
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        let updateBuilder = supabase.from("jobs").update({ status }).in("id", uniqueIds);
-        if (user?.id) {
-          updateBuilder = updateBuilder.eq("assigned_to", user.id);
-        }
-
-        const { error } = await updateBuilder;
-        if (error) {
-          console.error(`Failed to update job status to ${status}`, error);
+        const targetJobs = jobs.filter((job) => idSet.has(job.id));
+        if (!targetJobs.length) {
+          console.warn("No matching jobs found when updating statuses", { jobIds, status });
           return;
         }
 
-        applyStatusToJobs(uniqueIds, status);
+        const batches = new Map<string | null, string[]>();
+        targetJobs.forEach((job) => {
+          const assignee = normalizeAssignee(job.assigned_to);
+          const list = batches.get(assignee) ?? [];
+          list.push(job.id);
+          batches.set(assignee, list);
+        });
+
+        const updatedIds: string[] = [];
+
+        for (const [assignee, ids] of batches) {
+          let updateBuilder = supabase.from("jobs").update({ status }).in("id", ids);
+          if (assignee) {
+            updateBuilder = updateBuilder.eq("assigned_to", assignee);
+          }
+
+          const { data, error } = await updateBuilder.select("id");
+          if (error) {
+            console.error(`Failed to update job status to ${status}`, { assignee, ids, error });
+            continue;
+          }
+
+          if (Array.isArray(data)) {
+            data.forEach((row) => {
+              if (row?.id !== undefined && row?.id !== null) {
+                updatedIds.push(String(row.id));
+              }
+            });
+          }
+        }
+
+        if (updatedIds.length) {
+          applyStatusToJobs(updatedIds, status);
+        } else {
+          console.warn("No job rows were updated when setting status", { jobIds, status });
+        }
       } catch (err) {
         console.error(`Unexpected error updating job status to ${status}`, err);
       }
     },
-    [applyStatusToJobs, supabase]
+    [applyStatusToJobs, jobs, supabase]
   );
 
   const [start, setStart] = useState<{ lat: number; lng: number } | null>(null);
