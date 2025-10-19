@@ -72,7 +72,6 @@ export type Job = {
   scheduledAt: string
   etaMinutes?: number | null
   startedAt?: string | null
-  arrivedAt?: string | null
   completedAt?: string | null
   crewName?: string | null
   proofPhotoKeys?: string[] | null
@@ -83,7 +82,6 @@ export type Job = {
   notes?: string | null
   jobType?: string | null
   bins?: string[]
-  statusUpdatedAt?: string | null
 }
 
 export type NotificationPreferences = {
@@ -157,7 +155,7 @@ export type ClientPortalContextValue = {
   jobs: Job[]
   jobsLoading: boolean
   refreshJobs: () => Promise<void>
-  upsertJob: (job: Partial<Job> & { id: string }) => void
+  upsertJob: (job: Job) => void
   notificationPreferences: NotificationPreferences | null
   preferencesLoading: boolean
   refreshNotificationPreferences: () => Promise<void>
@@ -207,90 +205,6 @@ const normaliseIdentifier = (value: string | number | null | undefined): string 
   }
   const trimmed = value.trim()
   return trimmed.length ? trimmed : null
-}
-
-const parseDateToIso = (value: string | null | undefined): string | null => {
-  if (!value) return null
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed.toISOString()
-}
-
-const JOB_STATUS_PRIORITY: Record<JobStatus, number> = {
-  scheduled: 0,
-  en_route: 1,
-  on_site: 2,
-  completed: 3,
-  skipped: 4,
-}
-
-const normaliseJobStatus = (value: string | null | undefined): JobStatus | null => {
-  if (!value) return null
-  const normalised = value.trim().toLowerCase().replace(/[-\s]/g, '_')
-  if (!normalised.length) return null
-
-  switch (normalised) {
-    case 'scheduled':
-    case 'pending':
-      return 'scheduled'
-    case 'en_route':
-    case 'enroute':
-    case 'start':
-    case 'started':
-    case 'start_run':
-    case 'starting':
-    case 'departed':
-    case 'in_transit':
-      return 'en_route'
-    case 'on_site':
-    case 'onsite':
-    case 'arrived':
-    case 'arrival':
-    case 'arrived_at_location':
-    case 'onlocation':
-      return 'on_site'
-    case 'completed':
-    case 'done':
-    case 'finished':
-    case 'marked_done':
-      return 'completed'
-    case 'skipped':
-    case 'cancelled':
-    case 'canceled':
-      return 'skipped'
-    default:
-      return null
-  }
-}
-
-const extractStatusFromPayload = (payload: Record<string, unknown> | null | undefined): JobStatus | null => {
-  if (!payload) return null
-  const candidateKeys = ['status', 'new_status', 'action', 'event', 'type', 'transition']
-  for (const key of candidateKeys) {
-    if (key in payload) {
-      const value = payload[key]
-      if (typeof value === 'string') {
-        const status = normaliseJobStatus(value)
-        if (status) return status
-      }
-    }
-  }
-  return null
-}
-
-const extractProgressTimestamp = (payload: Record<string, unknown> | null | undefined): string | null => {
-  if (!payload) return null
-  const candidateKeys = ['occurred_at', 'created_at', 'updated_at', 'inserted_at', 'timestamp', 'event_at']
-  for (const key of candidateKeys) {
-    if (key in payload) {
-      const value = payload[key]
-      if (typeof value === 'string') {
-        const iso = parseDateToIso(value)
-        if (iso) return iso
-      }
-    }
-  }
-  return null
 }
 
 const extractIdentifierArray = (
@@ -806,115 +720,15 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       }
     })
 
-    type ProgressRow = {
-      job_id?: string | number | null
-      account_id?: string | number | null
-    } & Record<string, unknown>
-
-    let progressRows: ProgressRow[] | null = null
-    let progressQueryError: unknown = null
-
-    try {
-      let progressQuery = supabase
-        .from('job_progress_events')
-        .select('*')
-        .gte('created_at', twoMonthsAgo.toISOString())
-
-      if (accountIdFilters.length === 1) {
-        progressQuery = progressQuery.eq('account_id', accountIdFilters[0]!)
-      } else if (accountIdFilters.length > 1) {
-        progressQuery = progressQuery.in('account_id', accountIdFilters)
-      } else if (accountId) {
-        progressQuery = progressQuery.eq('account_id', accountId)
-      }
-
-      const { data, error } = await progressQuery
-      if (error) {
-        progressQueryError = error
-      } else {
-        progressRows = data as ProgressRow[] | null
-      }
-    } catch (error) {
-      progressQueryError = error
-    }
-
-    if (progressQueryError) {
-      console.warn('Failed to load job progress events', progressQueryError)
-    }
-
-    type ProgressSnapshot = {
-      status: JobStatus
-      startedAt: string | null
-      arrivedAt: string | null
-      completedAt: string | null
-      statusUpdatedAt: string | null
-    }
-
-    const progressByJobId = new Map<string, ProgressSnapshot>()
-
-    const ensureSnapshot = (jobId: string): ProgressSnapshot => {
-      const existing = progressByJobId.get(jobId)
-      if (existing) return existing
-      const snapshot: ProgressSnapshot = {
-        status: 'scheduled',
-        startedAt: null,
-        arrivedAt: null,
-        completedAt: null,
-        statusUpdatedAt: null,
-      }
-      progressByJobId.set(jobId, snapshot)
-      return snapshot
-    }
-
-    const sortedProgressRows = [...(progressRows ?? [])].sort((a, b) => {
-      const firstIso = extractProgressTimestamp(a)
-      const secondIso = extractProgressTimestamp(b)
-      const firstTime = firstIso ? new Date(firstIso).getTime() : 0
-      const secondTime = secondIso ? new Date(secondIso).getTime() : 0
-      return firstTime - secondTime
-    })
-
-    sortedProgressRows.forEach((row) => {
-      const jobIdKey = normaliseIdentifier(row.job_id)
-      if (!jobIdKey) {
-        return
-      }
-
-      const status = extractStatusFromPayload(row)
-      if (!status) {
-        return
-      }
-
-      const occurredAtIso = extractProgressTimestamp(row)
-      const snapshot = ensureSnapshot(jobIdKey)
-      if (status === 'en_route' && occurredAtIso) {
-        snapshot.startedAt = occurredAtIso
-      }
-      if (status === 'on_site' && occurredAtIso) {
-        snapshot.arrivedAt = occurredAtIso
-      }
-      if ((status === 'completed' || status === 'skipped') && occurredAtIso) {
-        snapshot.completedAt = occurredAtIso
-      }
-
-      const currentRank = JOB_STATUS_PRIORITY[snapshot.status]
-      const nextRank = JOB_STATUS_PRIORITY[status]
-      const shouldPromote =
-        nextRank > currentRank ||
-        (nextRank === currentRank &&
-          occurredAtIso &&
-          (!snapshot.statusUpdatedAt || occurredAtIso > snapshot.statusUpdatedAt))
-
-      if (shouldPromote) {
-        snapshot.status = status
-        snapshot.statusUpdatedAt = occurredAtIso ?? snapshot.statusUpdatedAt ?? null
-      } else if (occurredAtIso && (!snapshot.statusUpdatedAt || occurredAtIso > snapshot.statusUpdatedAt)) {
-        snapshot.statusUpdatedAt = occurredAtIso
-      }
-    })
-
     const combinedJobs: Job[] = []
     const historyJobs: Job[] = []
+
+    const parseDateToIso = (value: string | null | undefined): string | null => {
+      if (!value) return null
+      const parsed = new Date(value)
+      if (Number.isNaN(parsed.getTime())) return null
+      return parsed.toISOString()
+    }
 
     ;(logRows ?? []).forEach((log) => {
       const jobIdKey = normaliseIdentifier(log.job_id)
@@ -937,23 +751,6 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
       const completedAtIso = parseDateToIso(log.done_on ?? log.created_at)
       const uploadedAtIso = parseDateToIso(log.created_at)
-      const progress = jobIdKey ? progressByJobId.get(jobIdKey) : undefined
-
-      if (jobIdKey && completedAtIso) {
-        const snapshot = ensureSnapshot(jobIdKey)
-        if (!snapshot.completedAt || completedAtIso > snapshot.completedAt) {
-          snapshot.completedAt = completedAtIso
-        }
-        const currentRank = JOB_STATUS_PRIORITY[snapshot.status]
-        const completedRank = JOB_STATUS_PRIORITY['completed']
-        if (completedRank >= currentRank) {
-          snapshot.status = 'completed'
-          snapshot.statusUpdatedAt = completedAtIso
-        } else if (!snapshot.statusUpdatedAt || completedAtIso > snapshot.statusUpdatedAt) {
-          snapshot.statusUpdatedAt = completedAtIso
-        }
-      }
-
       if (!completedAtIso) {
         return
       }
@@ -966,8 +763,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         status: 'completed',
         scheduledAt: completedAtIso,
         etaMinutes: null,
-        startedAt: progress?.startedAt ?? null,
-        arrivedAt: progress?.arrivedAt ?? null,
+        startedAt: null,
         completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
@@ -978,7 +774,6 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         notes: log.notes,
         jobType: log.task_type,
         bins: normaliseBinList(log.bins),
-        statusUpdatedAt: progress?.statusUpdatedAt ?? completedAtIso,
       }
 
       historyJobs.push(logJob)
@@ -1001,22 +796,13 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       if (!property && jobAccountId && jobAccountId !== accountId) {
         return
       }
-      const progress = jobIdKey ? progressByJobId.get(jobIdKey) : undefined
-      const completedAtIsoFromLog = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
-      const progressCompletedAt = progress?.completedAt ?? null
-      const completedAtIso = progressCompletedAt ?? completedAtIsoFromLog
+      const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
       const proofUploadedAtIso = latestLog ? parseDateToIso(latestLog.created_at) : null
-      const statusFromProgress = progress?.status
-      const status: JobStatus = statusFromProgress
-        ? statusFromProgress
-        : completedAtIso
-          ? 'completed'
-          : latestLog
-            ? 'en_route'
-            : 'scheduled'
-      const startedAt = progress?.startedAt ?? null
-      const arrivedAt = progress?.arrivedAt ?? null
-      const statusUpdatedAt = progress?.statusUpdatedAt ?? completedAtIso ?? proofUploadedAtIso ?? null
+      const status: JobStatus = completedAtIso
+        ? 'completed'
+        : latestLog
+          ? 'en_route'
+          : 'scheduled'
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
       combinedJobs.push({
@@ -1027,8 +813,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         status,
         scheduledAt,
         etaMinutes: status === 'scheduled' ? Math.max(5, differenceInMinutes(new Date(scheduledAt), new Date())) : null,
-        startedAt,
-        arrivedAt,
+        startedAt: null,
         completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys,
@@ -1039,7 +824,6 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         notes: job.notes ?? latestLog?.notes ?? null,
         jobType: job.job_type,
         bins,
-        statusUpdatedAt,
       })
     })
 
@@ -1057,30 +841,16 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     setJobsLoading(false)
   }, [selectedAccountId, supabase, user])
 
-  const isCompleteJob = (job: Partial<Job>): job is Job => {
-    return Boolean(job.id && job.accountId && job.propertyName && job.status && job.scheduledAt)
-  }
-
-  const upsertJob = useCallback((job: Partial<Job> & { id: string }) => {
+  const upsertJob = useCallback((job: Job) => {
     setJobs((previousJobs) => {
-      const index = previousJobs.findIndex((existing) => existing.id === job.id)
-
+      const nextJobs = [...previousJobs]
+      const index = nextJobs.findIndex((existing) => existing.id === job.id)
       if (index >= 0) {
-        const updatedJobs = [...previousJobs]
-        updatedJobs[index] = { ...updatedJobs[index], ...job }
-        return updatedJobs.sort(
-          (a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
-        )
+        nextJobs[index] = { ...nextJobs[index], ...job }
+      } else {
+        nextJobs.unshift(job)
       }
-
-      if (isCompleteJob(job)) {
-        const updatedJobs: Job[] = [job, ...previousJobs]
-        return updatedJobs.sort(
-          (a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
-        )
-      }
-
-      return previousJobs
+      return nextJobs.sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     })
   }, [])
 
