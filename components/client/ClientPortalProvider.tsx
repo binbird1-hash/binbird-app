@@ -9,6 +9,7 @@ import {
   addMinutes,
   differenceInMinutes,
   formatISO,
+  isSameDay,
   nextDay,
   setHours,
   setMinutes,
@@ -733,6 +734,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
 
     const combinedJobs: Job[] = []
     const historyJobs: Job[] = []
+    const now = new Date()
 
     const parseDateToIso = (value: string | null | undefined): string | null => {
       if (!value) return null
@@ -801,6 +803,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       const property = propertyId ? propertyMap.get(propertyId) : undefined
       const propertyName = property?.name ?? job.address ?? 'Property'
       const scheduledAt = nextOccurrenceIso(job.day_of_week)
+      const scheduledAtDate = new Date(scheduledAt)
+      const scheduledAtValid = !Number.isNaN(scheduledAtDate.getTime())
       const jobIdKey = normaliseIdentifier(job.id)
       const latestLog = jobIdKey ? logsByJobId.get(jobIdKey) : undefined
       const jobAccountId = normaliseIdentifier(job.account_id)
@@ -809,22 +813,39 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       }
       const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
       const proofUploadedAtIso = latestLog ? parseDateToIso(latestLog.created_at) : null
+      const completionDate = completedAtIso ? new Date(completedAtIso) : null
+      const completionApplies =
+        completionDate !== null &&
+        !Number.isNaN(completionDate.getTime()) &&
+        scheduledAtValid &&
+        isSameDay(completionDate, scheduledAtDate)
+      const logActivityIso = parseDateToIso(latestLog?.done_on ?? latestLog?.created_at)
+      const logActivityDate = logActivityIso ? new Date(logActivityIso) : null
+      const hasRecentLog =
+        logActivityDate !== null && !Number.isNaN(logActivityDate.getTime()) && isSameDay(logActivityDate, now)
       const explicitStatus = parseJobStatus(job.status)
-      const status: JobStatus = explicitStatus === 'completed'
-        ? 'completed'
-        : explicitStatus === 'on_site'
-          ? 'on_site'
-          : explicitStatus === 'en_route'
-            ? 'en_route'
-            : explicitStatus === 'skipped'
-              ? 'skipped'
-              : completedAtIso
-                ? 'completed'
-                : latestLog
-                  ? 'en_route'
-                  : 'scheduled'
+      let status: JobStatus
+      if (explicitStatus === 'skipped') {
+        status = 'skipped'
+      } else if (completionApplies) {
+        status = 'completed'
+      } else if (explicitStatus === 'completed') {
+        status = 'scheduled'
+      } else if (explicitStatus === 'on_site') {
+        status = 'on_site'
+      } else if (explicitStatus === 'en_route') {
+        status = 'en_route'
+      } else if (hasRecentLog) {
+        status = 'en_route'
+      } else {
+        status = 'scheduled'
+      }
       const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
+      const etaMinutes =
+        status === 'scheduled' && scheduledAtValid
+          ? Math.max(5, differenceInMinutes(scheduledAtDate, now))
+          : null
       combinedJobs.push({
         id: job.id,
         accountId,
@@ -832,7 +853,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         propertyName,
         status,
         scheduledAt,
-        etaMinutes: status === 'scheduled' ? Math.max(5, differenceInMinutes(new Date(scheduledAt), new Date())) : null,
+        etaMinutes,
         startedAt: null,
         completedAt: completedAtIso,
         crewName: null,

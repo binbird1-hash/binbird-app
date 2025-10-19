@@ -1,3 +1,4 @@
+import { isToday } from "date-fns";
 import { normalizeJobStatus, type Job } from "./jobs";
 import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
 
@@ -65,10 +66,22 @@ function normalizeJob(value: Job): Job {
     typeof value.last_completed_on === "string" && value.last_completed_on.trim().length
       ? value.last_completed_on
       : null;
-  const status =
-    lastCompletedOn && value.status !== "skipped" && value.status !== "completed"
-      ? "completed"
-      : normalizeJobStatus(value.status);
+  const baseStatus = normalizeJobStatus(value.status);
+  const completedOnDate = lastCompletedOn ? new Date(lastCompletedOn) : null;
+  const completedToday =
+    completedOnDate !== null && !Number.isNaN(completedOnDate.getTime())
+      ? isToday(completedOnDate)
+      : false;
+
+  let status = baseStatus;
+
+  if (baseStatus === "completed" && !completedToday) {
+    status = "scheduled";
+  }
+
+  if (completedToday && baseStatus !== "skipped") {
+    status = "completed";
+  }
 
   return {
     id: String(value.id),

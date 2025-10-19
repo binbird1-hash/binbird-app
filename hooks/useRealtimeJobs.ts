@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js"
 import type { Job } from "@/components/client/ClientPortalProvider"
 import { normaliseBinList } from "@/lib/binLabels"
-import { nextDay, setHours, setMinutes, startOfToday } from "date-fns"
+import { isSameDay, nextDay, setHours, setMinutes, startOfToday } from "date-fns"
 import type { Day } from "date-fns"
 
 const WEEKDAY_LOOKUP: Record<string, Day> = {
@@ -49,6 +49,12 @@ const JOB_STATUS_VALUES: Job['status'][] = ['scheduled', 'en_route', 'on_site', 
 const JOB_STATUS_SET = new Set<Job['status']>(JOB_STATUS_VALUES)
 
 const parseStatus = (value: unknown, completedAt: string | null): Job['status'] => {
+  const completionDate = completedAt ? new Date(completedAt) : null
+  const completedToday =
+    completionDate !== null && !Number.isNaN(completionDate.getTime())
+      ? isSameDay(completionDate, new Date())
+      : false
+
   if (typeof value === 'string') {
     const normalised = value.trim().toLowerCase() as Job['status']
     if (JOB_STATUS_SET.has(normalised)) {
@@ -56,15 +62,19 @@ const parseStatus = (value: unknown, completedAt: string | null): Job['status'] 
         return 'skipped'
       }
       if (normalised === 'completed') {
-        return 'completed'
+        return completedToday ? 'completed' : 'scheduled'
       }
-      if (completedAt) {
-        return 'completed'
+      if (normalised === 'on_site' || normalised === 'en_route') {
+        return normalised
       }
-      return normalised
     }
   }
-  return completedAt ? 'completed' : 'scheduled'
+
+  if (completedToday) {
+    return 'completed'
+  }
+
+  return 'scheduled'
 }
 
 const createJobFromPayload = (payload: any, fallbackAccountId: string | null): Job | null => {

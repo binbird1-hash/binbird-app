@@ -1,3 +1,4 @@
+import { isToday } from "date-fns";
 import type { JobRecord } from "./database.types";
 
 export type JobStatus = "scheduled" | "en_route" | "on_site" | "completed" | "skipped";
@@ -116,10 +117,22 @@ function normalizeJobType(value: unknown): "put_out" | "bring_in" {
 export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
   const lastCompletedOn = normalizeDate(record.last_completed_on);
   const baseStatus = normalizeJobStatus(record.status);
-  const status =
-    lastCompletedOn && baseStatus !== "skipped" && baseStatus !== "completed"
-      ? "completed"
-      : baseStatus;
+
+  const completedOnDate = lastCompletedOn ? new Date(lastCompletedOn) : null;
+  const completedToday =
+    completedOnDate !== null && !Number.isNaN(completedOnDate.getTime())
+      ? isToday(completedOnDate)
+      : false;
+
+  let status = baseStatus;
+
+  if (baseStatus === "completed" && !completedToday) {
+    status = "scheduled";
+  }
+
+  if (completedToday && baseStatus !== "skipped") {
+    status = "completed";
+  }
 
   return {
     id: normalizeString(record.id),
