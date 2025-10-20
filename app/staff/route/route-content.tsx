@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -10,6 +10,7 @@ import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSet
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
+import { updateJobProgressStatus } from "@/lib/job-status";
 
 function RoutePageContent() {
   const supabase = useSupabase();
@@ -50,6 +51,7 @@ function RoutePageContent() {
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
+  const lastEnRouteJobRef = useRef<string | null>(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -173,6 +175,22 @@ function RoutePageContent() {
     : null;
   const isEndStop = normalizedAddress === "end";
 
+  useEffect(() => {
+    if (!jobs.length) return;
+    const job = jobs[activeIdx];
+    if (!job?.id) return;
+    if (job.address && job.address.trim().toLowerCase() === "end") return;
+    if (lastEnRouteJobRef.current === job.id) return;
+    lastEnRouteJobRef.current = job.id;
+    void updateJobProgressStatus(supabase, job.id, "en_route");
+  }, [activeIdx, jobs, supabase]);
+
+  useEffect(() => {
+    if (!jobs.length) {
+      lastEnRouteJobRef.current = null;
+    }
+  }, [jobs.length]);
+
   // Update current location
   useEffect(() => {
     if (!activeJob) return;
@@ -287,6 +305,14 @@ function RoutePageContent() {
   }
 
   function handleArrivedAtLocation() {
+    if (!activeJob || isEndStop) {
+      return;
+    }
+
+    if (activeJob.id) {
+      void updateJobProgressStatus(supabase, activeJob.id, "on_site");
+    }
+
     if (!navigator.geolocation) {
       setPopupMsg("Geolocation not supported");
       return;
@@ -300,11 +326,17 @@ function RoutePageContent() {
           );
         } else {
           setPopupMsg(`You are too far from the job location. (${Math.round(dist)}m away)`);
+          if (activeJob.id) {
+            void updateJobProgressStatus(supabase, activeJob.id, "en_route");
+          }
         }
       },
       (err) => {
         console.error("Geolocation error", err);
         setPopupMsg("Unable to get your current location.");
+        if (activeJob?.id) {
+          void updateJobProgressStatus(supabase, activeJob.id, "en_route");
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
