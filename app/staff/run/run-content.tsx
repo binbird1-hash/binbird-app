@@ -18,6 +18,7 @@ import {
 } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { updateJobProgressStatus } from "@/lib/job-status";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -413,7 +414,7 @@ function RunPageContent() {
     return false;
   }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
 
-  const handleStartRun = useCallback(() => {
+  const handleStartRun = useCallback(async () => {
     console.log("Starting run…");
     const existingSession = readRunSession();
     const nowIso = new Date().toISOString();
@@ -433,8 +434,14 @@ function RunPageContent() {
       completedJobs: 0,
     });
 
+    const activeJobs = ordered.length ? ordered : jobs;
+    const firstJob = activeJobs[0];
+    if (firstJob) {
+      void updateJobProgressStatus(supabase, firstJob.id, "scheduled", { started_at: startedAt });
+    }
+
     redirectExistingPlan();
-  }, [jobs.length, redirectExistingPlan]);
+  }, [jobs, ordered, redirectExistingPlan, supabase]);
 
   const handleReset = useCallback(() => {
     console.log("Resetting route");
@@ -642,7 +649,9 @@ function RunPageContent() {
                 // Start Run button (accent red)
                 <button
                   className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
-                  onClick={handleStartRun}
+                  onClick={() => {
+                    void handleStartRun();
+                  }}
                 >
                   Start Run
                 </button>

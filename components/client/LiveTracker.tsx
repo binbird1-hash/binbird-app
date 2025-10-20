@@ -10,18 +10,33 @@ import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 const PROGRESS_STEPS: { key: Exclude<Job['status'], 'skipped'>; label: string }[] = [
-  { key: 'scheduled', label: 'Scheduled' },
-  { key: 'en_route', label: 'En route' },
-  { key: 'on_site', label: 'On site' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'en_route', label: 'En Route' },
+  { key: 'on_site', label: 'On Site' },
+  { key: 'completed', label: 'Done' },
 ]
 
 const PROGRESS_INDEX: Record<Job['status'], number> = {
-  scheduled: 0,
-  en_route: 1,
-  on_site: 2,
-  completed: 3,
-  skipped: 3,
+  scheduled: -1,
+  en_route: 0,
+  on_site: 1,
+  completed: 2,
+  skipped: 2,
+}
+
+const computeProgressStage = (job: Job): number => {
+  if (job.status === 'completed' || job.status === 'skipped') {
+    return PROGRESS_INDEX.completed
+  }
+
+  if (job.status === 'on_site' || job.arrivedAt) {
+    return PROGRESS_INDEX.on_site
+  }
+
+  if (job.status === 'en_route' || job.startedAt) {
+    return PROGRESS_INDEX.en_route
+  }
+
+  return -1
 }
 
 const formatJobTypeLabel = (value: string | null | undefined): string | null => {
@@ -95,11 +110,6 @@ export function LiveTracker() {
     jobsLoading,
   } = useClientPortal()
 
-  const activeJobs = useMemo(
-    () => jobs.filter((job) => job.status !== 'completed'),
-    [jobs],
-  )
-
   const propertiesById = useMemo(
     () => new Map(properties.map((property) => [property.id, property])),
     [properties],
@@ -121,15 +131,16 @@ export function LiveTracker() {
     upsertJob(job)
   })
 
-  const todaysJobs = useMemo(
-    () =>
-      activeJobs.filter((job) => {
-        const scheduled = new Date(job.scheduledAt)
-        const now = new Date()
-        return scheduled.toDateString() === now.toDateString()
-      }),
-    [activeJobs],
-  )
+  const todaysJobs = useMemo(() => {
+    const now = new Date()
+    return jobs.filter((job) => {
+      const scheduled = job.scheduledAt ? new Date(job.scheduledAt) : null
+      const completed = job.completedAt ? new Date(job.completedAt) : null
+      const matchesScheduled = scheduled ? scheduled.toDateString() === now.toDateString() : false
+      const matchesCompleted = completed ? completed.toDateString() === now.toDateString() : false
+      return matchesScheduled || matchesCompleted
+    })
+  }, [jobs])
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refreshProperties(), refreshJobs()])
@@ -180,7 +191,7 @@ export function LiveTracker() {
         ) : (
           <div className="mt-6 space-y-6">
             {todaysJobs.map((job) => {
-              const progressIndex = PROGRESS_INDEX[job.status]
+              const progressStage = computeProgressStage(job)
               const isSkipped = job.status === 'skipped'
               const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
               const fullAddress = formatPropertyAddress(property ?? null, job.propertyName)
@@ -242,9 +253,10 @@ export function LiveTracker() {
                     <div className="relative flex flex-col gap-6">
                       <div className="grid grid-cols-2 gap-3 sm:hidden">
                         {PROGRESS_STEPS.map((step, index) => {
-                          const reached = progressIndex >= index
+                          const reached = progressStage >= index && progressStage >= 0
                           const completed =
-                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
+                            progressStage > index ||
+                            (progressStage === index && step.key === 'completed' && !isSkipped)
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
                             <div
@@ -284,9 +296,10 @@ export function LiveTracker() {
                       </div>
                       <ol className="relative hidden flex-col gap-6 sm:flex sm:flex-row sm:items-start sm:gap-0">
                         {PROGRESS_STEPS.map((step, index) => {
-                          const reached = progressIndex >= index
+                          const reached = progressStage >= index && progressStage >= 0
                           const completed =
-                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
+                            progressStage > index ||
+                            (progressStage === index && step.key === 'completed' && !isSkipped)
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
                             <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
@@ -320,7 +333,7 @@ export function LiveTracker() {
                                     <span
                                       className={clsx(
                                         'h-[2px] w-full rounded-full transition-all',
-                                        progressIndex > index
+                                        progressStage > index
                                           ? 'bg-gradient-to-r from-binbird-red/80 via-binbird-red/40 to-white/10'
                                           : 'bg-white/10',
                                       )}
