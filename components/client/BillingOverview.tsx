@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
+import { addMonths, startOfMonth } from 'date-fns'
 import { CreditCardIcon } from '@heroicons/react/24/outline'
 import { useClientPortal } from './ClientPortalProvider'
 import { AddPropertyDialog } from './AddPropertyDialog'
@@ -166,19 +166,6 @@ export function BillingOverview() {
     }
   }, [properties])
 
-  const planName = useMemo(() => {
-    if (stats.activeProperties === 0) {
-      return 'Paused plan'
-    }
-    if (stats.activeProperties <= 3) {
-      return 'Starter plan'
-    }
-    if (stats.activeProperties <= 10) {
-      return 'Growth plan'
-    }
-    return 'Enterprise plan'
-  }, [stats.activeProperties])
-
   const handleAddProperty = () => {
     setAddPropertyOpen(true)
   }
@@ -189,9 +176,9 @@ export function BillingOverview() {
         <section className="rounded-3xl border border-white/10 bg-black p-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
+              <span className="text-xs uppercase tracking-wide text-white/40">Subscription snapshot</span>
               <p className="mt-1 text-sm text-white/60">
-                Current totals for your connected properties and upcoming invoice
+                Review your current monthly total and manage your plan.
               </p>
             </div>
           </div>
@@ -211,15 +198,7 @@ export function BillingOverview() {
             </div>
           </dl>
           <p className="mt-6 text-sm text-white/60">
-            {selectedAccount ? `${selectedAccount.name} is on the ${planName}.` : 'Review your plan details.'}
-            {stats.activeProperties > 0 && (
-              <>
-                {' '}
-                Next invoice {format(stats.nextBillingDate, 'PPP')} ({
-                  formatDistanceToNowStrict(stats.nextBillingDate, { addSuffix: true })
-                }).
-              </>
-            )}
+            {selectedAccount ? `${selectedAccount.name} can manage their subscription here.` : 'Manage your subscription details.'}
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
