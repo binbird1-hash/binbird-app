@@ -2,23 +2,17 @@
 
 import { ChangeEvent, FormEvent, Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import {
-  CalendarIcon,
-  EnvelopeIcon,
-  HomeIcon,
-  PencilSquareIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline'
+import { CalendarIcon, HomeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 export type AddPropertyDialogProps = {
   isOpen: boolean
   onClose: () => void
   accountName?: string
-  contactEmail?: string
+  accountId?: string
+  requesterEmail?: string
 }
 
 type FormState = {
-  propertyName: string
   addressLine1: string
   addressLine2: string
   suburb: string
@@ -27,11 +21,9 @@ type FormState = {
   postalCode: string
   startDate: string
   instructions: string
-  contactEmail: string
 }
 
 const INITIAL_FORM_STATE: FormState = {
-  propertyName: '',
   addressLine1: '',
   addressLine2: '',
   suburb: '',
@@ -40,30 +32,27 @@ const INITIAL_FORM_STATE: FormState = {
   postalCode: '',
   startDate: '',
   instructions: '',
-  contactEmail: '',
 }
 
-export function AddPropertyDialog({ isOpen, onClose, accountName, contactEmail }: AddPropertyDialogProps) {
-  const [formState, setFormState] = useState<FormState>({
-    ...INITIAL_FORM_STATE,
-    contactEmail: contactEmail ?? '',
-  })
+export function AddPropertyDialog({
+  isOpen,
+  onClose,
+  accountName,
+  accountId,
+  requesterEmail,
+}: AddPropertyDialogProps) {
+  const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const isSubmitDisabled = status === 'submitting' || !accountId
 
   useEffect(() => {
     if (!isOpen) {
-      setFormState({ ...INITIAL_FORM_STATE, contactEmail: contactEmail ?? '' })
+      setFormState(INITIAL_FORM_STATE)
       setStatus('idle')
       setErrorMessage(null)
-      return
     }
-
-    setFormState((current) => ({
-      ...current,
-      contactEmail: current.contactEmail || contactEmail || '',
-    }))
-  }, [isOpen, contactEmail])
+  }, [isOpen])
 
   const handleChange = (field: keyof FormState) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value
@@ -73,6 +62,11 @@ export function AddPropertyDialog({ isOpen, onClose, accountName, contactEmail }
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setErrorMessage(null)
+
+    if (!accountId) {
+      setErrorMessage('We could not determine which account to attach this request to. Please refresh and try again.')
+      return
+    }
 
     if (!formState.addressLine1.trim()) {
       setErrorMessage('Please provide the property address so we know where to start service.')
@@ -87,7 +81,12 @@ export function AddPropertyDialog({ isOpen, onClose, accountName, contactEmail }
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formState),
+        body: JSON.stringify({
+          ...formState,
+          accountId,
+          accountName,
+          requesterEmail,
+        }),
       })
 
       if (!response.ok) {
@@ -177,35 +176,25 @@ export function AddPropertyDialog({ isOpen, onClose, accountName, contactEmail }
                     </div>
                   ) : (
                     <form className="space-y-6" onSubmit={handleSubmit}>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <label className="space-y-2 text-sm">
-                          <span className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-white/50">
-                            <HomeIcon className="h-4 w-4" /> Property name (optional)
-                          </span>
-                          <input
-                            type="text"
-                            name="propertyName"
-                            value={formState.propertyName}
-                            onChange={handleChange('propertyName')}
-                            className="w-full rounded-2xl border border-white/10 bg-black/60 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none"
-                            placeholder="e.g. Warehouse 3"
-                          />
-                        </label>
-                        <label className="space-y-2 text-sm">
-                          <span className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-white/50">
-                            <EnvelopeIcon className="h-4 w-4" /> Contact email
-                          </span>
-                          <input
-                            type="email"
-                            name="contactEmail"
-                            value={formState.contactEmail}
-                            onChange={handleChange('contactEmail')}
-                            className="w-full rounded-2xl border border-white/10 bg-black/60 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none"
-                            placeholder="you@company.com"
-                            required
-                          />
-                        </label>
-                      </div>
+                      {(accountName || requesterEmail) && (
+                        <div className="rounded-2xl border border-white/10 bg-black/60 p-4 text-xs text-white/60 sm:text-sm">
+                          {accountName && (
+                            <p>
+                              Requesting for{' '}
+                              <span className="font-medium text-white">{accountName}</span>
+                            </p>
+                          )}
+                          {requesterEmail && (
+                            <p className="mt-1">
+                              Confirmation will be sent to{' '}
+                              <span className="font-medium text-white">{requesterEmail}</span>
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {!accountId && (
+                        <p className="text-xs text-binbird-red">Select an account to enable property requests.</p>
+                      )}
 
                       <div className="space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -326,9 +315,13 @@ export function AddPropertyDialog({ isOpen, onClose, accountName, contactEmail }
                         <button
                           type="submit"
                           className="inline-flex items-center justify-center rounded-full border border-binbird-red bg-binbird-red px-5 py-2 text-sm font-semibold text-white transition hover:border-white/10 hover:bg-transparent hover:text-binbird-red disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-white/60"
-                          disabled={status === 'submitting'}
+                          disabled={isSubmitDisabled}
                         >
-                          {status === 'submitting' ? 'Submitting…' : 'Submit request'}
+                          {status === 'submitting'
+                            ? 'Submitting…'
+                            : !accountId
+                              ? 'Select an account'
+                              : 'Submit request'}
                         </button>
                       </div>
                     </form>

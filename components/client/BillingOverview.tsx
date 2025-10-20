@@ -394,7 +394,8 @@ export function BillingOverview() {
         isOpen={isAddPropertyOpen}
         onClose={() => setAddPropertyOpen(false)}
         accountName={selectedAccount?.name}
-        contactEmail={user?.email ?? undefined}
+        accountId={selectedAccount?.id}
+        requesterEmail={user?.email ?? undefined}
       />
     </>
   )
