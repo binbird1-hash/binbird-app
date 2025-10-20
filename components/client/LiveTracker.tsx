@@ -10,18 +10,17 @@ import { useRealtimeJobs } from '@/hooks/useRealtimeJobs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 const PROGRESS_STEPS: { key: Exclude<Job['status'], 'skipped'>; label: string }[] = [
-  { key: 'scheduled', label: 'Active' },
+  { key: 'scheduled', label: 'Scheduled' },
   { key: 'en_route', label: 'En route' },
-  { key: 'on_site', label: 'On site' },
-  { key: 'completed', label: 'Done' },
+  { key: 'completed', label: 'Completed' },
 ]
 
 const PROGRESS_INDEX: Record<Job['status'], number> = {
   scheduled: 0,
   en_route: 1,
-  on_site: 2,
-  completed: 3,
-  skipped: 3,
+  on_site: 1,
+  completed: 2,
+  skipped: 2,
 }
 
 const computeProgressStage = (job: Job): number => {
@@ -30,7 +29,7 @@ const computeProgressStage = (job: Job): number => {
   }
 
   if (job.status === 'on_site' || job.arrivedAt) {
-    return PROGRESS_INDEX.on_site
+    return PROGRESS_INDEX.en_route
   }
 
   if (job.status === 'en_route') {
