@@ -10,6 +10,7 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
+import { getLocalISODate } from "@/lib/date";
 import {
   clearPlannedRun,
   readPlannedRun,
@@ -192,7 +193,25 @@ function RunPageContent() {
         // Hardcoded weekday mapping
         const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const now = new Date();
-        const todayName = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE || days[now.getDay()];
+        const todayIndex = now.getDay();
+        const overrideDay = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
+        const normalizedOverrideIndex = overrideDay
+          ? days.findIndex(
+              (day) => day.toLowerCase() === overrideDay.toLowerCase()
+            )
+          : -1;
+        const effectiveTodayIndex =
+          normalizedOverrideIndex !== -1 ? normalizedOverrideIndex : todayIndex;
+        const todayName = days[effectiveTodayIndex];
+        const yesterdayName = days[(effectiveTodayIndex + 6) % 7];
+
+        const dayDelta = effectiveTodayIndex - todayIndex;
+        const effectiveTodayDate = new Date(now);
+        effectiveTodayDate.setDate(now.getDate() + dayDelta);
+        const effectiveYesterdayDate = new Date(effectiveTodayDate);
+        effectiveYesterdayDate.setDate(effectiveTodayDate.getDate() - 1);
+        const todayIso = getLocalISODate(effectiveTodayDate);
+        const yesterdayIso = getLocalISODate(effectiveYesterdayDate);
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
@@ -200,7 +219,10 @@ function RunPageContent() {
           assigneeId,
           email: user.email,
           todayName,
-          todayIndex: now.getDay(),
+          todayIndex: effectiveTodayIndex,
+          yesterdayName,
+          todayIso,
+          yesterdayIso,
           nowISO: now.toISOString(),
         });
 
@@ -209,13 +231,38 @@ function RunPageContent() {
           .from("jobs")
           .select("*")
           .eq("assigned_to", assigneeId)
-          .ilike("day_of_week", todayName)
+          .or(
+            `day_of_week.ilike.${todayName},day_of_week.ilike.${yesterdayName}`
+          )
           .is("last_completed_on", null);
 
         console.log("Jobs raw result:", data, "Error:", error);
 
         if (!error && data) {
           const normalized = normalizeJobs<JobRecord>(data);
+
+          const jobIds = normalized.map((job) => job.id).filter(Boolean);
+          const isoTargets = [todayIso, yesterdayIso];
+          const isoTargetSet = new Set(isoTargets);
+          const completedIds = new Set<string>();
+
+          if (jobIds.length > 0) {
+            const { data: logs, error: logsError } = await supabase
+              .from("logs")
+              .select("job_id, done_on")
+              .in("job_id", jobIds)
+              .in("done_on", isoTargets);
+
+            console.log("Relevant logs:", logs, "Error:", logsError);
+
+            if (!logsError && logs) {
+              logs.forEach((log) => {
+                if (!log || !log.job_id || !log.done_on) return;
+                if (!isoTargetSet.has(log.done_on)) return;
+                completedIds.add(log.job_id);
+              });
+            }
+          }
 
           // ✅ log jobs in detail
           console.log("Normalized jobs:", normalized);
@@ -229,9 +276,12 @@ function RunPageContent() {
             });
           });
 
-          const availableJobs = normalized.filter(
-            (job) => job.last_completed_on === null
-          );
+          const availableJobs = normalized.filter((job) => {
+            if (job.last_completed_on !== null) {
+              return false;
+            }
+            return !completedIds.has(job.id);
+          });
 
           console.log("Available jobs after filter:", availableJobs);
           setJobs(availableJobs);
