@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
@@ -11,6 +11,7 @@ import {
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
 import { useClientPortal } from './ClientPortalProvider'
+import { AddPropertyDialog } from './AddPropertyDialog'
 
 type BillingRow = {
   id: string
@@ -94,11 +95,11 @@ function formatPropertyDisplay({
 }
 
 const BILLING_PORTAL_URL = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
-const PROPERTY_REQUEST_URL = process.env.NEXT_PUBLIC_PROPERTY_REQUEST_URL
 
 export function BillingOverview() {
   const router = useRouter()
   const { properties, profile, user, selectedAccount } = useClientPortal()
+  const [isAddPropertyOpen, setAddPropertyOpen] = useState(false)
 
   const currencyFormatter = useMemo(
     () =>
@@ -193,12 +194,7 @@ export function BillingOverview() {
   }
 
   const handleAddProperty = () => {
-    if (typeof window === 'undefined') return
-    if (PROPERTY_REQUEST_URL) {
-      window.open(PROPERTY_REQUEST_URL, '_blank', 'noopener,noreferrer')
-      return
-    }
-    window.open('mailto:hello@binbird.com?subject=Add%20a%20new%20property%20to%20my%20account', '_blank')
+    setAddPropertyOpen(true)
   }
 
   const handleUpdateBillingDetails = () => {
@@ -206,8 +202,9 @@ export function BillingOverview() {
   }
 
   return (
-    <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-black p-6">
+    <>
+      <div className="space-y-6 text-white">
+        <section className="rounded-3xl border border-white/10 bg-black p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
@@ -392,6 +389,13 @@ export function BillingOverview() {
           </div>
         )}
       </section>
-    </div>
+      </div>
+      <AddPropertyDialog
+        isOpen={isAddPropertyOpen}
+        onClose={() => setAddPropertyOpen(false)}
+        accountName={selectedAccount?.name}
+        contactEmail={user?.email ?? undefined}
+      />
+    </>
   )
 }
