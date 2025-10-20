@@ -3,11 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
-import {
-  CreditCardIcon,
-  ArrowPathIcon,
-  BuildingOffice2Icon,
-} from '@heroicons/react/24/outline'
+import { CreditCardIcon } from '@heroicons/react/24/outline'
 import { useClientPortal } from './ClientPortalProvider'
 import { AddPropertyDialog } from './AddPropertyDialog'
 
@@ -191,101 +187,58 @@ export function BillingOverview() {
     <>
       <div className="space-y-6 text-white">
         <section className="rounded-3xl border border-white/10 bg-black p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
-            <p className="mt-1 text-sm text-white/60">
-              Current totals for your connected properties and upcoming invoice
-            </p>
-          </div>
-        </div>
-        <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-black p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
-            <dd className="mt-2 text-3xl font-semibold tracking-tight">
-              {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black p-4">
-            <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
-            <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
-            {stats.pausedProperties > 0 && (
-              <dd className="mt-3 text-xs text-white/50">{stats.pausedProperties} paused</dd>
-            )}
-          </div>
-        </dl>
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-black p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <span className="text-xs uppercase tracking-wide text-white/40">Manage your account</span>
-            <p className="mt-1 text-sm text-white/60">
-              Keep your subscription current and request new properties
-            </p>
-          </div>
-        </div>
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
-                <ArrowPathIcon className="h-5 w-5" /> Manage subscription
-              </div>
-              <p className="text-sm text-white/60">
-                {selectedAccount ? `${selectedAccount.name} is on the ${planName}.` : 'Review your plan details.'}
-                {stats.activeProperties > 0 && (
-                  <>
-                    {' '}
-                    Next invoice {format(stats.nextBillingDate, 'PPP')} (
-                    {formatDistanceToNowStrict(stats.nextBillingDate, { addSuffix: true })}).
-                  </>
-                )}
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <span className="text-xs uppercase tracking-wide text-white/40">Billing snapshot</span>
+              <p className="mt-1 text-sm text-white/60">
+                Current totals for your connected properties and upcoming invoice
               </p>
-              <dl className="grid gap-2 text-xs text-white/60">
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black px-3 py-2">
-                  <dt className="uppercase tracking-wide">Monthly spend</dt>
-                  <dd className="font-semibold text-white">
-                    {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black px-3 py-2">
-                  <dt className="uppercase tracking-wide">Properties</dt>
-                  <dd className="font-semibold text-white">
-                    {stats.activeProperties} active · {stats.pausedProperties} paused
-                  </dd>
-                </div>
-              </dl>
             </div>
+          </div>
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-black p-4">
+              <dt className="text-xs uppercase tracking-wide text-white/50">Monthly total (excl. tax)</dt>
+              <dd className="mt-2 text-3xl font-semibold tracking-tight">
+                {stats.totalMonthly > 0 ? currencyFormatter.format(stats.totalMonthly) : 'Included'}
+              </dd>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black p-4">
+              <dt className="text-xs uppercase tracking-wide text-white/50">Active properties</dt>
+              <dd className="mt-2 text-3xl font-semibold tracking-tight">{stats.activeProperties}</dd>
+              {stats.pausedProperties > 0 && (
+                <dd className="mt-3 text-xs text-white/50">{stats.pausedProperties} paused</dd>
+              )}
+            </div>
+          </dl>
+          <p className="mt-6 text-sm text-white/60">
+            {selectedAccount ? `${selectedAccount.name} is on the ${planName}.` : 'Review your plan details.'}
+            {stats.activeProperties > 0 && (
+              <>
+                {' '}
+                Next invoice {format(stats.nextBillingDate, 'PPP')} ({
+                  formatDistanceToNowStrict(stats.nextBillingDate, { addSuffix: true })
+                }).
+              </>
+            )}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href={BILLING_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
             >
               Manage subscription
             </Link>
+            <button
+              type="button"
+              onClick={handleAddProperty}
+              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+            >
+              Add property
+            </button>
           </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
-                <BuildingOffice2Icon className="h-5 w-5" /> Property management
-              </div>
-              <p className="text-sm text-white/60">
-                Add more properties whenever you&apos;re ready to grow your portfolio.
-              </p>
-            </div>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleAddProperty}
-                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
-              >
-                Add property
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
         <header className="mb-4 flex items-center justify-between text-sm text-white/60">
