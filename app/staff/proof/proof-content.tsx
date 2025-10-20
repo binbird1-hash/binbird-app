@@ -368,6 +368,7 @@ export default function ProofPageContent() {
       const { error: logErr } = await supabase.from("logs").insert({
         job_id: job.id,
         account_id: accountId,
+        property_id: job.property_id ?? null,
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,
