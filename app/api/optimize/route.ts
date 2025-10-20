@@ -6,9 +6,9 @@ export async function POST(req: NextRequest) {
   try {
     const { start, end, waypoints } = await req.json();
 
-    const key = process.env.GOOGLE_MAPS_SERVER_KEY;
+    const key = process.env.GOOGLE_MAPS_SERVER_KEY ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!key) {
-      return NextResponse.json({ error: "Missing GOOGLE_MAPS_SERVER_KEY" }, { status: 500 });
+      return NextResponse.json({ error: "Missing Google Maps API key" }, { status: 500 });
     }
 
     const url = new URL("https://maps.googleapis.com/maps/api/directions/json");
