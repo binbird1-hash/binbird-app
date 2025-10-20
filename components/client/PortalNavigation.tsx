@@ -98,22 +98,24 @@ export function PortalNavigation() {
                 </Link>
               )
             })}
-          </nav>
 
-          <button
-            type="button"
-            onClick={handleSignOut}
-            disabled={signingOut}
-            className={clsx(
-              'inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
-              signingOut
-                ? 'cursor-wait bg-white/5 text-white/70'
-                : 'text-white hover:border-binbird-red hover:bg-binbird-red/20',
-            )}
-          >
-            <ArrowRightOnRectangleIcon className="h-5 w-5" />
-            {signingOut ? 'Signing out…' : 'Sign out'}
-          </button>
+            <div className="mt-auto pt-4">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className={clsx(
+                  'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
+                  signingOut
+                    ? 'cursor-wait bg-white/5 text-white/70'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white',
+                )}
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+              </button>
+            </div>
+          </nav>
         </aside>
       </div>
       <nav className="hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-white/10 bg-black/60 p-2 text-sm text-white shadow-2xl shadow-black/20 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
@@ -134,6 +136,20 @@ export function PortalNavigation() {
             </Link>
           )
         })}
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className={clsx(
+            'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:px-4',
+            signingOut
+              ? 'cursor-wait bg-white/5 text-white/60'
+              : 'text-white/60 hover:bg-white/5 hover:text-white',
+          )}
+        >
+          <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+        </button>
       </nav>
     </div>
   )
