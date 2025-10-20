@@ -99,20 +99,22 @@ export function PortalNavigation() {
               )
             })}
 
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className={clsx(
-                'flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
-                signingOut
-                  ? 'cursor-wait bg-white/5 text-white/70'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white',
-              )}
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
-            </button>
+            <div className="mt-auto pt-4">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className={clsx(
+                  'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
+                  signingOut
+                    ? 'cursor-wait bg-white/5 text-white/70'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white',
+                )}
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+              </button>
+            </div>
           </nav>
         </aside>
       </div>
@@ -134,6 +136,20 @@ export function PortalNavigation() {
             </Link>
           )
         })}
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className={clsx(
+            'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:px-4',
+            signingOut
+              ? 'cursor-wait bg-white/5 text-white/60'
+              : 'text-white/60 hover:bg-white/5 hover:text-white',
+          )}
+        >
+          <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+        </button>
       </nav>
     </div>
   )
