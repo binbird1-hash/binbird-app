@@ -4,6 +4,7 @@ export type JobProgressStatus = 'scheduled' | 'en_route' | 'on_site' | 'complete
 
 const STATUS_NORMALISATION: Record<string, JobProgressStatus> = {
   scheduled: 'scheduled',
+  active: 'scheduled',
   pending: 'scheduled',
   queued: 'scheduled',
   unstarted: 'scheduled',
