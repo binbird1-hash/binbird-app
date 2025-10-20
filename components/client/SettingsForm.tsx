@@ -31,7 +31,7 @@ const PREFERENCE_FIELDS = [
   {
     key: 'emailRouteUpdates',
     label: 'Route updates',
-    description: 'Receive notifications when the crew is on their way or arriving on site.',
+    description: 'Receive notifications when the crew is heading out or wrapping up.',
     icon: BellIcon,
   },
   {

@@ -61,7 +61,7 @@ export type Property = {
   collectionDay: string | null
 }
 
-export type JobStatus = 'scheduled' | 'en_route' | 'on_site' | 'completed' | 'skipped'
+export type JobStatus = 'scheduled' | 'en_route' | 'completed' | 'skipped'
 
 export type Job = {
   id: string
@@ -1050,7 +1050,7 @@ export const computeEtaLabel = (job: Job): string => {
     return `~${etaMinutes} min`
   }
 
-  if (job.status === 'on_site' || job.status === 'en_route') {
+  if (job.status === 'en_route') {
     return 'In progress'
   }
 

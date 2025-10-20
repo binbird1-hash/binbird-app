@@ -39,7 +39,7 @@ describe('computeEtaLabel', () => {
     const now = new Date()
     vi.setSystemTime(now)
     const startedAt = new Date(now.getTime() - 5 * 60 * 1000).toISOString()
-    expect(computeEtaLabel({ ...baseJob, status: 'on_site', startedAt, etaMinutes: 20 })).toBe('~15 min')
+    expect(computeEtaLabel({ ...baseJob, status: 'scheduled', startedAt, etaMinutes: 20 })).toBe('~15 min')
     vi.useRealTimers()
   })
 
