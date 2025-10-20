@@ -7,6 +7,7 @@ import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
+import { updateJobProgressStatus } from "@/lib/job-status";
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
@@ -351,6 +352,7 @@ export default function ProofPageContent() {
       }
       const now = new Date();
       const dateStr = getLocalISODate(now);
+      const completedAtIso = now.toISOString();
       const { year, week } = getCustomWeek(now);
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
@@ -384,6 +386,7 @@ export default function ProofPageContent() {
       });
       if (logErr) throw logErr;
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
+      await updateJobProgressStatus(supabase, job.id, "completed", { completed_at: completedAtIso });
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
       const nowIso = new Date().toISOString();

@@ -95,11 +95,6 @@ export function LiveTracker() {
     jobsLoading,
   } = useClientPortal()
 
-  const activeJobs = useMemo(
-    () => jobs.filter((job) => job.status !== 'completed'),
-    [jobs],
-  )
-
   const propertiesById = useMemo(
     () => new Map(properties.map((property) => [property.id, property])),
     [properties],
@@ -121,15 +116,16 @@ export function LiveTracker() {
     upsertJob(job)
   })
 
-  const todaysJobs = useMemo(
-    () =>
-      activeJobs.filter((job) => {
-        const scheduled = new Date(job.scheduledAt)
-        const now = new Date()
-        return scheduled.toDateString() === now.toDateString()
-      }),
-    [activeJobs],
-  )
+  const todaysJobs = useMemo(() => {
+    const now = new Date()
+    return jobs.filter((job) => {
+      const scheduled = job.scheduledAt ? new Date(job.scheduledAt) : null
+      const completed = job.completedAt ? new Date(job.completedAt) : null
+      const matchesScheduled = scheduled ? scheduled.toDateString() === now.toDateString() : false
+      const matchesCompleted = completed ? completed.toDateString() === now.toDateString() : false
+      return matchesScheduled || matchesCompleted
+    })
+  }, [jobs])
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refreshProperties(), refreshJobs()])

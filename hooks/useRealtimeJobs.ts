@@ -4,6 +4,12 @@ import { useEffect } from "react"
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js"
 import type { Job } from "@/components/client/ClientPortalProvider"
 import { normaliseBinList } from "@/lib/binLabels"
+import {
+  parseIsoDateTime,
+  parseJobProgressStatus,
+  parseOptionalNumber,
+  parseStringArray,
+} from "@/lib/job-status"
 import { nextDay, setHours, setMinutes, startOfToday } from "date-fns"
 import type { Day } from "date-fns"
 
@@ -38,21 +44,36 @@ const normaliseId = (value: string | number | null | undefined): string | null =
   return trimmed.length ? trimmed : null
 }
 
-const parseDateToIso = (value: string | null | undefined): string | null => {
-  if (!value) return null
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed.toISOString()
-}
-
 const createJobFromPayload = (payload: any, fallbackAccountId: string | null): Job | null => {
   if (!payload) return null
   const scheduledAt = computeNextOccurrence(payload.day_of_week ?? null)
   const bins = normaliseBinList(payload.bins)
   const propertyId = normaliseId(payload.property_id)
   const accountId = normaliseId(payload.account_id) ?? fallbackAccountId ?? 'unknown'
-  const completedAt = parseDateToIso(payload.last_completed_on)
-  const status: Job['status'] = completedAt ? 'completed' : 'scheduled'
+  const completedAt =
+    parseIsoDateTime(payload.completed_at ?? payload.completedAt ?? payload.last_completed_on) ?? null
+  const startedAt = parseIsoDateTime(payload.started_at ?? payload.startedAt ?? payload.started_on) ?? null
+  const arrivedAt = parseIsoDateTime(payload.arrived_at ?? payload.arrivedAt ?? payload.arrived_on) ?? null
+  const etaMinutes =
+    parseOptionalNumber(payload.eta_minutes ?? payload.etaMinutes ?? payload.eta) ?? null
+  const crewName = typeof payload.crew_name === 'string' ? payload.crew_name : null
+  const proofKeys = parseStringArray(payload.proof_photo_keys ?? payload.proofPhotoKeys)
+  const proofUploadedAt =
+    parseIsoDateTime(payload.proof_uploaded_at ?? payload.proofUploadedAt ?? payload.photo_uploaded_at) ?? null
+  const rawStatus =
+    payload.status ?? payload.progress_status ?? payload.current_status ?? (arrivedAt ? 'on_site' : null)
+  const status: Job['status'] = parseJobProgressStatus(rawStatus, {
+    completed: Boolean(completedAt),
+  })
+  const lastLatitude = parseOptionalNumber(
+    payload.last_latitude ?? payload.lastLatitude ?? payload.gps_lat ?? payload.lat,
+  )
+  const lastLongitude = parseOptionalNumber(
+    payload.last_longitude ?? payload.lastLongitude ?? payload.gps_lng ?? payload.lng,
+  )
+  const notes = typeof payload.notes === 'string' ? payload.notes : null
+  const jobType = typeof payload.job_type === 'string' ? payload.job_type : null
+
   return {
     id: String(payload.id),
     accountId,
@@ -60,16 +81,17 @@ const createJobFromPayload = (payload: any, fallbackAccountId: string | null): J
     propertyName: payload.address ?? 'Property',
     status,
     scheduledAt,
-    etaMinutes: null,
-    startedAt: null,
+    etaMinutes,
+    startedAt,
     completedAt,
-    crewName: null,
-    proofPhotoKeys: payload.photo_path ? [payload.photo_path] : [],
-    routePolyline: null,
-    lastLatitude: payload.lat ?? undefined,
-    lastLongitude: payload.lng ?? undefined,
-    notes: payload.notes ?? null,
-    jobType: payload.job_type ?? null,
+    crewName,
+    proofPhotoKeys: [payload.photo_path, ...proofKeys].filter(Boolean) as string[],
+    proofUploadedAt,
+    routePolyline: payload.route_polyline ?? payload.routePolyline ?? null,
+    lastLatitude: lastLatitude ?? undefined,
+    lastLongitude: lastLongitude ?? undefined,
+    notes,
+    jobType,
     bins,
   }
 }
