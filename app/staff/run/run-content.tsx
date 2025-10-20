@@ -437,7 +437,7 @@ function RunPageContent() {
     const activeJobs = ordered.length ? ordered : jobs;
     const firstJob = activeJobs[0];
     if (firstJob) {
-      void updateJobProgressStatus(supabase, firstJob.id, "en_route");
+      void updateJobProgressStatus(supabase, firstJob.id, "scheduled", { started_at: startedAt });
     }
 
     redirectExistingPlan();

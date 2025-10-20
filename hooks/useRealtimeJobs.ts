@@ -84,6 +84,7 @@ const createJobFromPayload = (payload: any, fallbackAccountId: string | null): J
     etaMinutes,
     startedAt,
     completedAt,
+    arrivedAt,
     crewName,
     proofPhotoKeys: [payload.photo_path, ...proofKeys].filter(Boolean) as string[],
     proofUploadedAt,

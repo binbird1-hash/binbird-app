@@ -24,6 +24,30 @@ const PROGRESS_INDEX: Record<Job['status'], number> = {
   skipped: 3,
 }
 
+const computeProgressStage = (job: Job): number => {
+  if (job.status === 'completed' || job.status === 'skipped') {
+    return PROGRESS_INDEX.completed
+  }
+
+  if (job.status === 'on_site' || job.arrivedAt) {
+    return PROGRESS_INDEX.on_site
+  }
+
+  if (job.status === 'en_route') {
+    return PROGRESS_INDEX.en_route
+  }
+
+  if (job.startedAt) {
+    return PROGRESS_INDEX.scheduled
+  }
+
+  if (job.status === 'scheduled') {
+    return -1
+  }
+
+  return -1
+}
+
 const formatJobTypeLabel = (value: string | null | undefined): string | null => {
   if (!value) return null
   return value
@@ -176,7 +200,7 @@ export function LiveTracker() {
         ) : (
           <div className="mt-6 space-y-6">
             {todaysJobs.map((job) => {
-              const progressIndex = PROGRESS_INDEX[job.status]
+              const progressStage = computeProgressStage(job)
               const isSkipped = job.status === 'skipped'
               const property = job.propertyId ? propertiesById.get(job.propertyId) ?? null : null
               const fullAddress = formatPropertyAddress(property ?? null, job.propertyName)
@@ -238,9 +262,10 @@ export function LiveTracker() {
                     <div className="relative flex flex-col gap-6">
                       <div className="grid grid-cols-2 gap-3 sm:hidden">
                         {PROGRESS_STEPS.map((step, index) => {
-                          const reached = progressIndex >= index
+                          const reached = progressStage >= index && progressStage >= 0
                           const completed =
-                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
+                            progressStage > index ||
+                            (progressStage === index && step.key === 'completed' && !isSkipped)
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
                             <div
@@ -280,9 +305,10 @@ export function LiveTracker() {
                       </div>
                       <ol className="relative hidden flex-col gap-6 sm:flex sm:flex-row sm:items-start sm:gap-0">
                         {PROGRESS_STEPS.map((step, index) => {
-                          const reached = progressIndex >= index
+                          const reached = progressStage >= index && progressStage >= 0
                           const completed =
-                            progressIndex > index || (progressIndex === index && step.key === 'completed' && !isSkipped)
+                            progressStage > index ||
+                            (progressStage === index && step.key === 'completed' && !isSkipped)
                           const label = step.key === 'completed' && isSkipped ? 'Skipped' : step.label
                           return (
                             <li key={step.key} className="relative flex flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
@@ -316,7 +342,7 @@ export function LiveTracker() {
                                     <span
                                       className={clsx(
                                         'h-[2px] w-full rounded-full transition-all',
-                                        progressIndex > index
+                                        progressStage > index
                                           ? 'bg-gradient-to-r from-binbird-red/80 via-binbird-red/40 to-white/10'
                                           : 'bg-white/10',
                                       )}

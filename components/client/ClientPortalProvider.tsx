@@ -78,6 +78,7 @@ export type Job = {
   scheduledAt: string
   etaMinutes?: number | null
   startedAt?: string | null
+  arrivedAt?: string | null
   completedAt?: string | null
   crewName?: string | null
   proofPhotoKeys?: string[] | null
@@ -762,6 +763,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         scheduledAt: completedAtIso,
         etaMinutes: null,
         startedAt: null,
+        arrivedAt: null,
         completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
@@ -838,6 +840,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         scheduledAt,
         etaMinutes: etaMinutes ?? etaFromSchedule,
         startedAt: startedAtIso,
+        arrivedAt: arrivedAtIso,
         completedAt: completedAtIso,
         crewName,
         proofPhotoKeys,
