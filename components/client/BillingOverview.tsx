@@ -94,7 +94,9 @@ function formatPropertyDisplay({
   return { primary: trimmedName, secondary: address }
 }
 
-const BILLING_PORTAL_URL = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
+const BILLING_PORTAL_URL =
+  process.env.NEXT_PUBLIC_BILLING_PORTAL_URL ??
+  'https://billing.stripe.com/p/login/8x2dR8gWu3i84Kp39sdZ600'
 
 export function BillingOverview() {
   const router = useRouter()
@@ -184,15 +186,6 @@ export function BillingOverview() {
     return 'Enterprise plan'
   }, [stats.activeProperties])
 
-  const handleManageSubscription = () => {
-    if (typeof window === 'undefined') return
-    if (BILLING_PORTAL_URL) {
-      window.open(BILLING_PORTAL_URL, '_blank', 'noopener,noreferrer')
-      return
-    }
-    window.open('mailto:billing@binbird.com?subject=Manage%20my%20BinBird%20subscription', '_blank')
-  }
-
   const handleAddProperty = () => {
     setAddPropertyOpen(true)
   }
@@ -270,13 +263,14 @@ export function BillingOverview() {
                 </div>
               </dl>
             </div>
-            <button
-              type="button"
-              onClick={handleManageSubscription}
+            <Link
+              href={BILLING_PORTAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
             >
               Manage subscription
-            </button>
+            </Link>
           </div>
           <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
