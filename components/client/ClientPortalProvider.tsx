@@ -4,12 +4,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { normaliseBinList } from '@/lib/binLabels'
-import {
-  parseIsoDateTime,
-  parseJobProgressStatus,
-  parseOptionalNumber,
-  parseStringArray,
-} from '@/lib/job-status'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   addMinutes,
@@ -78,7 +72,6 @@ export type Job = {
   scheduledAt: string
   etaMinutes?: number | null
   startedAt?: string | null
-  arrivedAt?: string | null
   completedAt?: string | null
   crewName?: string | null
   proofPhotoKeys?: string[] | null
@@ -635,7 +628,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     })
 
     const accountIdFilters = Array.from(accountCandidates)
-    const jobSelectFields = '*'
+    const jobSelectFields =
+      'id, account_id, property_id, lat, lng, last_completed_on, day_of_week, address, photo_path, client_name, bins, notes, job_type'
 
     const mergedJobRows: any[] = []
 
@@ -729,6 +723,13 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     const combinedJobs: Job[] = []
     const historyJobs: Job[] = []
 
+    const parseDateToIso = (value: string | null | undefined): string | null => {
+      if (!value) return null
+      const parsed = new Date(value)
+      if (Number.isNaN(parsed.getTime())) return null
+      return parsed.toISOString()
+    }
+
     ;(logRows ?? []).forEach((log) => {
       const jobIdKey = normaliseIdentifier(log.job_id)
       const logAccountId = normaliseIdentifier(log.account_id)
@@ -748,8 +749,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         return
       }
 
-      const completedAtIso = parseIsoDateTime(log.done_on ?? log.created_at)
-      const uploadedAtIso = parseIsoDateTime(log.created_at)
+      const completedAtIso = parseDateToIso(log.done_on ?? log.created_at)
+      const uploadedAtIso = parseDateToIso(log.created_at)
       if (!completedAtIso) {
         return
       }
@@ -763,7 +764,6 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         scheduledAt: completedAtIso,
         etaMinutes: null,
         startedAt: null,
-        arrivedAt: null,
         completedAt: completedAtIso,
         crewName: null,
         proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
@@ -796,41 +796,15 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       if (!property && jobAccountId && jobAccountId !== accountId) {
         return
       }
-      const completedAtIso =
-        parseIsoDateTime(job.completed_at ?? job.completedAt ?? latestLog?.done_on ?? job.last_completed_on) ?? null
-      const startedAtIso =
-        parseIsoDateTime(job.started_at ?? job.startedAt ?? job.started_on ?? job.last_started_on) ?? null
-      const arrivedAtIso = parseIsoDateTime(job.arrived_at ?? job.arrivedAt ?? job.arrived_on) ?? null
-      const proofUploadedAtIso =
-        parseIsoDateTime(job.proof_uploaded_at ?? job.proofUploadedAt ?? latestLog?.created_at) ?? null
-      const etaMinutes = parseOptionalNumber(job.eta_minutes ?? job.etaMinutes ?? job.eta)
-      const rawStatus =
-        job.status ?? job.progress_status ?? job.current_status ?? (arrivedAtIso ? 'on_site' : null)
-      const status: JobStatus = parseJobProgressStatus(rawStatus, {
-        completed: Boolean(completedAtIso),
-      })
-      const proofPhotoKeys = Array.from(
-        new Set(
-          [
-            ...(parseStringArray(job.proof_photo_keys ?? job.proofPhotoKeys) ?? []),
-            job.photo_path,
-            latestLog?.photo_path,
-          ].filter((value): value is string => Boolean(value)),
-        ),
-      )
+      const completedAtIso = parseDateToIso(latestLog?.done_on ?? job.last_completed_on)
+      const proofUploadedAtIso = latestLog ? parseDateToIso(latestLog.created_at) : null
+      const status: JobStatus = completedAtIso
+        ? 'completed'
+        : latestLog
+          ? 'en_route'
+          : 'scheduled'
+      const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
-      const lastLatitude =
-        parseOptionalNumber(job.last_latitude ?? job.gps_lat ?? job.lat) ?? undefined
-      const lastLongitude =
-        parseOptionalNumber(job.last_longitude ?? job.gps_lng ?? job.lng) ?? undefined
-      const crewName = typeof job.crew_name === 'string' ? job.crew_name : null
-      const jobNotes = job.notes ?? latestLog?.notes ?? null
-      const noteValue = typeof jobNotes === 'string' ? jobNotes : null
-      const etaFromSchedule =
-        status === 'scheduled'
-          ? Math.max(5, differenceInMinutes(new Date(scheduledAt), new Date()))
-          : null
-
       combinedJobs.push({
         id: job.id,
         accountId,
@@ -838,17 +812,16 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         propertyName,
         status,
         scheduledAt,
-        etaMinutes: etaMinutes ?? etaFromSchedule,
-        startedAt: startedAtIso,
-        arrivedAt: arrivedAtIso,
+        etaMinutes: status === 'scheduled' ? Math.max(5, differenceInMinutes(new Date(scheduledAt), new Date())) : null,
+        startedAt: null,
         completedAt: completedAtIso,
-        crewName,
+        crewName: null,
         proofPhotoKeys,
         proofUploadedAt: proofUploadedAtIso,
-        routePolyline: job.route_polyline ?? job.routePolyline ?? null,
-        lastLatitude,
-        lastLongitude,
-        notes: noteValue,
+        routePolyline: null,
+        lastLatitude: job.lat ?? undefined,
+        lastLongitude: job.lng ?? undefined,
+        notes: job.notes ?? latestLog?.notes ?? null,
         jobType: job.job_type,
         bins,
       })
