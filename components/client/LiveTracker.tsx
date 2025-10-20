@@ -239,7 +239,7 @@ export function LiveTracker() {
                         </dl>
                       ) : null}
                     </div>
-                    <div className="relative flex flex-col gap-6">
+                    <div className="relative flex flex-col gap-6 lg:self-center">
                       <div className="grid grid-cols-2 gap-3 sm:hidden">
                         {PROGRESS_STEPS.map((step, index) => {
                           const reached = progressIndex >= index
