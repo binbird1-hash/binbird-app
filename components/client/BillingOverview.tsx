@@ -2,13 +2,11 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { addMonths, format, formatDistanceToNowStrict, startOfMonth } from 'date-fns'
 import {
   CreditCardIcon,
   ArrowPathIcon,
   BuildingOffice2Icon,
-  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
 import { useClientPortal } from './ClientPortalProvider'
 import { AddPropertyDialog } from './AddPropertyDialog'
@@ -99,8 +97,7 @@ const BILLING_PORTAL_URL =
   'https://billing.stripe.com/p/login/8x2dR8gWu3i84Kp39sdZ600'
 
 export function BillingOverview() {
-  const router = useRouter()
-  const { properties, profile, user, selectedAccount } = useClientPortal()
+  const { properties, user, selectedAccount } = useClientPortal()
   const [isAddPropertyOpen, setAddPropertyOpen] = useState(false)
 
   const currencyFormatter = useMemo(
@@ -190,10 +187,6 @@ export function BillingOverview() {
     setAddPropertyOpen(true)
   }
 
-  const handleUpdateBillingDetails = () => {
-    router.push('/client/settings')
-  }
-
   return (
     <>
       <div className="space-y-6 text-white">
@@ -228,7 +221,7 @@ export function BillingOverview() {
           <div>
             <span className="text-xs uppercase tracking-wide text-white/40">Manage your account</span>
             <p className="mt-1 text-sm text-white/60">
-              Keep your subscription current, maintain billing contacts, and request new properties
+              Keep your subscription current and request new properties
             </p>
           </div>
         </div>
@@ -275,58 +268,11 @@ export function BillingOverview() {
           <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
-                <DocumentDuplicateIcon className="h-5 w-5" /> Billing contacts
-              </div>
-              <p className="text-sm text-white/60">
-                Confirm who receives invoices and reminders so nothing is missed.
-              </p>
-              <dl className="space-y-2 text-sm text-white">
-                <div className="rounded-xl border border-white/10 bg-black px-3 py-2">
-                  <dt className="text-xs uppercase tracking-wide text-white/50">Primary email</dt>
-                  <dd className="mt-1 font-medium text-white">
-                    {user?.email ?? 'Not set'}
-                  </dd>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black px-3 py-2">
-                  <dt className="text-xs uppercase tracking-wide text-white/50">Account contact</dt>
-                  <dd className="mt-1 font-medium text-white">
-                    {profile?.fullName ?? 'Add a billing contact'}
-                  </dd>
-                  {profile?.phone && <dd className="text-xs text-white/50">{profile.phone}</dd>}
-                </div>
-              </dl>
-            </div>
-            <button
-              type="button"
-              onClick={handleUpdateBillingDetails}
-              className="mt-6 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
-            >
-              Update billing details
-            </button>
-          </div>
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black p-5">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-3 text-sm font-medium text-white">
                 <BuildingOffice2Icon className="h-5 w-5" /> Property management
               </div>
               <p className="text-sm text-white/60">
-                Track which sites are active, request new connections, or pause locations that are on hold.
+                Add more properties whenever you&apos;re ready to grow your portfolio.
               </p>
-              <ul className="space-y-2 text-xs text-white/60">
-                <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
-                  <span className="font-semibold text-white">{stats.activeProperties}</span> active properties scheduled this
-                  month
-                </li>
-                {stats.pausedProperties > 0 && (
-                  <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
-                    <span className="font-semibold text-white">{stats.pausedProperties}</span> paused until reactivated
-                  </li>
-                )}
-                <li className="rounded-xl border border-white/10 bg-black px-3 py-2">
-                  Projected monthly catalogue value:{' '}
-                  {stats.catalogMonthly > 0 ? currencyFormatter.format(stats.catalogMonthly) : 'Included'}
-                </li>
-              </ul>
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
               <button
@@ -336,12 +282,6 @@ export function BillingOverview() {
               >
                 Add property
               </button>
-              <Link
-                href="/client/dashboard"
-                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
-              >
-                View property list
-              </Link>
             </div>
           </div>
         </div>
