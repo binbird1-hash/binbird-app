@@ -25,8 +25,11 @@ const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png
 const JOB_MARKER_POPUP_OFFSET_PX = 58;
 const JOB_MARKER_ICON_HEIGHT_PX = 32;
 const JOB_MARKER_GLOW_DIAMETER_PX = 20;
+const JOB_MARKER_GLOW_VERTICAL_ADJUST_PX = 4;
 const JOB_MARKER_GLOW_OFFSET_PX =
-  JOB_MARKER_ICON_HEIGHT_PX / 2 - JOB_MARKER_GLOW_DIAMETER_PX / 2;
+  JOB_MARKER_ICON_HEIGHT_PX / 2 -
+  JOB_MARKER_GLOW_DIAMETER_PX / 2 +
+  JOB_MARKER_GLOW_VERTICAL_ADJUST_PX;
 const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
   put_out: "Put bins out",
   bring_in: "Bring bins in",
@@ -760,13 +763,13 @@ function RunPageContent() {
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flex flex-col items-center">
-                  <div className="rounded-2xl border border-white/10 bg-[#0b0d12]/95 px-4 py-3 text-xs text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
+                  <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-xs text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
                     <p className="text-sm font-semibold text-white">{selectedJob.address}</p>
                     <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#ff5757]">
                       {JOB_TYPE_LABELS[selectedJob.job_type]}
                     </p>
                   </div>
-                  <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-[#0b0d12]/95" />
+                  <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-black" />
                 </div>
               </div>
             </OverlayViewF>
