@@ -22,9 +22,8 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 const LIBRARIES: ("places")[] = ["places"];
 
 const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
-const JOB_MARKER_ICON_ACTIVE = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
 const JOB_MARKER_POPUP_OFFSET_PX = 58;
-const JOB_MARKER_GLOW_OFFSET_PX = 38;
+const JOB_MARKER_GLOW_OFFSET_PX = 24;
 const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
   put_out: "Put bins out",
   bring_in: "Bring bins in",
@@ -697,7 +696,7 @@ function RunPageContent() {
               <Marker
                 key={j.id}
                 position={{ lat: j.lat, lng: j.lng }}
-                icon={selectedJobId === j.id ? JOB_MARKER_ICON_ACTIVE : JOB_MARKER_ICON}
+                icon={JOB_MARKER_ICON}
                 title={j.address}
                 onClick={() =>
                   setSelectedJobId((current) => (current === j.id ? null : j.id))
@@ -724,14 +723,14 @@ function RunPageContent() {
                     transform: `translate(-50%, calc(-100% - ${JOB_MARKER_GLOW_OFFSET_PX}px))`,
                   }}
                 >
-                  <span className="relative block h-9 w-9">
+                  <span className="relative block h-6 w-6">
                     <span
-                      className="absolute inset-0 rounded-full opacity-80 [animation:pulse_2.8s_ease-in-out_infinite]"
-                      style={{ backgroundColor: "rgba(0, 204, 255, 0.18)" }}
+                      className="absolute inset-0 rounded-full opacity-75 blur-[2px] [animation:pulse_2.8s_ease-in-out_infinite]"
+                      style={{ backgroundColor: "rgba(0, 204, 255, 0.28)" }}
                     />
                     <span
                       className="absolute inset-0 rounded-full opacity-60 blur-[6px]"
-                      style={{ backgroundColor: "rgba(0, 204, 255, 0.32)" }}
+                      style={{ backgroundColor: "rgba(0, 204, 255, 0.35)" }}
                     />
                   </span>
                 </div>
