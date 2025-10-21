@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
-import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
+import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete, OverlayViewF } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -20,6 +20,14 @@ import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const LIBRARIES: ("places")[] = ["places"];
+
+const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
+const JOB_MARKER_ICON_HEIGHT_PX = 32;
+const JOB_MARKER_POPUP_OFFSET_PX = JOB_MARKER_ICON_HEIGHT_PX - 6;
+const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
+  put_out: "Put bins out",
+  bring_in: "Bring bins in",
+};
 
 const VICTORIA_BOUNDS: google.maps.LatLngBoundsLiteral = {
   north: -33.7,
@@ -122,6 +130,8 @@ function RunPageContent() {
   const [resetCounter, setResetCounter] = useState(0);
   const [userMoved, setUserMoved] = useState(false);
   const [forceFit, setForceFit] = useState(false);
+
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [routeSummary, setRouteSummary] = useState<{
     distanceKm: number;
@@ -646,13 +656,26 @@ function RunPageContent() {
     return `${mins}m`;
   }, []);
 
+  const jobsToRender = useMemo(() => (routePath.length > 0 ? ordered : jobs), [jobs, ordered, routePath]);
+  const selectedJob = useMemo(
+    () => (selectedJobId ? jobsToRender.find((job) => job.id === selectedJobId) ?? null : null),
+    [jobsToRender, selectedJobId]
+  );
+
+  useEffect(() => {
+    if (selectedJobId && !selectedJob) {
+      setSelectedJobId(null);
+    }
+  }, [selectedJob, selectedJobId]);
+
   if (loading) return <PortalLoadingScreen />;
   if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+    <>
+      <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
 
       <div className="flex-grow relative">
 
@@ -665,19 +688,50 @@ function RunPageContent() {
             fitBoundsToMap(); 
           }}
           options={{ styles: styleMap, disableDefaultUI: true, zoomControl: false }}
+          onClick={() => setSelectedJobId(null)}
         >
           {start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />}
-          {!routePath.length
-            ? jobs.map((j) => {
-                console.log("Rendering job marker:", j.address, j.lat, j.lng);
-                return <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />;
-              })
-            : ordered.map((j) => {
-                console.log("Rendering ordered marker:", j.address, j.lat, j.lng);
-                return <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />;
-              })}
+          {jobsToRender.map((j) => {
+            console.log("Rendering job marker:", j.address, j.lat, j.lng);
+            return (
+              <Marker
+                key={j.id}
+                position={{ lat: j.lat, lng: j.lng }}
+                icon={JOB_MARKER_ICON}
+                title={j.address}
+                onClick={() =>
+                  setSelectedJobId((current) => (current === j.id ? null : j.id))
+                }
+                zIndex={selectedJobId === j.id ? 2 : 1}
+                options={{ cursor: "pointer" }}
+              />
+            );
+          })}
           {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
           {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
+          {selectedJob && (
+            <OverlayViewF
+              position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
+              mapPaneName="overlayMouseTarget"
+              zIndex={3}
+            >
+              <div
+                className="pointer-events-auto"
+                style={{ transform: `translate(-50%, calc(-100% - ${JOB_MARKER_POPUP_OFFSET_PX}px))` }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-xs text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
+                    <p className="text-sm font-semibold text-white">{selectedJob.address}</p>
+                    <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#ff5757]">
+                      {JOB_TYPE_LABELS[selectedJob.job_type]}
+                    </p>
+                  </div>
+                  <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-black" />
+                </div>
+              </div>
+            </OverlayViewF>
+          )}
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
@@ -721,7 +775,7 @@ function RunPageContent() {
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
+            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }} />
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
             <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
@@ -762,7 +816,7 @@ function RunPageContent() {
               />
             </Autocomplete>
 
-            <div className="flex items-center justify-between text-sm text-gray-300 mt-2">
+            <div className="mt-2 flex items-center justify-between text-sm text-gray-300">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -776,7 +830,7 @@ function RunPageContent() {
               {isPlanned && (
                 <button
                   onClick={handleReset}
-                  className="text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition"
+                  className="text-white text-sm font-semibold rounded-lg transition hover:bg-gray-700"
                 >
                   Reset
                 </button>
@@ -785,7 +839,7 @@ function RunPageContent() {
             <div className="mt-4">
               {jobs.length === 0 ? (
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] opacity-60 cursor-not-allowed"
+                  className="w-full cursor-not-allowed rounded-lg bg-[#ff5757] px-4 py-2 font-semibold opacity-60"
                   disabled
                 >
                   All Jobs Completed
@@ -793,7 +847,7 @@ function RunPageContent() {
               ) : !isPlanned ? (
                 // Plan Run button (grey)
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
+                  className="w-full rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
                   onClick={() => {
                     console.log("Planning run…");
                     buildRoute();
@@ -805,16 +859,17 @@ function RunPageContent() {
               ) : (
                 // Start Run button (accent red)
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
+                  className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-90"
                   onClick={handleStartRun}
                 >
                   Start Run
                 </button>
               )}
-            </div>            
+            </div>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
