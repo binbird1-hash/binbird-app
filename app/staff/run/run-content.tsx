@@ -23,7 +23,10 @@ const LIBRARIES: ("places")[] = ["places"];
 
 const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
 const JOB_MARKER_POPUP_OFFSET_PX = 58;
-const JOB_MARKER_GLOW_OFFSET_PX = 24;
+const JOB_MARKER_ICON_HEIGHT_PX = 32;
+const JOB_MARKER_GLOW_DIAMETER_PX = 20;
+const JOB_MARKER_GLOW_OFFSET_PX =
+  JOB_MARKER_ICON_HEIGHT_PX / 2 - JOB_MARKER_GLOW_DIAMETER_PX / 2;
 const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
   put_out: "Put bins out",
   bring_in: "Bring bins in",
@@ -723,7 +726,13 @@ function RunPageContent() {
                     transform: `translate(-50%, calc(-100% - ${JOB_MARKER_GLOW_OFFSET_PX}px))`,
                   }}
                 >
-                  <span className="relative block h-6 w-6">
+                  <span
+                    className="relative block h-5 w-5"
+                    style={{
+                      width: `${JOB_MARKER_GLOW_DIAMETER_PX}px`,
+                      height: `${JOB_MARKER_GLOW_DIAMETER_PX}px`,
+                    }}
+                  >
                     <span
                       className="absolute inset-0 rounded-full opacity-75 blur-[2px] [animation:pulse_2.8s_ease-in-out_infinite]"
                       style={{ backgroundColor: "rgba(0, 204, 255, 0.28)" }}
