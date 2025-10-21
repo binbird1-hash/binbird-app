@@ -529,14 +529,17 @@ function RunPageContent() {
     setRoutePath(polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] })));
     setOrdered(plannedJobs);
 
-    const legDurations = Array.isArray(opt.legs)
+    const legDurations: number[] = Array.isArray(opt.legs)
       ? opt.legs.map((leg: { duration_s?: number }) =>
           typeof leg.duration_s === "number" && Number.isFinite(leg.duration_s)
             ? Math.max(0, Math.round(leg.duration_s))
             : 0
         )
       : [];
-    const travelSeconds = legDurations.reduce((total, legSeconds) => total + legSeconds, 0);
+    const travelSeconds = legDurations.reduce(
+      (total: number, legSeconds: number) => total + legSeconds,
+      0
+    );
     const bufferSeconds = plannedJobs.length * 120;
     const totalDurationSeconds = Math.max(0, Math.round(travelSeconds + bufferSeconds));
     setEstimatedDurationSeconds(totalDurationSeconds);

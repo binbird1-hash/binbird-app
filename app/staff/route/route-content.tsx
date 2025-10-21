@@ -338,7 +338,7 @@ function RoutePageContent() {
     const clampedIdx = Math.min(Math.max(activeIdx, 0), Math.max(jobs.length - 1, 0));
     const travelSeconds = estimatedLegDurationsSeconds
       .slice(clampedIdx)
-      .reduce((total, legSeconds) => total + legSeconds, 0);
+      .reduce((total: number, legSeconds: number) => total + legSeconds, 0);
     const remainingJobs = Math.max(jobs.length - clampedIdx, 0);
     remainingDurationSeconds = Math.max(0, Math.round(travelSeconds + remainingJobs * 120));
   }
