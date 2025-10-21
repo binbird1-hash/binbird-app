@@ -680,7 +680,8 @@ function RunPageContent() {
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
+    <>
+      <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
 
       <div className="flex-grow relative">
 
@@ -730,19 +731,23 @@ function RunPageContent() {
                   }}
                 >
                   <span
-                    className="relative block h-5 w-5"
+                    className="relative block"
                     style={{
                       width: `${JOB_MARKER_GLOW_DIAMETER_PX}px`,
                       height: `${JOB_MARKER_GLOW_DIAMETER_PX}px`,
                     }}
                   >
                     <span
-                      className="absolute inset-0 rounded-full opacity-75 blur-[2px] [animation:pulse_2.8s_ease-in-out_infinite]"
-                      style={{ backgroundColor: "rgba(0, 204, 255, 0.28)" }}
+                      className="absolute inset-0 rounded-full opacity-80"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(0, 204, 255, 0.65) 0%, rgba(0, 204, 255, 0.28) 55%, rgba(0, 204, 255, 0) 80%)",
+                        animation: "runPinPulse 2.6s ease-in-out infinite",
+                      }}
                     />
                     <span
-                      className="absolute inset-0 rounded-full opacity-60 blur-[6px]"
-                      style={{ backgroundColor: "rgba(0, 204, 255, 0.35)" }}
+                      className="absolute inset-[2px] rounded-full opacity-65 blur-[4px]"
+                      style={{ backgroundColor: "rgba(0, 204, 255, 0.55)" }}
                     />
                   </span>
                 </div>
@@ -817,7 +822,7 @@ function RunPageContent() {
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
+            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }} />
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
             <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
@@ -858,7 +863,7 @@ function RunPageContent() {
               />
             </Autocomplete>
 
-            <div className="flex items-center justify-between text-sm text-gray-300 mt-2">
+            <div className="mt-2 flex items-center justify-between text-sm text-gray-300">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -872,7 +877,7 @@ function RunPageContent() {
               {isPlanned && (
                 <button
                   onClick={handleReset}
-                  className="text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition"
+                  className="text-white text-sm font-semibold rounded-lg transition hover:bg-gray-700"
                 >
                   Reset
                 </button>
@@ -881,7 +886,7 @@ function RunPageContent() {
             <div className="mt-4">
               {jobs.length === 0 ? (
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] opacity-60 cursor-not-allowed"
+                  className="w-full cursor-not-allowed rounded-lg bg-[#ff5757] px-4 py-2 font-semibold opacity-60"
                   disabled
                 >
                   All Jobs Completed
@@ -889,7 +894,7 @@ function RunPageContent() {
               ) : !isPlanned ? (
                 // Plan Run button (grey)
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
+                  className="w-full rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
                   onClick={() => {
                     console.log("Planning run…");
                     buildRoute();
@@ -901,16 +906,30 @@ function RunPageContent() {
               ) : (
                 // Start Run button (accent red)
                 <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
+                  className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-90"
                   onClick={handleStartRun}
                 >
                   Start Run
                 </button>
               )}
-            </div>            
+            </div>
           </div>
         </div>
       </div>
     </div>
+        <style jsx global>{`
+        @keyframes runPinPulse {
+          0%,
+          100% {
+            transform: scale(0.94);
+            opacity: 0.85;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.35;
+          }
+        }
+      `}</style>
+    </>
   );
 }
