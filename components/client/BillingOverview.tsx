@@ -177,7 +177,7 @@ export function BillingOverview() {
         <section className="rounded-3xl border border-white/10 bg-black p-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span className="text-xs uppercase tracking-wide text-white/40">Subscription snapshot</span>
+              <span className="text-xs uppercase tracking-wide text-white/40">Plan snapshot</span>
               <p className="mt-1 text-sm text-white/60">
                 Review your current monthly total and manage your plan.
               </p>
@@ -200,8 +200,8 @@ export function BillingOverview() {
           </dl>
           <p className="mt-6 text-sm text-white/60">
             {selectedAccount
-              ? `${selectedAccount.name} can manage their subscription here.`
-              : 'Manage your subscription details.'}
+              ? `${selectedAccount.name} can manage their plan here.`
+              : 'Manage your plan details.'}
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
@@ -225,12 +225,12 @@ export function BillingOverview() {
         <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
           <header className="mb-4 flex items-center justify-between text-sm text-white/60">
             <span className="inline-flex items-center gap-3">
-              <CreditCardIcon className="h-5 w-5" /> Property billing summary
+              <CreditCardIcon className="h-5 w-5" /> Property plan summary
             </span>
           </header>
           {stats.rows.length === 0 ? (
             <p className="text-sm text-white/60">
-              No billing data yet. Add properties to see plan details here.
+              No plan data yet. Add properties to see plan details here.
             </p>
           ) : (
             <div className="overflow-x-auto">
