@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
-import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
+import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete, OverlayViewF } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -20,6 +20,13 @@ import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 const LIBRARIES: ("places")[] = ["places"];
+
+const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
+const JOB_MARKER_ICON_ACTIVE = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
+const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
+  put_out: "Put bins out",
+  bring_in: "Bring bins in",
+};
 
 const VICTORIA_BOUNDS: google.maps.LatLngBoundsLiteral = {
   north: -33.7,
@@ -122,6 +129,8 @@ function RunPageContent() {
   const [resetCounter, setResetCounter] = useState(0);
   const [userMoved, setUserMoved] = useState(false);
   const [forceFit, setForceFit] = useState(false);
+
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [routeSummary, setRouteSummary] = useState<{
     distanceKm: number;
@@ -646,6 +655,18 @@ function RunPageContent() {
     return `${mins}m`;
   }, []);
 
+  const jobsToRender = useMemo(() => (routePath.length > 0 ? ordered : jobs), [jobs, ordered, routePath]);
+  const selectedJob = useMemo(
+    () => (selectedJobId ? jobsToRender.find((job) => job.id === selectedJobId) ?? null : null),
+    [jobsToRender, selectedJobId]
+  );
+
+  useEffect(() => {
+    if (selectedJobId && !selectedJob) {
+      setSelectedJobId(null);
+    }
+  }, [selectedJob, selectedJobId]);
+
   if (loading) return <PortalLoadingScreen />;
   if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
@@ -665,19 +686,49 @@ function RunPageContent() {
             fitBoundsToMap(); 
           }}
           options={{ styles: styleMap, disableDefaultUI: true, zoomControl: false }}
+          onClick={() => setSelectedJobId(null)}
         >
           {start && <Marker position={start} icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png" />}
-          {!routePath.length
-            ? jobs.map((j) => {
-                console.log("Rendering job marker:", j.address, j.lat, j.lng);
-                return <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />;
-              })
-            : ordered.map((j) => {
-                console.log("Rendering ordered marker:", j.address, j.lat, j.lng);
-                return <Marker key={j.id} position={{ lat: j.lat, lng: j.lng }} icon="http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png" />;
-              })}
+          {jobsToRender.map((j) => {
+            console.log("Rendering job marker:", j.address, j.lat, j.lng);
+            return (
+              <Marker
+                key={j.id}
+                position={{ lat: j.lat, lng: j.lng }}
+                icon={selectedJobId === j.id ? JOB_MARKER_ICON_ACTIVE : JOB_MARKER_ICON}
+                title={j.address}
+                onClick={() =>
+                  setSelectedJobId((current) => (current === j.id ? null : j.id))
+                }
+                zIndex={selectedJobId === j.id ? 2 : 1}
+              />
+            );
+          })}
           {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
           {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
+          {selectedJob && (
+            <OverlayViewF
+              position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
+              mapPaneName="overlayMouseTarget"
+              zIndex={3}
+            >
+              <div
+                className="pointer-events-auto"
+                style={{ transform: "translate(-50%, calc(-100% - 50px))" }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="rounded-2xl border border-white/10 bg-[#0b0d12]/95 px-4 py-3 text-xs text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
+                    <p className="text-sm font-semibold text-white">{selectedJob.address}</p>
+                    <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#ff5757]">
+                      {JOB_TYPE_LABELS[selectedJob.job_type]}
+                    </p>
+                  </div>
+                  <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-[#0b0d12]/95" />
+                </div>
+              </div>
+            </OverlayViewF>
+          )}
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
