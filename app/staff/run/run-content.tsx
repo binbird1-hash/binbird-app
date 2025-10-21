@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete, OverlayViewF } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
@@ -724,21 +724,14 @@ function RunPageContent() {
                     transform: `translate(-50%, calc(-100% - ${JOB_MARKER_GLOW_OFFSET_PX}px))`,
                   }}
                 >
-                  <span className="relative block h-10 w-10">
+                  <span className="relative block h-9 w-9">
                     <span
-                      className="absolute inset-0 rounded-full opacity-80"
-                      style={{
-                        background:
-                          "radial-gradient(circle, rgba(255, 87, 87, 0.32) 0%, rgba(255, 87, 87, 0.12) 48%, rgba(255, 87, 87, 0) 78%)",
-                        boxShadow: "0 0 14px rgba(255, 87, 87, 0.25)",
-                      }}
+                      className="absolute inset-0 rounded-full opacity-80 [animation:pulse_2.8s_ease-in-out_infinite]"
+                      style={{ backgroundColor: "rgba(255, 87, 87, 0.18)" }}
                     />
                     <span
-                      className="absolute inset-0 rounded-full opacity-80 [animation:pulse_2.6s_ease-in-out_infinite]"
-                      style={{
-                        background:
-                          "radial-gradient(circle, rgba(255, 87, 87, 0.45) 0%, rgba(255, 87, 87, 0.18) 42%, rgba(255, 87, 87, 0) 80%)",
-                      }}
+                      className="absolute inset-0 rounded-full opacity-60 blur-[6px]"
+                      style={{ backgroundColor: "rgba(255, 87, 87, 0.28)" }}
                     />
                   </span>
                 </div>
