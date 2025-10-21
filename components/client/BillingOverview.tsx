@@ -198,23 +198,6 @@ export function BillingOverview() {
               )}
             </div>
           </dl>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Link
-              href={BILLING_PORTAL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
-            >
-              Manage subscription
-            </Link>
-            <button
-              type="button"
-              onClick={handleAddProperty}
-              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
-            >
-              Add property
-            </button>
-          </div>
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-inner shadow-black/30">
@@ -256,6 +239,23 @@ export function BillingOverview() {
               </table>
             </div>
           )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href={BILLING_PORTAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
+            >
+              Manage subscription
+            </Link>
+            <button
+              type="button"
+              onClick={handleAddProperty}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
+            >
+              Add property
+            </button>
+          </div>
         </section>
       </div>
       <AddPropertyDialog
