@@ -123,6 +123,14 @@ function RunPageContent() {
   const [userMoved, setUserMoved] = useState(false);
   const [forceFit, setForceFit] = useState(false);
 
+  const [routeSummary, setRouteSummary] = useState<{
+    distanceKm: number;
+    travelMinutes: number;
+    jobCount: number;
+  } | null>(null);
+  const [isRouteSummaryLoading, setIsRouteSummaryLoading] = useState(false);
+  const [routeSummaryError, setRouteSummaryError] = useState<string | null>(null);
+
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
   const { isLoaded } = useLoadScript({
@@ -520,6 +528,124 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
   };
 
+  useEffect(() => {
+    if (
+      !isLoaded ||
+      !isPlanned ||
+      !start ||
+      !end ||
+      typeof window === "undefined" ||
+      !window.google?.maps
+    ) {
+      setRouteSummary(null);
+      setRouteSummaryError(null);
+      setIsRouteSummaryLoading(false);
+      return;
+    }
+
+    const activeJobs = ordered.length ? ordered : jobs;
+    const jobPoints = activeJobs.map((job) => ({ lat: job.lat, lng: job.lng }));
+    const points: google.maps.LatLngLiteral[] = [start, ...jobPoints, end];
+
+    if (points.length < 2) {
+      setRouteSummary(null);
+      setRouteSummaryError(null);
+      setIsRouteSummaryLoading(false);
+      return;
+    }
+
+    const legs: { origin: google.maps.LatLngLiteral; destination: google.maps.LatLngLiteral }[] = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      legs.push({ origin: points[i], destination: points[i + 1] });
+    }
+
+    if (!legs.length) {
+      setRouteSummary(null);
+      setRouteSummaryError(null);
+      setIsRouteSummaryLoading(false);
+      return;
+    }
+
+    const service = new google.maps.DirectionsService();
+    let isCancelled = false;
+
+    const fetchRouteForLeg = (leg: { origin: google.maps.LatLngLiteral; destination: google.maps.LatLngLiteral }) => {
+      return new Promise<google.maps.DirectionsResult | null>((resolve, reject) => {
+        service.route(
+          {
+            origin: leg.origin,
+            destination: leg.destination,
+            travelMode: google.maps.TravelMode.DRIVING,
+          },
+          (result, status) => {
+            if (status === "OK" && result) {
+              resolve(result);
+            } else if (status === google.maps.DirectionsStatus.ZERO_RESULTS) {
+              resolve(null);
+            } else {
+              reject(new Error(`Directions request failed with status: ${status}`));
+            }
+          }
+        );
+      });
+    };
+
+    (async () => {
+      setIsRouteSummaryLoading(true);
+      setRouteSummaryError(null);
+
+      let totalDistance = 0;
+      let totalDuration = 0;
+
+      try {
+        for (const leg of legs) {
+          const result = await fetchRouteForLeg(leg);
+          if (isCancelled) return;
+          const legData = result?.routes?.[0]?.legs?.[0];
+          if (legData) {
+            totalDistance += legData.distance?.value ?? 0;
+            totalDuration += legData.duration?.value ?? 0;
+          }
+        }
+
+        const jobCount = activeJobs.filter(
+          (job) => job.address?.trim().toLowerCase() !== "end"
+        ).length;
+
+        setRouteSummary({
+          distanceKm: totalDistance / 1000,
+          travelMinutes: totalDuration / 60,
+          jobCount,
+        });
+      } catch (error) {
+        console.warn("Failed to build run summary", error);
+        if (!isCancelled) {
+          setRouteSummary(null);
+          setRouteSummaryError("Unable to calculate run details.");
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsRouteSummaryLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoaded, isPlanned, start, end, ordered, jobs]);
+
+  const formatDuration = useCallback((minutes: number) => {
+    if (!Number.isFinite(minutes)) return "—";
+    const safeMinutes = Math.max(0, Math.round(minutes));
+    const hours = Math.floor(safeMinutes / 60);
+    const mins = safeMinutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  }, []);
+
   if (loading) return <PortalLoadingScreen />;
   if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
@@ -553,6 +679,44 @@ function RunPageContent() {
           {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
           {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
         </GoogleMap>
+
+        {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-4 sm:p-6">
+            <div className="pointer-events-auto w-72 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/80 p-4 text-white shadow-lg backdrop-blur">
+              <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
+                <span>Run summary</span>
+                {routeSummary && (
+                  <span className="text-[10px] font-semibold text-white/40">
+                    {routeSummary.jobCount} job{routeSummary.jobCount === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
+
+              {isRouteSummaryLoading ? (
+                <p className="text-sm text-white/70">Calculating route…</p>
+              ) : routeSummary ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between text-white/80">
+                    <span>Total distance</span>
+                    <span className="font-semibold text-white">
+                      {routeSummary.distanceKm >= 100
+                        ? routeSummary.distanceKm.toFixed(0)
+                        : routeSummary.distanceKm.toFixed(1)} km
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-base font-semibold">
+                    <span>Total ETA</span>
+                    <span>{formatDuration(routeSummary.travelMinutes)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-amber-300">
+                  {routeSummaryError ?? "Run summary unavailable."}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
