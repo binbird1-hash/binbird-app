@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
@@ -126,7 +126,6 @@ function RunPageContent() {
   const [routeSummary, setRouteSummary] = useState<{
     distanceKm: number;
     travelMinutes: number;
-    bufferMinutes: number;
     jobCount: number;
   } | null>(null);
   const [isRouteSummaryLoading, setIsRouteSummaryLoading] = useState(false);
@@ -532,6 +531,7 @@ function RunPageContent() {
   useEffect(() => {
     if (
       !isLoaded ||
+      !isPlanned ||
       !start ||
       !end ||
       typeof window === "undefined" ||
@@ -611,12 +611,10 @@ function RunPageContent() {
         const jobCount = activeJobs.filter(
           (job) => job.address?.trim().toLowerCase() !== "end"
         ).length;
-        const bufferMinutes = jobCount * 2;
 
         setRouteSummary({
           distanceKm: totalDistance / 1000,
           travelMinutes: totalDuration / 60,
-          bufferMinutes,
           jobCount,
         });
       } catch (error) {
@@ -635,12 +633,7 @@ function RunPageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [isLoaded, start, end, ordered, jobs]);
-
-  const totalMinutesWithBuffer = useMemo(() => {
-    if (!routeSummary) return 0;
-    return routeSummary.travelMinutes + routeSummary.bufferMinutes;
-  }, [routeSummary]);
+  }, [isLoaded, isPlanned, start, end, ordered, jobs]);
 
   const formatDuration = useCallback((minutes: number) => {
     if (!Number.isFinite(minutes)) return "—";
@@ -711,17 +704,9 @@ function RunPageContent() {
                         : routeSummary.distanceKm.toFixed(1)} km
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-white/80">
-                    <span>Travel time</span>
-                    <span className="font-medium text-white">{formatDuration(routeSummary.travelMinutes)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-white/60">
-                    <span>Buffer ({routeSummary.jobCount}×2m)</span>
-                    <span>{formatDuration(routeSummary.bufferMinutes)}</span>
-                  </div>
                   <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-base font-semibold">
                     <span>Total ETA</span>
-                    <span>{formatDuration(totalMinutesWithBuffer)}</span>
+                    <span>{formatDuration(routeSummary.travelMinutes)}</span>
                   </div>
                 </div>
               ) : (
