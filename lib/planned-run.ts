@@ -12,6 +12,7 @@ export type PlannedRunPayload = {
   createdAt: string;
   hasStarted: boolean;
   nextIdx: number;
+  estimatedDurationSeconds: number | null;
 };
 
 const PLANNED_RUN_STORAGE_KEY = "binbird:planned-run";
@@ -58,6 +59,12 @@ function normalizeAddress(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length ? trimmed : null;
+}
+
+function normalizeDurationSeconds(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (value <= 0) return 0;
+  return Math.round(value);
 }
 
 function normalizeJob(value: Job): Job {
@@ -145,6 +152,7 @@ function parsePlannedRun(raw: string): PlannedRunPayload | null {
           : new Date().toISOString(),
       hasStarted: Boolean(parsed.hasStarted),
       nextIdx,
+      estimatedDurationSeconds: normalizeDurationSeconds(parsed.estimatedDurationSeconds ?? null),
     };
   } catch (err) {
     console.warn("Unable to parse planned run payload", err);
@@ -199,6 +207,7 @@ export function writePlannedRun(payload: PlannedRunPayload) {
         : new Date().toISOString(),
     hasStarted: Boolean(payload.hasStarted),
     nextIdx: normalizeNextIdx(payload.nextIdx ?? 0, normalizedJobs.length),
+    estimatedDurationSeconds: normalizeDurationSeconds(payload.estimatedDurationSeconds ?? null),
   };
 
   if (!normalized.jobs.length) {

@@ -18,6 +18,7 @@ import {
 } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { formatArrivalTime, formatDurationSeconds } from "@/lib/time";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -122,6 +123,7 @@ function RunPageContent() {
   const [resetCounter, setResetCounter] = useState(0);
   const [userMoved, setUserMoved] = useState(false);
   const [forceFit, setForceFit] = useState(false);
+  const [estimatedDurationSeconds, setEstimatedDurationSeconds] = useState<number | null>(null);
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
@@ -144,6 +146,7 @@ function RunPageContent() {
       setEndAddress(stored.endAddress ?? "");
       setOrdered(stored.jobs);
       setRoutePath([]);
+      setEstimatedDurationSeconds(stored.estimatedDurationSeconds ?? null);
       if (stored.hasStarted && !hasRedirectedToRoute.current) {
         hasRedirectedToRoute.current = true;
         redirectToRoute(stored.jobs, stored.start, stored.end);
@@ -155,6 +158,7 @@ function RunPageContent() {
 
     hasRedirectedToRoute.current = false;
     setPlannerLocked(false);
+    setEstimatedDurationSeconds(null);
   }, [redirectToRoute]);
 
   useEffect(() => {
@@ -403,6 +407,7 @@ function RunPageContent() {
         createdAt: new Date().toISOString(),
         hasStarted: true,
         nextIdx: 0,
+        estimatedDurationSeconds: estimatedDurationSeconds ?? null,
       });
 
       hasRedirectedToRoute.current = true;
@@ -411,7 +416,7 @@ function RunPageContent() {
     }
 
     return false;
-  }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
+  }, [end, endAddress, estimatedDurationSeconds, ordered, redirectToRoute, start, startAddress]);
 
   const handleStartRun = useCallback(() => {
     console.log("Starting run…");
@@ -446,6 +451,7 @@ function RunPageContent() {
     setEnd(null);
     setEndAddress("");
     setIsPlanned(false);
+    setEstimatedDurationSeconds(null);
     setPlannerLocked(false);
     setResetCounter((c) => c + 1);
     setUserMoved(false);
@@ -479,6 +485,7 @@ function RunPageContent() {
     setIsPlanned(false);
     setUserMoved(false);
     setForceFit(true);
+    setEstimatedDurationSeconds(null);
     fitBoundsToMap();
 
     const waypoints = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
@@ -499,6 +506,18 @@ function RunPageContent() {
 
     setRoutePath(polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] })));
     setOrdered(plannedJobs);
+
+    const travelSeconds = Array.isArray(opt.legs)
+      ? opt.legs.reduce(
+          (total: number, leg: { duration_s?: number }) =>
+            total + (typeof leg.duration_s === "number" && Number.isFinite(leg.duration_s) ? leg.duration_s : 0),
+          0
+        )
+      : 0;
+    const bufferSeconds = plannedJobs.length * 120;
+    const totalDurationSeconds = Math.max(0, Math.round(travelSeconds + bufferSeconds));
+    setEstimatedDurationSeconds(totalDurationSeconds);
+
     setIsPlanned(true);
     setForceFit(true);
 
@@ -514,6 +533,7 @@ function RunPageContent() {
       createdAt: new Date().toISOString(),
       hasStarted: false,
       nextIdx: 0,
+      estimatedDurationSeconds: totalDurationSeconds,
     });
 
     setPlannerLocked(true);
@@ -524,6 +544,10 @@ function RunPageContent() {
   if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
 
   const styleMap = mapStylePref === "Dark" ? darkMapStyle : mapStylePref === "Light" ? lightMapStyle : satelliteMapStyle;
+  const estimatedDurationLabel =
+    estimatedDurationSeconds !== null ? formatDurationSeconds(estimatedDurationSeconds) : null;
+  const estimatedArrivalLabel =
+    estimatedDurationSeconds !== null ? formatArrivalTime(estimatedDurationSeconds) : null;
 
   return (
     <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
@@ -618,6 +642,15 @@ function RunPageContent() {
                 </button>
               )}
             </div>
+            {estimatedDurationLabel && estimatedArrivalLabel && (
+              <div className="mt-2 rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-gray-200">
+                <p className="font-semibold text-white">ETA to finish</p>
+                <p className="mt-1">
+                  {estimatedDurationLabel} (around {estimatedArrivalLabel})
+                </p>
+                <p className="mt-1 text-xs text-gray-400">Includes 2 min buffer per job.</p>
+              </div>
+            )}
             <div className="mt-4">
               {jobs.length === 0 ? (
                 <button

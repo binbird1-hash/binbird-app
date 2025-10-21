@@ -10,6 +10,7 @@ import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSet
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
+import { formatArrivalTime, formatDurationSeconds } from "@/lib/time";
 
 function RoutePageContent() {
   const supabase = useSupabase();
@@ -50,6 +51,7 @@ function RoutePageContent() {
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
+  const [estimatedDurationSeconds, setEstimatedDurationSeconds] = useState<number | null>(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -84,6 +86,7 @@ function RoutePageContent() {
         setLockNavigation(Boolean(stored.hasStarted));
         setJobs(stored.jobs.map((job) => ({ ...job })));
         setStart({ lat: stored.start.lat, lng: stored.start.lng });
+        setEstimatedDurationSeconds(stored.estimatedDurationSeconds ?? null);
 
         if (!params.has("nextIdx") && stored.jobs.length) {
           const clampedIdx = Math.min(
@@ -95,6 +98,7 @@ function RoutePageContent() {
         return;
       }
       setLockNavigation(false);
+      setEstimatedDurationSeconds(null);
     }
 
     const rawJobs = params.get("jobs");
@@ -320,6 +324,11 @@ function RoutePageContent() {
       ? `https://waze.com/ul?ll=${activeJob.lat},${activeJob.lng}&navigate=yes`
       : `http://maps.apple.com/?daddr=${activeJob.lat},${activeJob.lng}&dirflg=d`;
 
+  const estimatedDurationLabel =
+    estimatedDurationSeconds !== null ? formatDurationSeconds(estimatedDurationSeconds) : null;
+  const estimatedArrivalLabel =
+    estimatedDurationSeconds !== null ? formatArrivalTime(estimatedDurationSeconds) : null;
+
   const styleMap =
     mapStylePref === "Dark"
       ? darkMapStyle
@@ -369,6 +378,15 @@ function RoutePageContent() {
               <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2 relative z-10">
                 {locationWarning}
               </p>
+            )}
+            {estimatedDurationLabel && estimatedArrivalLabel && (
+              <div className="rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-gray-200 relative z-10">
+                <p className="font-semibold text-white">Planned finish ETA</p>
+                <p className="mt-1">
+                  {estimatedDurationLabel} (around {estimatedArrivalLabel})
+                </p>
+                <p className="mt-1 text-xs text-gray-400">Includes 2 min buffer per job.</p>
+              </div>
             )}
               <button
                 onClick={() => window.open(navigateUrl, "_blank")}
