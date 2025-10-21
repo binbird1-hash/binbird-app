@@ -190,9 +190,19 @@ function RunPageContent() {
         }
 
         // Hardcoded weekday mapping
-        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const overrideDay = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
         const now = new Date();
-        const todayName = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE || days[now.getDay()];
+        const hour = now.getHours();
+
+        let effectiveDay = now.toLocaleString("en-AU", { weekday: "long" });
+
+        if (hour < 5) {
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          effectiveDay = yesterday.toLocaleString("en-AU", { weekday: "long" });
+        }
+
+        const todayName = overrideDay || effectiveDay;
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
