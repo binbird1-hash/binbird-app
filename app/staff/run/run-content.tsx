@@ -24,12 +24,6 @@ const LIBRARIES: ("places")[] = ["places"];
 const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
 const JOB_MARKER_ICON_HEIGHT_PX = 32;
 const JOB_MARKER_POPUP_OFFSET_PX = JOB_MARKER_ICON_HEIGHT_PX - 6;
-const JOB_MARKER_GLOW_DIAMETER_PX = 20;
-const JOB_MARKER_GLOW_VERTICAL_ADJUST_PX = 8;
-const JOB_MARKER_GLOW_OFFSET_PX =
-  JOB_MARKER_ICON_HEIGHT_PX / 2 -
-  JOB_MARKER_GLOW_DIAMETER_PX / 2 +
-  JOB_MARKER_GLOW_VERTICAL_ADJUST_PX;
 const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
   put_out: "Put bins out",
   bring_in: "Bring bins in",
@@ -713,48 +707,6 @@ function RunPageContent() {
               />
             );
           })}
-          {jobsToRender.map((job) => {
-            if (selectedJobId === job.id) {
-              return null;
-            }
-
-            return (
-              <OverlayViewF
-                key={`${job.id}-halo`}
-                position={{ lat: job.lat, lng: job.lng }}
-                mapPaneName="overlayMouseTarget"
-              >
-                <div
-                  className="pointer-events-none"
-                  style={{
-                    transform: `translate(-50%, calc(-100% - ${JOB_MARKER_GLOW_OFFSET_PX}px))`,
-                  }}
-                >
-                  <span
-                    className="relative block"
-                    style={{
-                      width: `${JOB_MARKER_GLOW_DIAMETER_PX}px`,
-                      height: `${JOB_MARKER_GLOW_DIAMETER_PX}px`,
-                    }}
-                  >
-                    <span
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background:
-                          "radial-gradient(circle, rgba(0, 220, 255, 0.85) 0%, rgba(0, 220, 255, 0.42) 48%, rgba(0, 220, 255, 0) 75%)",
-                        animation: "runPinPulse 1.8s ease-in-out infinite",
-                        boxShadow: "0 0 12px rgba(0, 220, 255, 0.45)",
-                      }}
-                    />
-                    <span
-                      className="absolute inset-[3px] rounded-full blur-[5px]"
-                      style={{ backgroundColor: "rgba(0, 220, 255, 0.55)" }}
-                    />
-                  </span>
-                </div>
-              </OverlayViewF>
-            );
-          })}
           {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
           {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
           {selectedJob && (
@@ -918,19 +870,6 @@ function RunPageContent() {
         </div>
       </div>
     </div>
-        <style jsx global>{`
-        @keyframes runPinPulse {
-          0%,
-          100% {
-            transform: scale(0.78);
-            opacity: 0.95;
-          }
-          50% {
-            transform: scale(1.28);
-            opacity: 0.2;
-          }
-        }
-      `}</style>
     </>
   );
 }
