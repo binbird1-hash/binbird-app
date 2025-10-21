@@ -295,7 +295,7 @@ export default function ProofPageContent() {
       if (uploadErr) throw uploadErr;
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
-      const { error: logErr } = await supabase.from("logs").insert({
+      const logPayload = {
         job_id: job.id,
         client_name: job.client_name ?? null,
         address: job.address,
@@ -309,7 +309,11 @@ export default function ProofPageContent() {
         gps_acc: gpsData.acc ?? null,
         gps_time: gpsData.time ?? null,
         user_id: user.id,
-      });
+      };
+
+      const { error: logErr } = await supabase
+        .from("logs")
+        .upsert(logPayload, { onConflict: "job_id" });
       if (logErr) throw logErr;
       await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
       const nextIdx = idx + 1;
@@ -352,8 +356,9 @@ export default function ProofPageContent() {
         router.push(`/staff/route?${paramsObj.toString()}`);
       }
     } catch (err: any) {
-      setSubmitting(false);
       alert(err?.message || "Unable to save proof. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
