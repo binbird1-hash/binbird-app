@@ -52,6 +52,9 @@ function RoutePageContent() {
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
   const [estimatedDurationSeconds, setEstimatedDurationSeconds] = useState<number | null>(null);
+  const [estimatedLegDurationsSeconds, setEstimatedLegDurationsSeconds] = useState<number[] | null>(
+    null
+  );
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -87,6 +90,7 @@ function RoutePageContent() {
         setJobs(stored.jobs.map((job) => ({ ...job })));
         setStart({ lat: stored.start.lat, lng: stored.start.lng });
         setEstimatedDurationSeconds(stored.estimatedDurationSeconds ?? null);
+        setEstimatedLegDurationsSeconds(stored.estimatedLegDurationsSeconds ?? null);
 
         if (!params.has("nextIdx") && stored.jobs.length) {
           const clampedIdx = Math.min(
@@ -99,6 +103,7 @@ function RoutePageContent() {
       }
       setLockNavigation(false);
       setEstimatedDurationSeconds(null);
+      setEstimatedLegDurationsSeconds(null);
     }
 
     const rawJobs = params.get("jobs");
@@ -275,7 +280,7 @@ function RoutePageContent() {
       if (activeJob) bounds.extend({ lat: activeJob.lat, lng: activeJob.lng });
     }
     if (!bounds.isEmpty())
-      mapRef.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
+      mapRef.fitBounds(bounds, { top: 32, right: 320, bottom: 220, left: 32 });
   }, [mapRef, directions, currentLocation, activeJob]);
 
   // Distance calculation
@@ -324,10 +329,24 @@ function RoutePageContent() {
       ? `https://waze.com/ul?ll=${activeJob.lat},${activeJob.lng}&navigate=yes`
       : `http://maps.apple.com/?daddr=${activeJob.lat},${activeJob.lng}&dirflg=d`;
 
+  let remainingDurationSeconds: number | null = estimatedDurationSeconds;
+  if (
+    jobs.length > 0 &&
+    estimatedLegDurationsSeconds &&
+    estimatedLegDurationsSeconds.length >= Math.min(Math.max(activeIdx, 0), jobs.length - 1) + 1
+  ) {
+    const clampedIdx = Math.min(Math.max(activeIdx, 0), Math.max(jobs.length - 1, 0));
+    const travelSeconds = estimatedLegDurationsSeconds
+      .slice(clampedIdx)
+      .reduce((total, legSeconds) => total + legSeconds, 0);
+    const remainingJobs = Math.max(jobs.length - clampedIdx, 0);
+    remainingDurationSeconds = Math.max(0, Math.round(travelSeconds + remainingJobs * 120));
+  }
+
   const estimatedDurationLabel =
-    estimatedDurationSeconds !== null ? formatDurationSeconds(estimatedDurationSeconds) : null;
+    remainingDurationSeconds !== null ? formatDurationSeconds(remainingDurationSeconds) : null;
   const estimatedArrivalLabel =
-    estimatedDurationSeconds !== null ? formatArrivalTime(estimatedDurationSeconds) : null;
+    remainingDurationSeconds !== null ? formatArrivalTime(remainingDurationSeconds) : null;
 
   const styleMap =
     mapStylePref === "Dark"
@@ -337,8 +356,8 @@ function RoutePageContent() {
       : satelliteMapStyle;
 
   return (
-  <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
-    <div className="flex-grow relative">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-black text-white">
+      <div className="relative flex-1">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={currentLocation || { lat: activeJob.lat, lng: activeJob.lng }}
@@ -370,43 +389,45 @@ function RoutePageContent() {
           )}
         </GoogleMap>
 
-        <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
-            <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
-            {locationWarning && (
-              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2 relative z-10">
-                {locationWarning}
-              </p>
-            )}
-            {estimatedDurationLabel && estimatedArrivalLabel && (
-              <div className="rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-gray-200 relative z-10">
-                <p className="font-semibold text-white">Planned finish ETA</p>
-                <p className="mt-1">
-                  {estimatedDurationLabel} (around {estimatedArrivalLabel})
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-end justify-end p-4 sm:p-6">
+          <div className="pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl border border-neutral-800 bg-black/85 backdrop-blur-xl shadow-2xl">
+            <div className="h-1 w-full bg-[#ff5757]" />
+            <div className="flex max-h-[calc(100vh-6rem)] flex-col gap-3 overflow-y-auto px-5 py-5">
+              <h2 className="text-lg font-bold">{activeJob.address}</h2>
+              {locationWarning && (
+                <p className="rounded-lg border border-amber-500/40 bg-amber-950/60 px-3 py-2 text-sm text-amber-300">
+                  {locationWarning}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">Includes 2 min buffer per job.</p>
-              </div>
-            )}
+              )}
+              {estimatedDurationLabel && estimatedArrivalLabel && (
+                <div className="rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-gray-200">
+                  <p className="font-semibold text-white">Finish ETA</p>
+                  <p className="mt-1">
+                    {estimatedDurationLabel} (around {estimatedArrivalLabel})
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">Includes 2 min buffer per remaining job.</p>
+                </div>
+              )}
               <button
                 onClick={() => window.open(navigateUrl, "_blank")}
-                className="w-full bg-neutral-900 text-white px-4 py-2 rounded-lg font-semibold transition hover:bg-neutral-800 relative z-10"
+                className="w-full rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
               >
                 Navigate
               </button>
-            <button
-              onClick={handleArrivedAtLocation}
-              className="w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 relative z-10"
-            >
-              Arrived At Location
-            </button>
+              <button
+                onClick={handleArrivedAtLocation}
+                className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-90"
+              >
+                Arrived At Location
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      
+
       {popupMsg && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
-          <div className="bg-white text-black p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 text-center text-black shadow-xl">
             {/* Split into two lines */}
             <p className="mb-2">
               {popupMsg.includes("(") ? popupMsg.split("(")[0] : popupMsg}

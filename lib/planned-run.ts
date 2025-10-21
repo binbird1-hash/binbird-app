@@ -13,6 +13,7 @@ export type PlannedRunPayload = {
   hasStarted: boolean;
   nextIdx: number;
   estimatedDurationSeconds: number | null;
+  estimatedLegDurationsSeconds: number[] | null;
 };
 
 const PLANNED_RUN_STORAGE_KEY = "binbird:planned-run";
@@ -65,6 +66,21 @@ function normalizeDurationSeconds(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   if (value <= 0) return 0;
   return Math.round(value);
+}
+
+function normalizeDurationSecondsList(value: unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const normalized: number[] = [];
+  for (const entry of value) {
+    const normalizedEntry = normalizeDurationSeconds(entry);
+    if (normalizedEntry === null) {
+      return null;
+    }
+    normalized.push(normalizedEntry);
+  }
+
+  return normalized.length ? normalized : null;
 }
 
 function normalizeJob(value: Job): Job {
@@ -153,6 +169,9 @@ function parsePlannedRun(raw: string): PlannedRunPayload | null {
       hasStarted: Boolean(parsed.hasStarted),
       nextIdx,
       estimatedDurationSeconds: normalizeDurationSeconds(parsed.estimatedDurationSeconds ?? null),
+      estimatedLegDurationsSeconds: normalizeDurationSecondsList(
+        parsed.estimatedLegDurationsSeconds ?? null
+      ),
     };
   } catch (err) {
     console.warn("Unable to parse planned run payload", err);
@@ -208,6 +227,9 @@ export function writePlannedRun(payload: PlannedRunPayload) {
     hasStarted: Boolean(payload.hasStarted),
     nextIdx: normalizeNextIdx(payload.nextIdx ?? 0, normalizedJobs.length),
     estimatedDurationSeconds: normalizeDurationSeconds(payload.estimatedDurationSeconds ?? null),
+    estimatedLegDurationsSeconds: normalizeDurationSecondsList(
+      payload.estimatedLegDurationsSeconds ?? null
+    ),
   };
 
   if (!normalized.jobs.length) {

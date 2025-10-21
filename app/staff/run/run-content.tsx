@@ -29,6 +29,13 @@ const VICTORIA_BOUNDS: google.maps.LatLngBoundsLiteral = {
   west: 140.95,
 };
 
+const MELBOURNE_BOUNDS: google.maps.LatLngBoundsLiteral = {
+  north: -37.5,
+  south: -38.3,
+  east: 145.5,
+  west: 144.4,
+};
+
 const applyVictoriaAutocompleteLimits = (
   autocomplete: google.maps.places.Autocomplete
 ) => {
@@ -124,8 +131,9 @@ function RunPageContent() {
   const [userMoved, setUserMoved] = useState(false);
   const [forceFit, setForceFit] = useState(false);
   const [estimatedDurationSeconds, setEstimatedDurationSeconds] = useState<number | null>(null);
-
-  const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
+  const [estimatedLegDurationsSeconds, setEstimatedLegDurationsSeconds] = useState<number[] | null>(
+    null
+  );
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -147,6 +155,7 @@ function RunPageContent() {
       setOrdered(stored.jobs);
       setRoutePath([]);
       setEstimatedDurationSeconds(stored.estimatedDurationSeconds ?? null);
+      setEstimatedLegDurationsSeconds(stored.estimatedLegDurationsSeconds ?? null);
       if (stored.hasStarted && !hasRedirectedToRoute.current) {
         hasRedirectedToRoute.current = true;
         redirectToRoute(stored.jobs, stored.start, stored.end);
@@ -159,6 +168,7 @@ function RunPageContent() {
     hasRedirectedToRoute.current = false;
     setPlannerLocked(false);
     setEstimatedDurationSeconds(null);
+    setEstimatedLegDurationsSeconds(null);
   }, [redirectToRoute]);
 
   useEffect(() => {
@@ -260,14 +270,15 @@ function RunPageContent() {
     if (!mapRef.current) return;
     const bounds = new google.maps.LatLngBounds();
 
-      if (jobs.length === 0) {
-    // ✅ No jobs → zoom out to Melbourne
-    bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
-    bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
-    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
-    mapRef.current?.setZoom(9);
-    return;
-  }
+    if (jobs.length === 0) {
+      // ✅ No jobs → zoom out to Melbourne
+      bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
+      bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
+      mapRef.current.fitBounds(bounds, { top: 32, right: 32, bottom: 240, left: 32 });
+      mapRef.current?.setZoom(9);
+      return;
+    }
+
     if (start) bounds.extend(start);
     if (end) bounds.extend(end);
     (routePath.length ? ordered : jobs).forEach((j) => {
@@ -277,7 +288,7 @@ function RunPageContent() {
 
     if (!bounds.isEmpty() && (!userMoved || forceFit)) {
       console.log("Fitting map bounds");
-      mapRef.current.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
+      mapRef.current.fitBounds(bounds, { top: 32, right: 320, bottom: 240, left: 32 });
       setForceFit(false);
     }
   }, [start, end, jobs, ordered, routePath, userMoved, forceFit]);
@@ -408,6 +419,7 @@ function RunPageContent() {
         hasStarted: true,
         nextIdx: 0,
         estimatedDurationSeconds: estimatedDurationSeconds ?? null,
+        estimatedLegDurationsSeconds: estimatedLegDurationsSeconds ?? null,
       });
 
       hasRedirectedToRoute.current = true;
@@ -416,7 +428,16 @@ function RunPageContent() {
     }
 
     return false;
-  }, [end, endAddress, estimatedDurationSeconds, ordered, redirectToRoute, start, startAddress]);
+  }, [
+    end,
+    endAddress,
+    estimatedDurationSeconds,
+    estimatedLegDurationsSeconds,
+    ordered,
+    redirectToRoute,
+    start,
+    startAddress,
+  ]);
 
   const handleStartRun = useCallback(() => {
     console.log("Starting run…");
@@ -486,6 +507,7 @@ function RunPageContent() {
     setUserMoved(false);
     setForceFit(true);
     setEstimatedDurationSeconds(null);
+    setEstimatedLegDurationsSeconds(null);
     fitBoundsToMap();
 
     const waypoints = jobs.map((j) => ({ lat: j.lat, lng: j.lng }));
@@ -507,16 +529,18 @@ function RunPageContent() {
     setRoutePath(polyline.decode(opt.polyline).map((c) => ({ lat: c[0], lng: c[1] })));
     setOrdered(plannedJobs);
 
-    const travelSeconds = Array.isArray(opt.legs)
-      ? opt.legs.reduce(
-          (total: number, leg: { duration_s?: number }) =>
-            total + (typeof leg.duration_s === "number" && Number.isFinite(leg.duration_s) ? leg.duration_s : 0),
-          0
+    const legDurations = Array.isArray(opt.legs)
+      ? opt.legs.map((leg: { duration_s?: number }) =>
+          typeof leg.duration_s === "number" && Number.isFinite(leg.duration_s)
+            ? Math.max(0, Math.round(leg.duration_s))
+            : 0
         )
-      : 0;
+      : [];
+    const travelSeconds = legDurations.reduce((total, legSeconds) => total + legSeconds, 0);
     const bufferSeconds = plannedJobs.length * 120;
     const totalDurationSeconds = Math.max(0, Math.round(travelSeconds + bufferSeconds));
     setEstimatedDurationSeconds(totalDurationSeconds);
+    setEstimatedLegDurationsSeconds(legDurations.length ? legDurations : null);
 
     setIsPlanned(true);
     setForceFit(true);
@@ -534,6 +558,7 @@ function RunPageContent() {
       hasStarted: false,
       nextIdx: 0,
       estimatedDurationSeconds: totalDurationSeconds,
+      estimatedLegDurationsSeconds: legDurations.length ? legDurations : null,
     });
 
     setPlannerLocked(true);
@@ -550,14 +575,12 @@ function RunPageContent() {
     estimatedDurationSeconds !== null ? formatArrivalTime(estimatedDurationSeconds) : null;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
-
-      <div className="flex-grow relative">
-
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-black text-white">
+      <div className="relative flex-1">
         <GoogleMap
           key={resetCounter}
           mapContainerStyle={{ width: "100%", height: "100%" }}
-          onLoad={(map) => { 
+          onLoad={(map) => {
             console.log("Google Map loaded"); 
             mapRef.current = map; 
             fitBoundsToMap(); 
@@ -578,109 +601,110 @@ function RunPageContent() {
           {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
         </GoogleMap>
 
-        {/* Overlay controls */}
-        <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
-            <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-end justify-end p-4 sm:p-6">
+          <div className="pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl border border-neutral-800 bg-black/85 backdrop-blur-xl shadow-2xl">
+            <div className="h-1 w-full bg-[#ff5757]" />
+            <div className="flex max-h-[calc(100vh-6rem)] flex-col gap-3 overflow-y-auto px-5 py-5">
+              <h1 className="text-xl font-bold text-white">Plan Run</h1>
 
-            <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
-              <input
-                type="text"
-                value={startAddress}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setStartAddress(value);
-                  if (!value.trim()) {
-                    setStart(null);
-                    setForceFit(true);
-                    if (sameAsStart) {
-                      setEnd(null);
-                      setEndAddress("");
-                    }
-                  }
-                }}
-                placeholder="Where you are right now"
-                className="w-full px-3 py-2 rounded-lg text-black"
-                disabled={isPlanned || plannerLocked}
-              />
-            </Autocomplete>
-            {locationWarning && (
-              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2">
-                {locationWarning}
-              </p>
-            )}
-
-            <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>
-              <input
-                type="text"
-                value={endAddress}
-                onChange={(e) => setEndAddress(e.target.value)}
-                placeholder="Where you want to go after run"
-                className="w-full px-3 py-2 rounded-lg text-black"
-                disabled={sameAsStart || isPlanned || plannerLocked}
-              />
-            </Autocomplete>
-
-            <div className="flex items-center justify-between text-sm text-gray-300 mt-2">
-              <label className="flex items-center gap-2">
+              <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
                 <input
-                  type="checkbox"
-                  checked={sameAsStart}
-                  onChange={(e) => setSameAsStart(e.target.checked)}
+                  type="text"
+                  value={startAddress}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setStartAddress(value);
+                    if (!value.trim()) {
+                      setStart(null);
+                      setForceFit(true);
+                      if (sameAsStart) {
+                        setEnd(null);
+                        setEndAddress("");
+                      }
+                    }
+                  }}
+                  placeholder="Where you are right now"
+                  className="w-full rounded-lg px-3 py-2 text-black"
                   disabled={isPlanned || plannerLocked}
                 />
-                Finish at same place I started
-              </label>
-
-              {isPlanned && (
-                <button
-                  onClick={handleReset}
-                  className="text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-            {estimatedDurationLabel && estimatedArrivalLabel && (
-              <div className="mt-2 rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-gray-200">
-                <p className="font-semibold text-white">ETA to finish</p>
-                <p className="mt-1">
-                  {estimatedDurationLabel} (around {estimatedArrivalLabel})
+              </Autocomplete>
+              {locationWarning && (
+                <p className="rounded-lg border border-amber-500/40 bg-amber-950/60 px-3 py-2 text-sm text-amber-300">
+                  {locationWarning}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">Includes 2 min buffer per job.</p>
-              </div>
-            )}
-            <div className="mt-4">
-              {jobs.length === 0 ? (
-                <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] opacity-60 cursor-not-allowed"
-                  disabled
-                >
-                  All Jobs Completed
-                </button>
-              ) : !isPlanned ? (
-                // Plan Run button (grey)
-                <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
-                  onClick={() => {
-                    console.log("Planning run…");
-                    buildRoute();
-                  }}
-                  disabled={plannerLocked}
-                >
-                  Plan Run
-                </button>
-              ) : (
-                // Start Run button (accent red)
-                <button
-                  className="w-full px-4 py-2 rounded-lg font-semibold bg-[#ff5757] text-white hover:opacity-90 transition"
-                  onClick={handleStartRun}
-                >
-                  Start Run
-                </button>
               )}
-            </div>            
+
+              <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>
+                <input
+                  type="text"
+                  value={endAddress}
+                  onChange={(e) => setEndAddress(e.target.value)}
+                  placeholder="Where you want to go after run"
+                  className="w-full rounded-lg px-3 py-2 text-black"
+                  disabled={sameAsStart || isPlanned || plannerLocked}
+                />
+              </Autocomplete>
+
+              <div className="mt-1 flex items-center justify-between text-sm text-gray-300">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={sameAsStart}
+                    onChange={(e) => setSameAsStart(e.target.checked)}
+                    disabled={isPlanned || plannerLocked}
+                  />
+                  Finish at same place I started
+                </label>
+
+                {isPlanned && (
+                  <button
+                    onClick={handleReset}
+                    className="rounded-lg px-3 py-1 text-sm font-semibold text-white transition hover:bg-gray-700"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              {estimatedDurationLabel && estimatedArrivalLabel && (
+                <div className="mt-1 rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-gray-200">
+                  <p className="font-semibold text-white">ETA to finish</p>
+                  <p className="mt-1">
+                    {estimatedDurationLabel} (around {estimatedArrivalLabel})
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">Includes 2 min buffer per job.</p>
+                </div>
+              )}
+              <div className="mt-2 space-y-3">
+                {jobs.length === 0 ? (
+                  <button
+                    className="w-full cursor-not-allowed rounded-lg bg-[#ff5757] px-4 py-2 font-semibold opacity-60"
+                    disabled
+                  >
+                    All Jobs Completed
+                  </button>
+                ) : !isPlanned ? (
+                  // Plan Run button (grey)
+                  <button
+                    className="w-full rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
+                    onClick={() => {
+                      console.log("Planning run…");
+                      buildRoute();
+                    }}
+                    disabled={plannerLocked}
+                  >
+                    Plan Run
+                  </button>
+                ) : (
+                  // Start Run button (accent red)
+                  <button
+                    className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-90"
+                    onClick={handleStartRun}
+                  >
+                    Start Run
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
