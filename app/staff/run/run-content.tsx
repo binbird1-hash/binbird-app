@@ -22,10 +22,10 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 const LIBRARIES: ("places")[] = ["places"];
 
 const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
-const JOB_MARKER_POPUP_OFFSET_PX = 58;
 const JOB_MARKER_ICON_HEIGHT_PX = 32;
+const JOB_MARKER_POPUP_OFFSET_PX = JOB_MARKER_ICON_HEIGHT_PX - 6;
 const JOB_MARKER_GLOW_DIAMETER_PX = 20;
-const JOB_MARKER_GLOW_VERTICAL_ADJUST_PX = 4;
+const JOB_MARKER_GLOW_VERTICAL_ADJUST_PX = 3;
 const JOB_MARKER_GLOW_OFFSET_PX =
   JOB_MARKER_ICON_HEIGHT_PX / 2 -
   JOB_MARKER_GLOW_DIAMETER_PX / 2 +
@@ -738,16 +738,17 @@ function RunPageContent() {
                     }}
                   >
                     <span
-                      className="absolute inset-0 rounded-full opacity-80"
+                      className="absolute inset-0 rounded-full"
                       style={{
                         background:
-                          "radial-gradient(circle, rgba(0, 204, 255, 0.65) 0%, rgba(0, 204, 255, 0.28) 55%, rgba(0, 204, 255, 0) 80%)",
-                        animation: "runPinPulse 2.6s ease-in-out infinite",
+                          "radial-gradient(circle, rgba(0, 220, 255, 0.85) 0%, rgba(0, 220, 255, 0.42) 48%, rgba(0, 220, 255, 0) 75%)",
+                        animation: "runPinPulse 1.8s ease-in-out infinite",
+                        boxShadow: "0 0 12px rgba(0, 220, 255, 0.45)",
                       }}
                     />
                     <span
-                      className="absolute inset-[2px] rounded-full opacity-65 blur-[4px]"
-                      style={{ backgroundColor: "rgba(0, 204, 255, 0.55)" }}
+                      className="absolute inset-[3px] rounded-full blur-[5px]"
+                      style={{ backgroundColor: "rgba(0, 220, 255, 0.55)" }}
                     />
                   </span>
                 </div>
@@ -921,12 +922,12 @@ function RunPageContent() {
         @keyframes runPinPulse {
           0%,
           100% {
-            transform: scale(0.94);
-            opacity: 0.85;
+            transform: scale(0.78);
+            opacity: 0.95;
           }
           50% {
-            transform: scale(1.1);
-            opacity: 0.35;
+            transform: scale(1.28);
+            opacity: 0.2;
           }
         }
       `}</style>
