@@ -688,8 +688,8 @@ function RunPageContent() {
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
-          <div className="pointer-events-none absolute top-4 right-4 z-20 w-72 max-w-full text-white">
-            <div className="pointer-events-auto overflow-hidden rounded-2xl border border-white/10 bg-black/80 p-4 shadow-lg backdrop-blur">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-4 sm:p-6">
+            <div className="pointer-events-auto w-72 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/80 p-4 text-white shadow-lg backdrop-blur">
               <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
                 <span>Run summary</span>
                 {routeSummary && (
