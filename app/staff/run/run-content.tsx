@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapSettings, MapSettingsProvider } from "@/components/Context/MapSettingsContext";
 import { GoogleMap, Marker, Polyline, useLoadScript, Autocomplete, OverlayViewF } from "@react-google-maps/api";
 import polyline from "@mapbox/polyline";
@@ -24,6 +24,7 @@ const LIBRARIES: ("places")[] = ["places"];
 const JOB_MARKER_ICON = "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png";
 const JOB_MARKER_ICON_ACTIVE = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
 const JOB_MARKER_POPUP_OFFSET_PX = 58;
+const JOB_MARKER_GLOW_OFFSET_PX = 52;
 const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
   put_out: "Put bins out",
   bring_in: "Bring bins in",
@@ -147,43 +148,6 @@ function RunPageContent() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: LIBRARIES,
   });
-
-  const jobMarkerIcons = useMemo(() => {
-    if (!isLoaded || typeof window === "undefined" || !window.google?.maps) {
-      return null;
-    }
-
-    const buildIcon = (
-      pinFill: string,
-      innerFill: string,
-      dotFill: string
-    ): google.maps.Icon => {
-      const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-        <svg width="48" height="66" viewBox="0 0 48 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="pinShadow" x="0" y="0" width="48" height="66" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-              <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="rgba(255, 87, 87, 0.28)"/>
-            </filter>
-          </defs>
-          <g filter="url(#pinShadow)">
-            <path d="M24 0C13.5066 0 5 8.50659 5 19C5 31.98 24 58 24 58C24 58 43 31.98 43 19C43 8.50659 34.4934 0 24 0Z" fill="${pinFill}"/>
-            <circle cx="24" cy="18" r="8.5" fill="${innerFill}" fill-opacity="0.92"/>
-            <circle cx="24" cy="18" r="4.5" fill="${dotFill}" fill-opacity="0.92"/>
-          </g>
-        </svg>`);
-
-      return {
-        url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-        scaledSize: new window.google.maps.Size(34, 50),
-        anchor: new window.google.maps.Point(17, 50),
-      } satisfies google.maps.Icon;
-    };
-
-    return {
-      idle: buildIcon("#141925", "#0b0d12", "#ff5757"),
-      active: buildIcon("#ff5757", "#ffffff", "#0b0d12"),
-    };
-  }, [isLoaded]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -733,11 +697,7 @@ function RunPageContent() {
               <Marker
                 key={j.id}
                 position={{ lat: j.lat, lng: j.lng }}
-                icon={
-                  selectedJobId === j.id
-                    ? jobMarkerIcons?.active ?? JOB_MARKER_ICON_ACTIVE
-                    : jobMarkerIcons?.idle ?? JOB_MARKER_ICON
-                }
+                icon={selectedJobId === j.id ? JOB_MARKER_ICON_ACTIVE : JOB_MARKER_ICON}
                 title={j.address}
                 onClick={() =>
                   setSelectedJobId((current) => (current === j.id ? null : j.id))
@@ -760,12 +720,25 @@ function RunPageContent() {
               >
                 <div
                   className="pointer-events-none"
-                  style={{ transform: "translate(-50%, calc(-100% - 54px))" }}
+                  style={{
+                    transform: `translate(-50%, calc(-100% - ${JOB_MARKER_GLOW_OFFSET_PX}px))`,
+                  }}
                 >
-                  <span className="relative block h-11 w-11">
+                  <span className="relative block h-10 w-10">
                     <span
-                      className="absolute inset-0 animate-pulse rounded-full"
-                      style={{ backgroundColor: "rgba(255, 87, 87, 0.18)" }}
+                      className="absolute inset-0 rounded-full opacity-80"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(255, 87, 87, 0.32) 0%, rgba(255, 87, 87, 0.12) 48%, rgba(255, 87, 87, 0) 78%)",
+                        boxShadow: "0 0 14px rgba(255, 87, 87, 0.25)",
+                      }}
+                    />
+                    <span
+                      className="absolute inset-0 rounded-full opacity-80 [animation:pulse_2.6s_ease-in-out_infinite]"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(255, 87, 87, 0.45) 0%, rgba(255, 87, 87, 0.18) 42%, rgba(255, 87, 87, 0) 80%)",
+                      }}
                     />
                   </span>
                 </div>
