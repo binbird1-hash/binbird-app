@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -50,14 +50,6 @@ function RoutePageContent() {
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
-  const [routeSummary, setRouteSummary] = useState<{
-    distanceKm: number;
-    travelMinutes: number;
-    bufferMinutes: number;
-    jobCount: number;
-  } | null>(null);
-  const [isRouteSummaryLoading, setIsRouteSummaryLoading] = useState(false);
-  const [routeSummaryError, setRouteSummaryError] = useState<string | null>(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -181,10 +173,6 @@ function RoutePageContent() {
     : null;
   const isEndStop = normalizedAddress === "end";
 
-  const jobsForBuffer = useMemo(() => {
-    return jobs.filter((job) => job.address.trim().toLowerCase() !== "end");
-  }, [jobs]);
-
   // Update current location
   useEffect(() => {
     if (!activeJob) return;
@@ -286,123 +274,6 @@ function RoutePageContent() {
       mapRef.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
   }, [mapRef, directions, currentLocation, activeJob]);
 
-  useEffect(() => {
-    if (
-      !isLoaded ||
-      !start ||
-      !jobs.length ||
-      typeof window === "undefined" ||
-      !window.google?.maps
-    ) {
-      setRouteSummary(null);
-      setRouteSummaryError(null);
-      setIsRouteSummaryLoading(false);
-      return;
-    }
-
-    const legs: { origin: google.maps.LatLngLiteral; destination: google.maps.LatLngLiteral }[] = [];
-    let currentOrigin: google.maps.LatLngLiteral | null = start;
-
-    for (const job of jobs) {
-      const destination = { lat: job.lat, lng: job.lng };
-      if (currentOrigin) {
-        legs.push({ origin: currentOrigin, destination });
-      }
-      currentOrigin = destination;
-    }
-
-    if (!legs.length) {
-      setRouteSummary(null);
-      setRouteSummaryError(null);
-      setIsRouteSummaryLoading(false);
-      return;
-    }
-
-    const service = new google.maps.DirectionsService();
-    let isCancelled = false;
-
-    const fetchRouteForLeg = (leg: { origin: google.maps.LatLngLiteral; destination: google.maps.LatLngLiteral }) => {
-      return new Promise<google.maps.DirectionsResult | null>((resolve, reject) => {
-        service.route(
-          {
-            origin: leg.origin,
-            destination: leg.destination,
-            travelMode: google.maps.TravelMode.DRIVING,
-          },
-          (result, status) => {
-            if (status === "OK" && result) {
-              resolve(result);
-            } else if (status === google.maps.DirectionsStatus.ZERO_RESULTS) {
-              resolve(null);
-            } else {
-              reject(new Error(`Directions request failed with status: ${status}`));
-            }
-          }
-        );
-      });
-    };
-
-    (async () => {
-      setIsRouteSummaryLoading(true);
-      setRouteSummaryError(null);
-
-      let totalDistance = 0;
-      let totalDuration = 0;
-
-      try {
-        for (const leg of legs) {
-          const result = await fetchRouteForLeg(leg);
-          if (isCancelled) return;
-          const legData = result?.routes?.[0]?.legs?.[0];
-          if (legData) {
-            totalDistance += legData.distance?.value ?? 0;
-            totalDuration += legData.duration?.value ?? 0;
-          }
-        }
-
-        const jobCount = jobsForBuffer.length;
-        const bufferMinutes = jobCount * 2;
-
-        setRouteSummary({
-          distanceKm: totalDistance / 1000,
-          travelMinutes: totalDuration / 60,
-          bufferMinutes,
-          jobCount,
-        });
-      } catch (error) {
-        console.warn("Failed to build route summary", error);
-        if (!isCancelled) {
-          setRouteSummary(null);
-          setRouteSummaryError("Unable to calculate total route details.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsRouteSummaryLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [isLoaded, start, jobs, jobsForBuffer]);
-
-  const totalMinutesWithBuffer = useMemo(() => {
-    if (!routeSummary) return 0;
-    return routeSummary.travelMinutes + routeSummary.bufferMinutes;
-  }, [routeSummary]);
-
-  const formatDuration = useCallback((minutes: number) => {
-    if (!Number.isFinite(minutes)) return "—";
-    const safeMinutes = Math.max(0, Math.round(minutes));
-    const hours = Math.floor(safeMinutes / 60);
-    const mins = safeMinutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  }, []);
-
   // Distance calculation
   function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371e3;
@@ -489,52 +360,6 @@ function RoutePageContent() {
             />
           )}
         </GoogleMap>
-
-        {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
-          <div className="pointer-events-none absolute top-4 right-4 z-20 w-72 max-w-full text-white">
-            <div className="pointer-events-auto overflow-hidden rounded-2xl border border-white/10 bg-black/80 p-4 shadow-lg backdrop-blur">
-              <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
-                <span>Run summary</span>
-                {routeSummary && (
-                  <span className="text-[10px] font-semibold text-white/40">
-                    {routeSummary.jobCount} job{routeSummary.jobCount === 1 ? "" : "s"}
-                  </span>
-                )}
-              </div>
-
-              {isRouteSummaryLoading ? (
-                <p className="text-sm text-white/70">Calculating route…</p>
-              ) : routeSummary ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between text-white/80">
-                    <span>Total distance</span>
-                    <span className="font-semibold text-white">
-                      {routeSummary.distanceKm >= 100
-                        ? routeSummary.distanceKm.toFixed(0)
-                        : routeSummary.distanceKm.toFixed(1)} km
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-white/80">
-                    <span>Travel time</span>
-                    <span className="font-medium text-white">{formatDuration(routeSummary.travelMinutes)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-white/60">
-                    <span>Buffer ({routeSummary.jobCount}×2m)</span>
-                    <span>{formatDuration(routeSummary.bufferMinutes)}</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-base font-semibold">
-                    <span>Total ETA</span>
-                    <span>{formatDuration(totalMinutesWithBuffer)}</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-amber-300">
-                  {routeSummaryError ?? "Route summary unavailable."}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
 
         <div className="fixed inset-x-0 bottom-0 z-10">
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
