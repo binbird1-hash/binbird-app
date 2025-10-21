@@ -198,24 +198,19 @@ export function BillingOverview() {
               )}
             </div>
           </dl>
-          <p className="mt-6 text-sm text-white/60">
-            {selectedAccount
-              ? `${selectedAccount.name} can manage their plan here.`
-              : 'Manage your plan details.'}
-          </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href={BILLING_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
             >
               Manage subscription
             </Link>
             <button
               type="button"
               onClick={handleAddProperty}
-              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:text-binbird-red"
+              className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
             >
               Add property
             </button>
