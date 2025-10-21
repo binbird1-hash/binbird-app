@@ -212,7 +212,7 @@ export function BillingOverview() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
               >
-                Manage subscription
+                Manage plan
               </Link>
               <button
                 type="button"
