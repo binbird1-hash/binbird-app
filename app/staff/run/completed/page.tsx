@@ -123,7 +123,19 @@ function CompletedRunContent() {
   const todayName = useMemo(() => {
     const override = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
     if (override) return override;
-    return new Date().toLocaleDateString("en-US", { weekday: "long" });
+
+    const now = new Date();
+    const hour = now.getHours();
+
+    let effectiveDay = now.toLocaleString("en-AU", { weekday: "long" });
+
+    if (hour < 5) {
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      effectiveDay = yesterday.toLocaleString("en-AU", { weekday: "long" });
+    }
+
+    return effectiveDay;
   }, []);
 
   const todayIndex = WEEKDAYS.indexOf(todayName);
