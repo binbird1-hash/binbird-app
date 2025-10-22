@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { Flag, LogOut, Navigation2, Palette } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { CalendarDays, Flag, LogOut, Navigation2, Palette } from "lucide-react";
 import clsx from "clsx";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
@@ -33,6 +33,7 @@ const mapStyleOptions: PickerOption<MapStyleKey>[] = [
 export default function SettingsDrawer() {
   const supabase = useSupabase();
   const router = useRouter();
+  const pathname = usePathname();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -77,6 +78,19 @@ export default function SettingsDrawer() {
       setActivePanel(panel);
     },
     [activePanel, dismissPanel, mapStylePref, navPref]
+  );
+
+  const handleNavigate = useCallback(
+    (path: string) => {
+      dismissPanel();
+      setIsOpen(false);
+      setEndRunError(null);
+      setLogoutError(null);
+      if (pathname !== path) {
+        router.push(path);
+      }
+    },
+    [dismissPanel, pathname, router, setEndRunError, setIsOpen, setLogoutError]
   );
 
   const syncActiveRunState = useCallback(() => {
@@ -317,6 +331,19 @@ export default function SettingsDrawer() {
 
               {/* Navigation & Map Style Buttons */}
               <div className="flex flex-col gap-4">
+                <button
+                  onClick={() => handleNavigate("/staff/week")}
+                  className={clsx(
+                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
+                    pathname?.startsWith("/staff/week")
+                      ? "text-[#ff5757]"
+                      : "text-white",
+                    "hover:text-[#ff5757]"
+                  )}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  <span>Weekly Jobs</span>
+                </button>
                 <button
                   onClick={() => handlePanelToggle("nav")}
                   className={clsx(

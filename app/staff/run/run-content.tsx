@@ -64,6 +64,7 @@ function RunPageContent() {
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
   const hasRedirectedToRoute = useRef(false);
+  const hasRedirectedToWeekly = useRef(false);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -137,6 +138,17 @@ function RunPageContent() {
   const [routeSummaryError, setRouteSummaryError] = useState<string | null>(null);
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
+
+  useEffect(() => {
+    if (!loading && jobs.length === 0) {
+      if (!hasRedirectedToWeekly.current) {
+        hasRedirectedToWeekly.current = true;
+        router.replace("/staff/week");
+      }
+    } else if (jobs.length > 0) {
+      hasRedirectedToWeekly.current = false;
+    }
+  }, [jobs.length, loading, router]);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
