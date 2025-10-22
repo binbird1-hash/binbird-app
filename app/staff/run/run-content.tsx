@@ -153,7 +153,11 @@ function RunPageContent() {
 
     updateHeight();
 
-    if (typeof window !== "undefined" && "ResizeObserver" in window) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if ("ResizeObserver" in window) {
       const observer = new ResizeObserver(() => updateHeight());
       observer.observe(element);
       return () => {
