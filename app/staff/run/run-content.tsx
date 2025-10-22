@@ -153,11 +153,12 @@ function RunPageContent() {
 
     updateHeight();
 
-    if (typeof window === "undefined") {
+    const win = typeof window === "undefined" ? undefined : window;
+    if (!win) {
       return;
     }
 
-    if ("ResizeObserver" in window) {
+    if ("ResizeObserver" in win) {
       const observer = new ResizeObserver(() => updateHeight());
       observer.observe(element);
       return () => {
@@ -165,9 +166,9 @@ function RunPageContent() {
       };
     }
 
-    window.addEventListener("resize", updateHeight);
+    win.addEventListener("resize", updateHeight);
     return () => {
-      window.removeEventListener("resize", updateHeight);
+      win.removeEventListener("resize", updateHeight);
     };
   }, []);
 
