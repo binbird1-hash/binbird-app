@@ -17,6 +17,7 @@ import {
   markPlannedRunStarted,
 } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
+import { getOperationalDayInfo } from "@/lib/date";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -189,10 +190,9 @@ function RunPageContent() {
           return;
         }
 
-        // Hardcoded weekday mapping
-        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const now = new Date();
-        const todayName = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE || days[now.getDay()];
+        const operationalDay = getOperationalDayInfo({ now });
+        const todayName = operationalDay.dayName;
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
@@ -200,8 +200,9 @@ function RunPageContent() {
           assigneeId,
           email: user.email,
           todayName,
-          todayIndex: now.getDay(),
+          todayIndex: operationalDay.dayIndex,
           nowISO: now.toISOString(),
+          operationalIso: operationalDay.isoDate,
         });
 
         // Jobs query

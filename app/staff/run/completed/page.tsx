@@ -11,16 +11,7 @@ import {
   RunSessionRecord,
 } from "@/lib/run-session";
 import { clearPlannedRun } from "@/lib/planned-run";
-
-const WEEKDAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+import { getOperationalDayInfo, WEEKDAYS } from "@/lib/date";
 
 type NextAssignmentDateParts = {
   weekday: string;
@@ -120,18 +111,10 @@ function CompletedRunContent() {
     null
   );
 
-  const todayName = useMemo(() => {
-    const override = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
-    if (override) return override;
-    return new Date().toLocaleDateString("en-US", { weekday: "long" });
-  }, []);
-
-  const todayIndex = WEEKDAYS.indexOf(todayName);
-
-  const todayIso = useMemo(() => {
-    const now = new Date();
-    return now.toISOString().slice(0, 10);
-  }, []);
+  const operationalDay = useMemo(() => getOperationalDayInfo(), []);
+  const todayName = operationalDay.dayName;
+  const todayIndex = operationalDay.dayIndex;
+  const todayIso = operationalDay.isoDate;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -222,7 +205,7 @@ function CompletedRunContent() {
           jobsByDay.set(job.day, list);
         });
 
-        const now = new Date();
+        const now = operationalDay.date;
         const fallbackIndex = now.getDay();
         const startIndex = todayIndex >= 0 ? todayIndex : fallbackIndex;
 
@@ -275,7 +258,7 @@ function CompletedRunContent() {
     return () => {
       isActive = false;
     };
-  }, [supabase, todayIndex, todayName, todayIso]);
+  }, [supabase, todayIndex, todayName, todayIso, operationalDay]);
 
   const derivedStats = useMemo(() => {
     if (!runData) {
