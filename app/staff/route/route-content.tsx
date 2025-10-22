@@ -49,7 +49,6 @@ function RoutePageContent() {
   const [popupMsg, setPopupMsg] = useState<string | null>(null);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
-  const [hasStoredPlan, setHasStoredPlan] = useState(false);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -79,12 +78,11 @@ function RoutePageContent() {
     if (typeof window !== "undefined") {
       const stored = readPlannedRun();
       if (stored) {
-        setHasStoredPlan(true);
         setLockNavigation(Boolean(stored.hasStarted));
         setJobs(stored.jobs.map((job) => ({ ...job })));
         setStart({ lat: stored.start.lat, lng: stored.start.lng });
 
-        if (stored.jobs.length) {
+        if (!params.has("nextIdx") && stored.jobs.length) {
           const clampedIdx = Math.min(
             Math.max(stored.nextIdx ?? 0, 0),
             Math.max(stored.jobs.length - 1, 0)
@@ -93,7 +91,6 @@ function RoutePageContent() {
         }
         return;
       }
-      setHasStoredPlan(false);
       setLockNavigation(false);
     }
 
@@ -138,14 +135,12 @@ function RoutePageContent() {
 
   // Pick up nextIdx
   useEffect(() => {
-    if (hasStoredPlan) return;
-
     const rawNextIdx = params.get("nextIdx");
     if (rawNextIdx) {
       const parsed = parseInt(rawNextIdx, 10);
       if (!isNaN(parsed)) setActiveIdx(parsed);
     }
-  }, [hasStoredPlan, params]);
+  }, [params]);
 
   useEffect(() => {
     if (!jobs.length || typeof window === "undefined") return;

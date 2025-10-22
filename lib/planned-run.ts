@@ -223,3 +223,12 @@ export function clearPlannedRun() {
   clearActiveRunCookie();
 }
 
+export function markPlannedRunStarted() {
+  const existing = readPlannedRun();
+  if (!existing) return;
+
+  writePlannedRun({
+    ...existing,
+    hasStarted: true,
+  });
+}
