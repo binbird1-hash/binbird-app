@@ -23,6 +23,22 @@ const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
   bring_in: "Bring bins in",
 };
 
+const JOB_TYPE_STYLES: Record<
+  Job["job_type"],
+  { background: string; border: string; text: string }
+> = {
+  put_out: {
+    background: "bg-[#ff5757]/15",
+    border: "border-[#ff5757]/30",
+    text: "text-[#ffb3b3]",
+  },
+  bring_in: {
+    background: "bg-white/10",
+    border: "border-white/15",
+    text: "text-white/80",
+  },
+};
+
 type DayBucket = {
   label: string;
   jobs: Job[];
@@ -243,12 +259,12 @@ function WeeklyJobsContent() {
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
                         <span
-                        className={clsx(
-                          "rounded-full px-3 py-1 font-semibold text-xs uppercase tracking-wide",
-                          job.job_type === "put_out"
-                            ? "bg-emerald-500/15 text-emerald-300"
-                            : "bg-sky-500/15 text-sky-300"
-                        )}
+                          className={clsx(
+                            "inline-flex h-8 items-center justify-center rounded-full border px-4 text-[11px] font-semibold uppercase tracking-[0.18em]",
+                            JOB_TYPE_STYLES[job.job_type].background,
+                            JOB_TYPE_STYLES[job.job_type].border,
+                            JOB_TYPE_STYLES[job.job_type].text
+                          )}
                         >
                           {JOB_TYPE_LABELS[job.job_type]}
                         </span>
@@ -259,7 +275,7 @@ function WeeklyJobsContent() {
                               <span
                                 key={`${job.id}-bin-${idx}`}
                                 className={clsx(
-                                  "rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide",
+                                  "inline-flex h-8 min-w-[96px] items-center justify-center rounded-full border px-4 text-[11px] font-semibold uppercase tracking-wide",
                                   styles.background,
                                   styles.text,
                                   styles.border
@@ -270,7 +286,7 @@ function WeeklyJobsContent() {
                             );
                           })
                         ) : (
-                          <span className="rounded-full border border-white/10 bg-black/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+                          <span className="inline-flex h-8 items-center justify-center rounded-full border border-white/10 bg-black/50 px-4 text-[11px] font-semibold uppercase tracking-wide text-white/70">
                             Bins not specified
                           </span>
                         )}
