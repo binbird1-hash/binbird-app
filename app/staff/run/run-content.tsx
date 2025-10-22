@@ -735,38 +735,30 @@ function RunPageContent() {
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center p-4 sm:justify-end sm:p-6">
-            <div className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-black/80 p-4 text-white shadow-lg backdrop-blur sm:w-72">
-              <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
-                <span>Run summary</span>
-                {routeSummary && (
-                  <span className="text-[10px] font-semibold text-white/40">
+          <div className="pointer-events-none absolute top-4 right-4 z-20 flex justify-end sm:top-6 sm:right-6">
+            <div className="pointer-events-auto inline-flex items-center gap-4 rounded-full border border-white/10 bg-black/80 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur sm:text-sm">
+              {isRouteSummaryLoading ? (
+                <span className="text-white/70">Calculating route…</span>
+              ) : routeSummary ? (
+                <>
+                  <span className="whitespace-nowrap text-white/70">
                     {routeSummary.jobCount} job{routeSummary.jobCount === 1 ? "" : "s"}
                   </span>
-                )}
-              </div>
-
-              {isRouteSummaryLoading ? (
-                <p className="text-sm text-white/70">Calculating route…</p>
-              ) : routeSummary ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between text-white/80">
-                    <span>Total distance</span>
-                    <span className="font-semibold text-white">
-                      {routeSummary.distanceKm >= 100
-                        ? routeSummary.distanceKm.toFixed(0)
-                        : routeSummary.distanceKm.toFixed(1)} km
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-base font-semibold">
-                    <span>Total ETA</span>
-                    <span>{formatDuration(routeSummary.travelMinutes)}</span>
-                  </div>
-                </div>
+                  <span className="hidden h-4 w-px bg-white/15 sm:block" aria-hidden />
+                  <span className="whitespace-nowrap font-semibold">
+                    {routeSummary.distanceKm >= 100
+                      ? routeSummary.distanceKm.toFixed(0)
+                      : routeSummary.distanceKm.toFixed(1)} km
+                  </span>
+                  <span className="hidden h-4 w-px bg-white/15 sm:block" aria-hidden />
+                  <span className="whitespace-nowrap font-semibold">
+                    {formatDuration(routeSummary.travelMinutes)}
+                  </span>
+                </>
               ) : (
-                <p className="text-sm text-amber-300">
+                <span className="text-amber-300">
                   {routeSummaryError ?? "Run summary unavailable."}
-                </p>
+                </span>
               )}
             </div>
           </div>
