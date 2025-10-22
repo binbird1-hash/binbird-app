@@ -653,7 +653,7 @@ function RunPageContent() {
     if (hours > 0) {
       return `${hours}h ${mins}m`;
     }
-    return `${mins}m`;
+    return `${mins} min`;
   }, []);
 
   const jobsToRender = useMemo(() => (routePath.length > 0 ? ordered : jobs), [jobs, ordered, routePath]);
@@ -735,38 +735,28 @@ function RunPageContent() {
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-4 sm:p-6">
-            <div className="pointer-events-auto w-72 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/80 p-4 text-white shadow-lg backdrop-blur">
-              <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
-                <span>Run summary</span>
-                {routeSummary && (
-                  <span className="text-[10px] font-semibold text-white/40">
+          <div className="pointer-events-none absolute right-2 top-2 z-20 sm:right-4 sm:top-4">
+            <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/80 px-3 py-1 text-[11px] text-white shadow-lg backdrop-blur sm:px-4 sm:py-1.5 sm:text-xs">
+              {isRouteSummaryLoading ? (
+                <span className="text-white/70">Calculating…</span>
+              ) : routeSummary ? (
+                <>
+                  <span className="whitespace-nowrap font-semibold text-white">
                     {routeSummary.jobCount} job{routeSummary.jobCount === 1 ? "" : "s"}
                   </span>
-                )}
-              </div>
-
-              {isRouteSummaryLoading ? (
-                <p className="text-sm text-white/70">Calculating route…</p>
-              ) : routeSummary ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between text-white/80">
-                    <span>Total distance</span>
-                    <span className="font-semibold text-white">
-                      {routeSummary.distanceKm >= 100
-                        ? routeSummary.distanceKm.toFixed(0)
-                        : routeSummary.distanceKm.toFixed(1)} km
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-base font-semibold">
-                    <span>Total ETA</span>
-                    <span>{formatDuration(routeSummary.travelMinutes)}</span>
-                  </div>
-                </div>
+                  <span className="whitespace-nowrap font-medium text-white">
+                    {routeSummary.distanceKm >= 100
+                      ? routeSummary.distanceKm.toFixed(0)
+                      : routeSummary.distanceKm.toFixed(1)} km
+                  </span>
+                  <span className="whitespace-nowrap font-medium text-white">
+                    {formatDuration(routeSummary.travelMinutes)}
+                  </span>
+                </>
               ) : (
-                <p className="text-sm text-amber-300">
+                <span className="text-amber-300">
                   {routeSummaryError ?? "Run summary unavailable."}
-                </p>
+                </span>
               )}
             </div>
           </div>
