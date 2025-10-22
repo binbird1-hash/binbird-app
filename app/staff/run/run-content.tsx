@@ -153,13 +153,14 @@ function RunPageContent() {
 
     updateHeight();
 
-    const win = typeof window === "undefined" ? undefined : window;
-    if (!win) {
+    if (typeof window === "undefined") {
       return;
     }
 
-    if ("ResizeObserver" in win) {
-      const observer = new ResizeObserver(() => updateHeight());
+    const win = window;
+    const ResizeObserverCtor = win.ResizeObserver;
+    if (typeof ResizeObserverCtor !== "undefined") {
+      const observer = new ResizeObserverCtor(() => updateHeight());
       observer.observe(element);
       return () => {
         observer.disconnect();
