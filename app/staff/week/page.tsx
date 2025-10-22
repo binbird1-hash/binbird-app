@@ -30,6 +30,44 @@ type DayBucket = {
 
 type LoadState = "idle" | "loading" | "error" | "ready";
 
+function getParsedBins(bins: Job["bins"]) {
+  if (!bins) return [] as string[];
+  return bins
+    .split(",")
+    .map((bin) => bin.trim())
+    .filter(Boolean);
+}
+
+function getBinColorStyles(bin: string) {
+  const normalized = bin.toLowerCase();
+  if (normalized.includes("red")) {
+    return {
+      background: "bg-red-600",
+      border: "border-red-500/70",
+      text: "text-white",
+    } as const;
+  }
+  if (normalized.includes("yellow")) {
+    return {
+      background: "bg-amber-300",
+      border: "border-amber-300/70",
+      text: "text-black",
+    } as const;
+  }
+  if (normalized.includes("green")) {
+    return {
+      background: "bg-emerald-600",
+      border: "border-emerald-500/70",
+      text: "text-white",
+    } as const;
+  }
+  return {
+    background: "bg-neutral-800",
+    border: "border-neutral-600/70",
+    text: "text-white",
+  } as const;
+}
+
 function WeeklyJobsContent() {
   const supabase = useSupabase();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -196,30 +234,50 @@ function WeeklyJobsContent() {
               </div>
             ) : (
               <ul className="divide-y divide-white/10">
-                {bucket.jobs.map((job) => (
-                  <li key={job.id} className="px-4 py-5 sm:px-5">
-                    <p className="text-base font-semibold text-white">
-                      {job.address || "Address unavailable"}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
-                      <span
+                {bucket.jobs.map((job) => {
+                  const parsedBins = getParsedBins(job.bins);
+                  return (
+                    <li key={job.id} className="px-4 py-5 sm:px-5">
+                      <p className="text-base font-semibold text-white">
+                        {job.address || "Address unavailable"}
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
+                        <span
                         className={clsx(
                           "rounded-full px-3 py-1 font-semibold text-xs uppercase tracking-wide",
                           job.job_type === "put_out"
                             ? "bg-emerald-500/15 text-emerald-300"
                             : "bg-sky-500/15 text-sky-300"
                         )}
-                      >
-                        {JOB_TYPE_LABELS[job.job_type]}
-                      </span>
-                      <span className="rounded-full bg-black/50 px-3 py-1">
-                        {job.bins?.length
-                          ? `${job.bins}`
-                          : "Bins not specified"}
-                      </span>
-                    </div>
-                  </li>
-                ))}
+                        >
+                          {JOB_TYPE_LABELS[job.job_type]}
+                        </span>
+                        {parsedBins.length ? (
+                          parsedBins.map((bin, idx) => {
+                            const styles = getBinColorStyles(bin);
+                            return (
+                              <span
+                                key={`${job.id}-bin-${idx}`}
+                                className={clsx(
+                                  "rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide",
+                                  styles.background,
+                                  styles.text,
+                                  styles.border
+                                )}
+                              >
+                                {bin}
+                              </span>
+                            );
+                          })
+                        ) : (
+                          <span className="rounded-full border border-white/10 bg-black/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+                            Bins not specified
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
