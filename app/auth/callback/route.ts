@@ -2,6 +2,9 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import type { Session } from '@supabase/supabase-js'
+
+type PortalRole = 'staff' | 'client' | 'admin' | null
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -10,8 +13,77 @@ export async function GET(req: Request) {
 
   if (code) {
     const supabase = createRouteHandlerClient({ cookies })
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error) {
+      const sessionUser = data.session?.user ?? data.user ?? null
+      const metadataRole =
+        (sessionUser?.user_metadata?.role as PortalRole | undefined) ?? null
+      const userId = sessionUser?.id ?? null
+
+      if (metadataRole && userId) {
+        await supabase
+          .from('user_profile')
+          .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })
+      }
+    }
   }
 
   return NextResponse.redirect(new URL(next, url.origin))
+}
+
+type SupabaseAuthWebhookPayload = {
+  event?: string
+  session?: Session | null
+}
+
+export async function POST(req: Request) {
+  let payload: SupabaseAuthWebhookPayload
+
+  try {
+    payload = (await req.json()) as SupabaseAuthWebhookPayload
+  } catch (error) {
+    return NextResponse.json({ received: false, error: 'Invalid JSON payload' }, { status: 400 })
+  }
+
+  const { event, session } = payload
+  const supabase = createRouteHandlerClient({ cookies })
+
+  if (event === 'SIGNED_OUT') {
+    await supabase.auth.signOut()
+  } else if (session) {
+    await supabase.auth.setSession(session)
+  }
+
+  const response = NextResponse.json({ received: true })
+  response.headers.set('Cache-Control', 'no-store')
+
+  const origin = req.headers.get('origin')
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+  }
+
+  return response
+}
+
+export async function OPTIONS(req: Request) {
+  const response = new Response(null, { status: 204 })
+
+  const origin = req.headers.get('origin')
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+  }
+
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+
+  const requestedHeaders = req.headers.get('access-control-request-headers')
+  if (requestedHeaders) {
+    response.headers.set('Access-Control-Allow-Headers', requestedHeaders)
+  }
+
+  response.headers.set('Cache-Control', 'no-store')
+
+  return response
 }

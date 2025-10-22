@@ -21,3 +21,6 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.swp
+
+# Patch files
+*.patch

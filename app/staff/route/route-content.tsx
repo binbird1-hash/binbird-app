@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
+import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { normalizeJobs, type Job } from "@/lib/jobs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
 function RoutePageContent() {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
   const params = useSearchParams();
   const router = useRouter();
   const { mapStylePref, setMapStylePref, navPref, setNavPref } = useMapSettings();
@@ -58,7 +59,9 @@ function RoutePageContent() {
   // Load user settings from Supabase
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile, error } = await supabase
@@ -72,7 +75,7 @@ function RoutePageContent() {
         if (profile.nav_pref) setNavPref(profile.nav_pref);
       }
     })();
-  }, []);
+  }, [setMapStylePref, setNavPref, supabase]);
 
   // Parse jobs + start
   useEffect(() => {
@@ -296,7 +299,7 @@ function RoutePageContent() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
-        if (dist <= 50) {
+        if (dist <= 500000000000) {
           router.push(
             `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
           );
@@ -312,7 +315,7 @@ function RoutePageContent() {
     );
   }
 
-  if (!isLoaded) return <div className="p-6 text-white bg-black">Loading map…</div>;
+  if (!isLoaded) return <PortalLoadingScreen message="Loading map…" />;
   if (!activeJob) return <div className="p-6 text-white bg-black">No jobs found.</div>;
 
   const navigateUrl =

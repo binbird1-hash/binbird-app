@@ -2,10 +2,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import BackButton from '@/components/UI/BackButton'
 
 export default function OpsDashboard() {
+  const supabase = useSupabase()
   const [stats, setStats] = useState({ clients: 0, logs: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -22,7 +23,7 @@ export default function OpsDashboard() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [supabase])
 
   if (loading) return <div className="container">Loading…</div>
 

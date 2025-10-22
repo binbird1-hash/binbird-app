@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Job } from "@/lib/jobs";
+import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 export default function SmartJobCard({
   job,
@@ -10,7 +10,7 @@ export default function SmartJobCard({
   job: Job;
   onCompleted: () => void;
 }) {
-  const supabase = createClientComponentClient();
+  const supabase = useSupabase();
 
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -63,7 +63,13 @@ export default function SmartJobCard({
       const propertyNote = typeof job.notes === "string" ? job.notes.trim() : "";
       const combinedNotes = propertyNote ? propertyNote : null;
 
+      if (!job.account_id) {
+        throw new Error("Unable to log completion: missing account identifier for job.");
+      }
+
       const { error: logErr } = await supabase.from("logs").insert({
+        job_id: job.id,
+        account_id: job.account_id,
         client_name: job.client_name ?? null,
         address: job.address,
         task_type: job.job_type,

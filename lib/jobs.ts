@@ -2,6 +2,8 @@ import type { JobRecord } from "./database.types";
 
 export type Job = {
   id: string;
+  account_id: string | null;
+  property_id: string | null;
   address: string;
   lat: number;
   lng: number;
@@ -91,6 +93,8 @@ function normalizeJobType(value: unknown): "put_out" | "bring_in" {
 export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
   return {
     id: normalizeString(record.id),
+    account_id: normalizeOptionalString(record.account_id),
+    property_id: normalizeOptionalString(record.property_id),
     address: normalizeString(record.address),
     lat: normalizeNumber(record.lat),
     lng: normalizeNumber(record.lng),

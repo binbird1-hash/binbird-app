@@ -1,10 +1,5 @@
-// app/auth/sign-in/page.tsx
-export const metadata = {
-  title: "Welcome to BinBird!",
-};
+import { redirect } from "next/navigation";
 
-import SignInClient from "./SignInClient";
-
-export default function Page() {
-  return <SignInClient />;
+export default function AuthSignInRedirectPage() {
+  redirect("/auth/login");
 }

@@ -1,10 +1,11 @@
 'use client'
 import Header from '../UI/Header'
 import Card from '../UI/Card'
-import { Users, Cog, FileText, KeyRound, LogOut } from 'lucide-react'
-import { supabase } from '@/lib/supabaseClient'
+import { Users, Cog, FileText, KeyRound, LogOut, ClipboardList } from 'lucide-react'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export default function AdminDashboard() {
+  const supabase = useSupabase()
   async function signOut() {
     await supabase.auth.signOut()
     window.location.href = '/'
@@ -17,6 +18,7 @@ export default function AdminDashboard() {
         <Card title="Ops Console" icon={Cog} href="/ops" />
         <Card title="Client List" icon={Users} href="/ops/clients" />
         <Card title="Logs & Proofs" icon={FileText} href="/ops/logs" />
+        <Card title="Property Requests" icon={ClipboardList} href="/ops/property-requests" />
         <Card title="Client Tokens" icon={KeyRound} href="/ops/tokens" />
         <Card title="Sign Out" icon={LogOut} onClick={signOut} />
       </div>

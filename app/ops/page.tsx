@@ -9,7 +9,9 @@ export default async function Ops() {
   if (!user) {
     return (
       <div className="container">
-        <p>Please <a href="/auth">sign in</a>.</p>
+        <p>
+          Please <a href="/auth/login">sign in</a>.
+        </p>
       </div>
     )
   }
