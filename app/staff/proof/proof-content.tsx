@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { getLocalISODate } from "@/lib/date";
+import { getOperationalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
@@ -281,7 +281,7 @@ export default function ProofPageContent() {
       if (authError) throw authError;
       if (!user) throw new Error("You must be signed in to submit proof.");
       const now = new Date();
-      const dateStr = getLocalISODate(now);
+      const dateStr = getOperationalISODate({ now });
       const { year, week } = getCustomWeek(now);
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
