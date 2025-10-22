@@ -735,22 +735,24 @@ function RunPageContent() {
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
-          <div className="pointer-events-none absolute top-0 right-0 z-20 p-4 sm:p-6">
-            <div className="pointer-events-auto inline-flex items-center gap-4 rounded-full border border-white/10 bg-black/80 px-4 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur">
+          <div className="pointer-events-none absolute bottom-0 right-0 z-20 p-4 sm:p-6">
+            <div className="pointer-events-auto inline-flex items-center gap-3 rounded-full border border-white/15 bg-gradient-to-r from-black/80 via-black/70 to-black/60 px-5 py-2 text-[13px] font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
               {isRouteSummaryLoading ? (
                 <span className="text-white/70">Calculating route…</span>
               ) : routeSummary ? (
                 <>
-                  <span>
+                  <span className="flex items-center gap-3">
                     {routeSummary.jobCount} job{routeSummary.jobCount === 1 ? "" : "s"}
+                    <span className="h-1 w-1 rounded-full bg-white/40" />
+                    <span>
+                      {routeSummary.distanceKm >= 100
+                        ? routeSummary.distanceKm.toFixed(0)
+                        : routeSummary.distanceKm.toFixed(1)}{' '}
+                      km
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-white/40" />
+                    <span>{formatDuration(routeSummary.travelMinutes)}</span>
                   </span>
-                  <span>
-                    {routeSummary.distanceKm >= 100
-                      ? routeSummary.distanceKm.toFixed(0)
-                      : routeSummary.distanceKm.toFixed(1)}{' '}
-                    km
-                  </span>
-                  <span>{formatDuration(routeSummary.travelMinutes)}</span>
                 </>
               ) : (
                 <span className="text-amber-300">
