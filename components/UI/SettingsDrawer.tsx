@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
-import { CalendarDays, Flag, LogOut, Navigation2, Palette } from "lucide-react";
+import { CalendarDays, Flag, LogOut, Navigation2, Palette, Route } from "lucide-react";
 import clsx from "clsx";
 import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
@@ -331,6 +331,19 @@ export default function SettingsDrawer() {
 
               {/* Navigation & Map Style Buttons */}
               <div className="flex flex-col gap-4">
+                <button
+                  onClick={() => handleNavigate("/staff/run")}
+                  className={clsx(
+                    "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
+                    pathname?.startsWith("/staff/run")
+                      ? "text-[#ff5757]"
+                      : "text-white",
+                    "hover:text-[#ff5757]"
+                  )}
+                >
+                  <Route className="h-4 w-4" />
+                  <span>Plan Run</span>
+                </button>
                 <button
                   onClick={() => handleNavigate("/staff/week")}
                   className={clsx(

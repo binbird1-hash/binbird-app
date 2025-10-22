@@ -7,7 +7,6 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
 import clsx from "clsx";
-import { useRouter } from "next/navigation";
 
 const WEEKDAYS = [
   "Sunday",
@@ -32,7 +31,6 @@ type DayBucket = {
 type LoadState = "idle" | "loading" | "error" | "ready";
 
 function WeeklyJobsContent() {
-  const router = useRouter();
   const supabase = useSupabase();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [state, setState] = useState<LoadState>("idle");
@@ -168,13 +166,6 @@ function WeeklyJobsContent() {
               ? "No jobs left for the rest of this week."
               : `You have ${totalJobs} job${totalJobs === 1 ? "" : "s"} remaining this week.`}
           </p>
-          <button
-            type="button"
-            onClick={() => router.push("/staff/run")}
-            className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
-          >
-            Back to Today’s Run
-          </button>
         </header>
 
         {state === "error" && errorMessage && (
