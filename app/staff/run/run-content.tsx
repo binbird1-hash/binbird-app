@@ -10,12 +10,7 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
-import {
-  clearPlannedRun,
-  readPlannedRun,
-  writePlannedRun,
-  markPlannedRunStarted,
-} from "@/lib/planned-run";
+import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -382,43 +377,53 @@ function RunPageContent() {
     if (place.formatted_address) setEndAddress(place.formatted_address);
   };
 
-  const redirectExistingPlan = useCallback(() => {
-    const stored = readPlannedRun();
-    if (stored) {
-      if (!stored.hasStarted) {
-        markPlannedRunStarted();
+  const redirectExistingPlan = useCallback(
+    (options?: { resetNextIdx?: boolean }) => {
+      const stored = readPlannedRun();
+      if (stored) {
+        const planToPersist = {
+          ...stored,
+          hasStarted: true,
+          nextIdx: options?.resetNextIdx ? 0 : stored.nextIdx ?? 0,
+        };
+
+        if (!stored.hasStarted || options?.resetNextIdx) {
+          writePlannedRun(planToPersist);
+        }
+
+        hasRedirectedToRoute.current = true;
+        redirectToRoute(planToPersist.jobs, planToPersist.start, planToPersist.end);
+        return true;
       }
-      hasRedirectedToRoute.current = true;
-      redirectToRoute(stored.jobs, stored.start, stored.end);
-      return true;
-    }
 
-    if (start && end && ordered.length) {
-      const normalizedStartAddress = startAddress.trim().length
-        ? startAddress.trim()
-        : null;
-      const normalizedEndAddress = endAddress.trim().length
-        ? endAddress.trim()
-        : null;
+      if (start && end && ordered.length) {
+        const normalizedStartAddress = startAddress.trim().length
+          ? startAddress.trim()
+          : null;
+        const normalizedEndAddress = endAddress.trim().length
+          ? endAddress.trim()
+          : null;
 
-      writePlannedRun({
-        start,
-        end,
-        jobs: ordered,
-        startAddress: normalizedStartAddress,
-        endAddress: normalizedEndAddress,
-        createdAt: new Date().toISOString(),
-        hasStarted: true,
-        nextIdx: 0,
-      });
+        writePlannedRun({
+          start,
+          end,
+          jobs: ordered,
+          startAddress: normalizedStartAddress,
+          endAddress: normalizedEndAddress,
+          createdAt: new Date().toISOString(),
+          hasStarted: true,
+          nextIdx: 0,
+        });
 
-      hasRedirectedToRoute.current = true;
-      redirectToRoute(ordered, start, end);
-      return true;
-    }
+        hasRedirectedToRoute.current = true;
+        redirectToRoute(ordered, start, end);
+        return true;
+      }
 
-    return false;
-  }, [end, endAddress, ordered, redirectToRoute, start, startAddress]);
+      return false;
+    },
+    [end, endAddress, ordered, redirectToRoute, start, startAddress]
+  );
 
   const handleStartRun = useCallback(() => {
     console.log("Starting run…");
@@ -440,7 +445,7 @@ function RunPageContent() {
       completedJobs: 0,
     });
 
-    redirectExistingPlan();
+    redirectExistingPlan({ resetNextIdx: true });
   }, [jobs.length, redirectExistingPlan]);
 
   const handleReset = useCallback(() => {
