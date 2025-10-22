@@ -140,6 +140,32 @@ function RunPageContent() {
   } | null>(null);
   const [isRouteSummaryLoading, setIsRouteSummaryLoading] = useState(false);
   const [routeSummaryError, setRouteSummaryError] = useState<string | null>(null);
+  const controlsRef = useRef<HTMLDivElement | null>(null);
+  const [controlsHeight, setControlsHeight] = useState(0);
+
+  useEffect(() => {
+    const element = controlsRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setControlsHeight(element.getBoundingClientRect().height);
+    };
+
+    updateHeight();
+
+    if (typeof window !== "undefined" && "ResizeObserver" in window) {
+      const observer = new ResizeObserver(() => updateHeight());
+      observer.observe(element);
+      return () => {
+        observer.disconnect();
+      };
+    }
+
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, []);
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
@@ -735,7 +761,10 @@ function RunPageContent() {
         </GoogleMap>
 
         {(routeSummary || isRouteSummaryLoading || routeSummaryError) && (
-          <div className="pointer-events-none absolute bottom-0 right-0 z-20 p-4 sm:p-6">
+          <div
+            className="pointer-events-none absolute right-0 z-20 p-4 sm:p-6"
+            style={{ bottom: controlsHeight + 24 }}
+          >
             <div className="pointer-events-auto inline-flex items-center gap-3 rounded-full border border-white/15 bg-gradient-to-r from-black/80 via-black/70 to-black/60 px-5 py-2 text-[13px] font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
               {isRouteSummaryLoading ? (
                 <span className="text-white/70">Calculating route…</span>
@@ -765,7 +794,7 @@ function RunPageContent() {
 
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
-          <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
+          <div ref={controlsRef} className="bg-black w-full flex flex-col gap-3 p-6 relative">
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }} />
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
