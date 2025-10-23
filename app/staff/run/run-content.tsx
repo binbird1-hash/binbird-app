@@ -13,6 +13,7 @@ import type { JobRecord } from "@/lib/database.types";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { getOperationalDayIndex, getOperationalDayName } from "@/lib/date";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -206,17 +207,9 @@ function RunPageContent() {
         // Hardcoded weekday mapping
         const overrideDay = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
         const now = new Date();
-        const hour = now.getHours();
 
-        let effectiveDay = now.toLocaleString("en-AU", { weekday: "long" });
-
-        if (hour < 5) {
-          const yesterday = new Date(now);
-          yesterday.setDate(now.getDate() - 1);
-          effectiveDay = yesterday.toLocaleString("en-AU", { weekday: "long" });
-        }
-
-        const todayName = overrideDay || effectiveDay;
+        const todayName = overrideDay || getOperationalDayName(now);
+        const todayIndex = overrideDay ? now.getDay() : getOperationalDayIndex(now);
 
         // ✅ log all main variables in one place
         console.log("Debug snapshot:", {
@@ -224,7 +217,7 @@ function RunPageContent() {
           assigneeId,
           email: user.email,
           todayName,
-          todayIndex: now.getDay(),
+          todayIndex,
           nowISO: now.toISOString(),
         });
 

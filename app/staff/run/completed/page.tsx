@@ -11,6 +11,11 @@ import {
 } from "@/lib/run-session";
 import { clearPlannedRun } from "@/lib/planned-run";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import {
+  getOperationalDayIndex,
+  getOperationalDayName,
+  getOperationalISODate,
+} from "@/lib/date";
 
 const WEEKDAYS = [
   "Sunday",
@@ -123,27 +128,12 @@ function CompletedRunContent() {
   const todayName = useMemo(() => {
     const override = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE;
     if (override) return override;
-
-    const now = new Date();
-    const hour = now.getHours();
-
-    let effectiveDay = now.toLocaleString("en-AU", { weekday: "long" });
-
-    if (hour < 5) {
-      const yesterday = new Date(now);
-      yesterday.setDate(now.getDate() - 1);
-      effectiveDay = yesterday.toLocaleString("en-AU", { weekday: "long" });
-    }
-
-    return effectiveDay;
+    return getOperationalDayName();
   }, []);
 
   const todayIndex = WEEKDAYS.indexOf(todayName);
 
-  const todayIso = useMemo(() => {
-    const now = new Date();
-    return now.toISOString().slice(0, 10);
-  }, []);
+  const todayIso = useMemo(() => getOperationalISODate(), []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -234,8 +224,7 @@ function CompletedRunContent() {
           jobsByDay.set(job.day, list);
         });
 
-        const now = new Date();
-        const fallbackIndex = now.getDay();
+        const fallbackIndex = getOperationalDayIndex();
         const startIndex = todayIndex >= 0 ? todayIndex : fallbackIndex;
 
         let found: NextAssignment | null = null;

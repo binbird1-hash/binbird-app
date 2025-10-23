@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import type { Job } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { getOperationalISODate } from "@/lib/date";
 
 export default function SmartJobCard({
   job,
@@ -35,7 +36,7 @@ export default function SmartJobCard({
       if (!user) throw new Error("Not signed in");
 
       const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10);
+      const dateStr = getOperationalISODate(now);
       const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
 
       const ext = file.name.split(".").pop() || "jpg";
