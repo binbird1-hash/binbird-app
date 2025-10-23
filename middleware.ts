@@ -47,7 +47,7 @@ export async function middleware(req: NextRequest) {
   // Staff & Ops routes → require login
   const staffAuthPaths = new Set(['/auth/login', '/auth/sign-up', '/staff/login', '/staff/sign-up'])
 
-  if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops'))) {
+  if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops') || pathname.startsWith('/admin'))) {
     const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
 
     if (!isStaffAuthRoute) {
@@ -68,7 +68,10 @@ export async function middleware(req: NextRequest) {
     }
 
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
-      if (role === 'staff' || role === 'admin') {
+      if (role === 'admin') {
+        return NextResponse.redirect(new URL('/admin', req.url))
+      }
+      if (role === 'staff') {
         return NextResponse.redirect(new URL('/staff/route', req.url))
       }
 
@@ -78,13 +81,20 @@ export async function middleware(req: NextRequest) {
     }
 
     if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
-      const isStaffRole = role === 'staff' || role === 'admin'
-      const destination = isStaffRole ? '/staff/run' : '/client/dashboard'
+      const destination =
+        role === 'admin'
+          ? '/admin'
+          : role === 'staff'
+            ? '/staff/run'
+            : '/client/dashboard'
       return NextResponse.redirect(new URL(destination, req.url))
     }
 
     if (role) {
       if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+      if (pathname.startsWith('/admin') && role !== 'admin') {
         return NextResponse.redirect(new URL('/', req.url))
       }
       if (pathname.startsWith('/ops') && role !== 'admin') {
