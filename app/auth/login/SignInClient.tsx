@@ -10,6 +10,20 @@ const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
 
 type PortalRole = "staff" | "client" | "admin" | null;
 
+function normalizeRole(role: unknown): PortalRole {
+  if (typeof role !== "string") {
+    return null;
+  }
+
+  const normalized = role.trim().toLowerCase();
+
+  if (normalized === "admin" || normalized === "staff" || normalized === "client") {
+    return normalized;
+  }
+
+  return null;
+}
+
 function resolveDestination(role: PortalRole) {
   if (role === "admin") {
     return "/admin";
@@ -63,8 +77,7 @@ export default function SignInClient() {
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole =
-        (signInData.user?.user_metadata?.role as PortalRole) ?? null;
+      const metadataRole = normalizeRole(signInData.user?.user_metadata?.role);
 
       if (!userId) {
         setError("We couldn't verify your account. Please try again.");
@@ -84,7 +97,9 @@ export default function SignInClient() {
         return;
       }
 
-      if (metadataRole && profile?.role !== metadataRole) {
+      const profileRole = normalizeRole(profile?.role);
+
+      if (metadataRole && metadataRole !== profileRole) {
         await supabase
           .from("user_profile")
           .upsert(
@@ -93,7 +108,7 @@ export default function SignInClient() {
           );
       }
 
-      const resolvedRole = metadataRole ?? (profile?.role as PortalRole);
+      const resolvedRole = metadataRole ?? profileRole;
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
