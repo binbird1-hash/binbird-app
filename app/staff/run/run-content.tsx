@@ -72,6 +72,9 @@ function RunPageContent() {
   const [jobVisibilityRestricted, setJobVisibilityRestricted] = useState(() =>
     isJobVisibilityRestricted()
   );
+  const [blackoutNoticeOpen, setBlackoutNoticeOpen] = useState(() =>
+    isJobVisibilityRestricted()
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -82,6 +85,14 @@ function RunPageContent() {
 
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (jobVisibilityRestricted) {
+      setBlackoutNoticeOpen(true);
+    } else {
+      setBlackoutNoticeOpen(false);
+    }
+  }, [jobVisibilityRestricted]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -836,12 +847,6 @@ function RunPageContent() {
                 disabled={isPlanned || plannerLocked}
               />
             </Autocomplete>
-            {jobVisibilityRestricted && (
-              <p className="rounded-lg border border-amber-500/40 bg-amber-950/60 px-3 py-2 text-sm text-amber-200">
-                Jobs will appear here after 2&nbsp;pm. Check the weekly schedule to prepare in advance.
-              </p>
-            )}
-
             {locationWarning && (
               <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2">
                 {locationWarning}
@@ -919,7 +924,21 @@ function RunPageContent() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      {blackoutNoticeOpen && jobVisibilityRestricted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 text-center text-black shadow-xl">
+            <p className="mb-2">Jobs will appear after 2&nbsp;pm.</p>
+            <button
+              onClick={() => setBlackoutNoticeOpen(false)}
+              className="mt-4 w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
