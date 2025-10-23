@@ -1,4 +1,4 @@
-export const OPERATIONAL_DAY_ROLLOVER_HOUR = 4;
+export const OPERATIONAL_DAY_ROLLOVER_HOUR = 3;
 
 export const WEEKDAYS = [
   "Sunday",
@@ -11,7 +11,7 @@ export const WEEKDAYS = [
 ];
 
 export type OperationalDayInfo = {
-  /** Date object representing the operational day (with 4am rollover). */
+  /** Date object representing the operational day (with 3am rollover). */
   date: Date;
   /** ISO formatted date string for the operational day (YYYY-MM-DD). */
   isoDate: string;
