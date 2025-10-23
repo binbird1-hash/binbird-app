@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getLocalISODate } from "@/lib/date";
+import { getOperationalISODate } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
@@ -350,7 +350,7 @@ export default function ProofPageContent() {
         return;
       }
       const now = new Date();
-      const dateStr = getLocalISODate(now);
+      const dateStr = getOperationalISODate(now);
       const { year, week } = getCustomWeek(now);
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");

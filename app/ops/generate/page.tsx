@@ -2,6 +2,7 @@
 import BackButton from '@/components/UI/BackButton'
 import { supabaseServer } from '@/lib/supabaseServer'
 import { redirect } from 'next/navigation'
+import { getOperationalDayIndex, getOperationalDayName } from '@/lib/date'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
@@ -124,13 +125,13 @@ const buildBinsSummary = (row: ClientListRow): string | null => {
 async function generateJobs() {
   'use server'
   const sb = supabaseServer()
-  const today = new Date()
-
   const override = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE ?? null
   const overrideIndex = parseDayIndex(override)
 
-  const dayIndex = overrideIndex ?? today.getDay()
-  const dayName = DAY_NAMES[dayIndex] ?? DAY_NAMES[today.getDay()]
+  const operationalIndex = getOperationalDayIndex()
+  const dayIndex = overrideIndex ?? operationalIndex
+  const dayName =
+    overrideIndex !== null ? DAY_NAMES[dayIndex] : getOperationalDayName()
 
   const { data: clients, error: clientError } = await sb
     .from('client_list')
