@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import {
+  normalizePortalRole,
+  type PortalRoleOrNull,
+} from "@/lib/portal-role";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
 
-type PortalRole = "staff" | "client" | "admin" | null;
-
-function resolveDestination(role: PortalRole) {
+function resolveDestination(role: PortalRoleOrNull) {
   if (role === "admin") {
     return "/admin";
   }
@@ -58,17 +60,16 @@ export default function SignInClient() {
 
       if (signInError) {
         setError(signInError.message);
-        setLoading(false);
         return;
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole =
-        (signInData.user?.user_metadata?.role as PortalRole) ?? null;
+      const metadataRole = normalizePortalRole(
+        signInData.user?.user_metadata?.role,
+      );
 
       if (!userId) {
         setError("We couldn't verify your account. Please try again.");
-        setLoading(false);
         return;
       }
 
@@ -80,20 +81,33 @@ export default function SignInClient() {
 
       if (profileError) {
         setError("We couldn't confirm your account role. Please try again.");
-        setLoading(false);
         return;
       }
 
-      if (metadataRole && profile?.role !== metadataRole) {
+      const normalizedProfileRole = normalizePortalRole(profile?.role);
+
+      if (metadataRole && normalizedProfileRole !== metadataRole) {
         await supabase
           .from("user_profile")
           .upsert(
             { user_id: userId, role: metadataRole },
             { onConflict: "user_id" },
           );
+      } else if (
+        !metadataRole &&
+        profile?.role &&
+        normalizedProfileRole &&
+        profile.role !== normalizedProfileRole
+      ) {
+        await supabase
+          .from("user_profile")
+          .upsert(
+            { user_id: userId, role: normalizedProfileRole },
+            { onConflict: "user_id" },
+          );
       }
 
-      const resolvedRole = metadataRole ?? (profile?.role as PortalRole);
+      const resolvedRole = metadataRole ?? normalizedProfileRole;
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
@@ -109,7 +123,6 @@ export default function SignInClient() {
           "Your account doesn't have a role yet. Please contact support.",
         );
         await supabase.auth.signOut();
-        setLoading(false);
         return;
       }
 
@@ -120,6 +133,7 @@ export default function SignInClient() {
           ? unknownError.message
           : "Something went wrong. Please try again.";
       setError(message);
+    } finally {
       setLoading(false);
     }
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { normalizePortalRole } from '@/lib/portal-role'
 import GuestDashboard from './GuestDashboard'
 import StaffDashboard from './StaffDashboard'
 import AdminDashboard from './AdminDashboard'
@@ -26,7 +27,8 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      setRole(profile?.role || 'staff')
+      const normalizedRole = normalizePortalRole(profile?.role)
+      setRole(normalizedRole ?? 'staff')
       setLoading(false)
     }
     load()
