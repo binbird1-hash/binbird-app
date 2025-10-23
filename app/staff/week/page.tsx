@@ -37,6 +37,16 @@ function getParsedBins(bins: Job["bins"]) {
     .filter(Boolean);
 }
 
+function getBinTextClass(bin: string) {
+  const normalized = bin.toLowerCase();
+
+  if (normalized.includes("red")) return "text-red-400";
+  if (normalized.includes("yellow")) return "text-amber-300";
+  if (normalized.includes("green")) return "text-emerald-400";
+
+  return "text-white/70";
+}
+
 function WeeklyJobsContent() {
   const supabase = useSupabase();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -216,7 +226,17 @@ function WeeklyJobsContent() {
                         </span>
                         {parsedBins.length ? (
                           <span className="text-xs uppercase tracking-wide text-white/70">
-                            {parsedBins.join(", ")}
+                            {parsedBins.map((bin, index) => {
+                              const binClass = getBinTextClass(bin);
+                              return (
+                                <span key={`${job.id}-bin-${index}`} className={binClass}>
+                                  {index > 0 && (
+                                    <span className="text-white/40">, </span>
+                                  )}
+                                  {bin}
+                                </span>
+                              );
+                            })}
                           </span>
                         ) : (
                           <span className="text-xs uppercase tracking-wide text-white/50">
