@@ -4,7 +4,12 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 import { resolvePortalScope } from '@/lib/clientPortalAccess'
-import { normalizePortalRole, type PortalRole } from '@/lib/roles'
+import {
+  normalizePortalRole,
+  resolveHighestPriorityRole,
+  resolveRoleFromMetadata,
+  type PortalRole,
+} from '@/lib/roles'
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -63,14 +68,16 @@ export async function middleware(req: NextRequest) {
   let role: PortalRole = null
 
   if (session) {
+    let rpcRole: PortalRole = null
     const { data, error } = await supabase.rpc('get_my_role')
     if (!error) {
-      role = normalizePortalRole(data)
+      rpcRole = normalizePortalRole(data)
     }
 
-    if (!role) {
-      role = normalizePortalRole(session.user?.user_metadata?.role)
-    }
+    const appMetadataRole = resolveRoleFromMetadata(session.user?.app_metadata)
+    const metadataRole = resolveRoleFromMetadata(session.user?.user_metadata)
+
+    role = resolveHighestPriorityRole(rpcRole, appMetadataRole, metadataRole)
 
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
       if (role === 'admin') {

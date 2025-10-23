@@ -3,7 +3,11 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
-import { normalizePortalRole, resolveHighestPriorityRole } from '@/lib/roles'
+import {
+  normalizePortalRole,
+  resolveHighestPriorityRole,
+  resolveRoleFromMetadata,
+} from '@/lib/roles'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -16,7 +20,12 @@ export async function GET(req: Request) {
 
     if (!error) {
       const sessionUser = data.session?.user ?? data.user ?? null
-      const metadataRole = normalizePortalRole(sessionUser?.user_metadata?.role)
+      const appMetadataRole = resolveRoleFromMetadata(
+        sessionUser?.app_metadata,
+      )
+      const metadataRole = resolveRoleFromMetadata(
+        sessionUser?.user_metadata,
+      )
       const userId = sessionUser?.id ?? null
 
       if (userId) {
@@ -27,7 +36,11 @@ export async function GET(req: Request) {
           .maybeSingle()
 
         const profileRole = normalizePortalRole(profile?.role)
-        const resolvedRole = resolveHighestPriorityRole(metadataRole, profileRole)
+        const resolvedRole = resolveHighestPriorityRole(
+          appMetadataRole,
+          metadataRole,
+          profileRole,
+        )
 
         if (resolvedRole) {
           if (profileRole !== resolvedRole) {

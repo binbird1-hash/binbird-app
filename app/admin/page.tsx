@@ -2,7 +2,11 @@
 import { redirect } from 'next/navigation'
 import AdminDashboard from '@/components/Dashboard/AdminDashboard'
 import { supabaseServer } from '@/lib/supabaseServer'
-import { normalizePortalRole } from '@/lib/roles'
+import {
+  normalizePortalRole,
+  resolveHighestPriorityRole,
+  resolveRoleFromMetadata,
+} from '@/lib/roles'
 
 export const metadata = {
   title: 'Admin Console',
@@ -18,7 +22,13 @@ export default async function AdminPage() {
     redirect('/auth/login')
   }
 
-  const metadataRole = normalizePortalRole(user.user_metadata?.role)
+  const appMetadataRole = resolveRoleFromMetadata(user.app_metadata)
+
+  if (appMetadataRole === 'admin') {
+    return <AdminDashboard />
+  }
+
+  const metadataRole = resolveRoleFromMetadata(user.user_metadata)
 
   if (metadataRole === 'admin') {
     return <AdminDashboard />
@@ -36,8 +46,13 @@ export default async function AdminPage() {
   }
 
   const profileRole = normalizePortalRole(profile?.role)
+  const resolvedRole = resolveHighestPriorityRole(
+    appMetadataRole,
+    metadataRole,
+    profileRole,
+  )
 
-  if (profileRole !== 'admin') {
+  if (resolvedRole !== 'admin') {
     redirect('/')
   }
 

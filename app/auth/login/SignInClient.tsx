@@ -8,6 +8,7 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
   normalizePortalRole,
   resolveHighestPriorityRole,
+  resolveRoleFromMetadata,
   type PortalRole,
 } from "@/lib/roles";
 
@@ -66,8 +67,11 @@ export default function SignInClient() {
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole = normalizePortalRole(
-        signInData.user?.user_metadata?.role,
+      const appMetadataRole = resolveRoleFromMetadata(
+        signInData.user?.app_metadata,
+      );
+      const metadataRole = resolveRoleFromMetadata(
+        signInData.user?.user_metadata,
       );
 
       if (!userId) {
@@ -91,6 +95,7 @@ export default function SignInClient() {
       const profileRole = normalizePortalRole(profile?.role);
 
       const resolvedRole = resolveHighestPriorityRole(
+        appMetadataRole,
         metadataRole,
         profileRole,
       );
@@ -140,6 +145,7 @@ export default function SignInClient() {
         return;
       }
 
+      setLoading(false);
       router.push(destination);
     } catch (unknownError) {
       const message =
