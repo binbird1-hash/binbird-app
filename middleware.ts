@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 import { resolvePortalScope } from '@/lib/clientPortalAccess'
+import { normalizePortalRole, type PortalRole } from '@/lib/roles'
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -59,12 +60,16 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  let role: string | null = null
+  let role: PortalRole = null
 
   if (session) {
     const { data, error } = await supabase.rpc('get_my_role')
     if (!error) {
-      role = data
+      role = normalizePortalRole(data)
+    }
+
+    if (!role) {
+      role = normalizePortalRole(session.user?.user_metadata?.role)
     }
 
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
@@ -80,7 +85,7 @@ export async function middleware(req: NextRequest) {
       return redirect
     }
 
-    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
+    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname) && role) {
       const destination =
         role === 'admin'
           ? '/admin'

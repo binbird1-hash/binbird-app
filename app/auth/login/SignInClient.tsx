@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import {
+  normalizePortalRole,
+  type PortalRole,
+} from "@/lib/roles";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
-
-type PortalRole = "staff" | "client" | "admin" | null;
 
 function resolveDestination(role: PortalRole) {
   if (role === "admin") {
@@ -63,8 +65,9 @@ export default function SignInClient() {
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole =
-        (signInData.user?.user_metadata?.role as PortalRole) ?? null;
+      const metadataRole = normalizePortalRole(
+        signInData.user?.user_metadata?.role,
+      );
 
       if (!userId) {
         setError("We couldn't verify your account. Please try again.");
@@ -84,7 +87,9 @@ export default function SignInClient() {
         return;
       }
 
-      if (metadataRole && profile?.role !== metadataRole) {
+      const profileRole = normalizePortalRole(profile?.role);
+
+      if (metadataRole && profileRole !== metadataRole) {
         await supabase
           .from("user_profile")
           .upsert(
@@ -93,7 +98,7 @@ export default function SignInClient() {
           );
       }
 
-      const resolvedRole = metadataRole ?? (profile?.role as PortalRole);
+      const resolvedRole = metadataRole ?? profileRole;
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
