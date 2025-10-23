@@ -97,18 +97,33 @@ export default function SignInClient() {
         return;
       }
 
-      const profileRole = normalizeRole(profile?.role);
-
-      if (metadataRole && metadataRole !== profileRole) {
-        await supabase
-          .from("user_profile")
-          .upsert(
-            { user_id: userId, role: metadataRole },
-            { onConflict: "user_id" },
-          );
-      }
+      const profileRoleRaw = typeof profile?.role === "string" ? profile.role : null;
+      const profileRole = normalizeRole(profileRoleRaw);
 
       const resolvedRole = metadataRole ?? profileRole;
+
+      if (resolvedRole) {
+        const shouldPersistMetadataRole =
+          metadataRole && profileRoleRaw !== metadataRole;
+        const shouldNormalizeProfileRole =
+          !metadataRole && profileRole && profileRoleRaw !== profileRole;
+
+        if (shouldPersistMetadataRole || shouldNormalizeProfileRole) {
+          const { error: upsertError } = await supabase
+            .from("user_profile")
+            .upsert(
+              { user_id: userId, role: resolvedRole },
+              { onConflict: "user_id" },
+            );
+
+          if (upsertError) {
+            setError("We couldn't update your account role. Please try again.");
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
