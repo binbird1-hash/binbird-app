@@ -11,7 +11,11 @@ const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
 type PortalRole = "staff" | "client" | "admin" | null;
 
 function resolveDestination(role: PortalRole) {
-  if (role === "staff" || role === "admin") {
+  if (role === "admin") {
+    return "/admin";
+  }
+
+  if (role === "staff") {
     return "/staff/run";
   }
 
