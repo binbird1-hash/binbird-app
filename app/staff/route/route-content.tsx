@@ -10,6 +10,7 @@ import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSet
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
+import { isJobVisibilityRestricted } from "@/lib/date";
 
 function RoutePageContent() {
   const supabase = useSupabase();
@@ -79,6 +80,14 @@ function RoutePageContent() {
 
   // Parse jobs + start
   useEffect(() => {
+    if (isJobVisibilityRestricted()) {
+      setHasStoredPlan(false);
+      setLockNavigation(false);
+      setJobs([]);
+      setStart(null);
+      return;
+    }
+
     if (typeof window !== "undefined") {
       const stored = readPlannedRun();
       if (stored) {

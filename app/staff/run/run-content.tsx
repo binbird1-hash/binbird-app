@@ -13,7 +13,11 @@ import type { JobRecord } from "@/lib/database.types";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
-import { getOperationalDayIndex, getOperationalDayName } from "@/lib/date";
+import {
+  getOperationalDayIndex,
+  getOperationalDayName,
+  isJobVisibilityRestricted,
+} from "@/lib/date";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -65,7 +69,30 @@ function RunPageContent() {
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
   const hasRedirectedToRoute = useRef(false);
-  const hasRedirectedToWeekly = useRef(false);
+  const [jobVisibilityRestricted, setJobVisibilityRestricted] = useState(() =>
+    isJobVisibilityRestricted()
+  );
+  const [blackoutNoticeOpen, setBlackoutNoticeOpen] = useState(() =>
+    isJobVisibilityRestricted()
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const interval = window.setInterval(() => {
+      setJobVisibilityRestricted(isJobVisibilityRestricted());
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (jobVisibilityRestricted) {
+      setBlackoutNoticeOpen(true);
+    } else {
+      setBlackoutNoticeOpen(false);
+    }
+  }, [jobVisibilityRestricted]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -140,17 +167,6 @@ function RunPageContent() {
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
-  useEffect(() => {
-    if (!loading && jobs.length === 0) {
-      if (!hasRedirectedToWeekly.current) {
-        hasRedirectedToWeekly.current = true;
-        router.replace("/staff/week");
-      }
-    } else if (jobs.length > 0) {
-      hasRedirectedToWeekly.current = false;
-    }
-  }, [jobs.length, loading, router]);
-
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: LIBRARIES,
@@ -158,6 +174,20 @@ function RunPageContent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    if (jobVisibilityRestricted) {
+      hasRedirectedToRoute.current = false;
+      setPlannerLocked(false);
+      setIsPlanned(false);
+      setJobs([]);
+      setOrdered([]);
+      setRoutePath([]);
+      setStart(null);
+      setEnd(null);
+      setStartAddress("");
+      setEndAddress("");
+      return;
+    }
 
     const stored = readPlannedRun();
     if (stored) {
@@ -181,7 +211,7 @@ function RunPageContent() {
 
     hasRedirectedToRoute.current = false;
     setPlannerLocked(false);
-  }, [redirectToRoute]);
+  }, [jobVisibilityRestricted, redirectToRoute]);
 
   useEffect(() => {
     if (!startAuto) return;
@@ -199,6 +229,12 @@ function RunPageContent() {
       console.log("=== FETCH JOBS START ===");
 
       try {
+        if (jobVisibilityRestricted) {
+          console.log("Job visibility restricted. Skipping job fetch.");
+          setJobs([]);
+          return;
+        }
+
         const { data: { user }, error: userErr } = await supabase.auth.getUser();
         
         // ✅ log raw
@@ -276,7 +312,7 @@ function RunPageContent() {
         setLoading(false);
       }
     })();
-  }, [supabase]);
+  }, [jobVisibilityRestricted, supabase]);
 
 
   // Fit bounds helper
@@ -849,7 +885,14 @@ function RunPageContent() {
               )}
             </div>
             <div className="mt-4">
-              {jobs.length === 0 ? (
+              {jobVisibilityRestricted ? (
+                <button
+                  className="w-full cursor-not-allowed rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white opacity-70"
+                  disabled
+                >
+                  Jobs available after 2&nbsp;pm
+                </button>
+              ) : jobs.length === 0 ? (
                 <button
                   className="w-full cursor-not-allowed rounded-lg bg-[#ff5757] px-4 py-2 font-semibold opacity-60"
                   disabled
@@ -881,7 +924,21 @@ function RunPageContent() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      {blackoutNoticeOpen && jobVisibilityRestricted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 text-center text-black shadow-xl">
+            <p className="mb-2">Jobs will appear after 2&nbsp;pm.</p>
+            <button
+              onClick={() => setBlackoutNoticeOpen(false)}
+              className="mt-4 w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

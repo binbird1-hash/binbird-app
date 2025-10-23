@@ -1,5 +1,6 @@
 import type { Job } from "./jobs";
 import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
+import { isJobVisibilityRestricted } from "./date";
 
 export type PlannedRunLocation = { lat: number; lng: number };
 
@@ -170,6 +171,9 @@ export function readPlannedRun(): PlannedRunPayload | null {
 
     const parsed = parsePlannedRun(raw);
     if (parsed) {
+      if (isJobVisibilityRestricted()) {
+        return null;
+      }
       if (index > 0) {
         writePlannedRun(parsed);
       }
