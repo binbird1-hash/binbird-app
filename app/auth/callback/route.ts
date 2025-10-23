@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
-import { normalizePortalRole } from '@/lib/roles'
+import { normalizePortalRole, resolveHighestPriorityRole } from '@/lib/roles'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -19,10 +19,33 @@ export async function GET(req: Request) {
       const metadataRole = normalizePortalRole(sessionUser?.user_metadata?.role)
       const userId = sessionUser?.id ?? null
 
-      if (metadataRole && userId) {
-        await supabase
+      if (userId) {
+        const { data: profile } = await supabase
           .from('user_profile')
-          .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        const profileRole = normalizePortalRole(profile?.role)
+        const resolvedRole = resolveHighestPriorityRole(metadataRole, profileRole)
+
+        if (resolvedRole) {
+          if (profileRole !== resolvedRole) {
+            await supabase
+              .from('user_profile')
+              .upsert({ user_id: userId, role: resolvedRole }, { onConflict: 'user_id' })
+          }
+
+          if (metadataRole !== resolvedRole && sessionUser) {
+            try {
+              await supabase.auth.updateUser({
+                data: { ...sessionUser.user_metadata, role: resolvedRole },
+              })
+            } catch (metadataSyncError) {
+              console.error('Failed to update auth metadata role', metadataSyncError)
+            }
+          }
+        }
       }
     }
   }

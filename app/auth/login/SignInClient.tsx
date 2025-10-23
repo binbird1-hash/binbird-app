@@ -7,6 +7,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
   normalizePortalRole,
+  resolveHighestPriorityRole,
   type PortalRole,
 } from "@/lib/roles";
 
@@ -89,16 +90,37 @@ export default function SignInClient() {
 
       const profileRole = normalizePortalRole(profile?.role);
 
-      if (metadataRole && profileRole !== metadataRole) {
-        await supabase
-          .from("user_profile")
-          .upsert(
-            { user_id: userId, role: metadataRole },
-            { onConflict: "user_id" },
-          );
-      }
+      const resolvedRole = resolveHighestPriorityRole(
+        metadataRole,
+        profileRole,
+      );
 
-      const resolvedRole = metadataRole ?? profileRole;
+      if (resolvedRole) {
+        if (profileRole !== resolvedRole) {
+          await supabase
+            .from("user_profile")
+            .upsert(
+              { user_id: userId, role: resolvedRole },
+              { onConflict: "user_id" },
+            );
+        }
+
+        if (signInData.user && metadataRole !== resolvedRole) {
+          const nextMetadata = {
+            ...signInData.user.user_metadata,
+            role: resolvedRole,
+          };
+
+          try {
+            await supabase.auth.updateUser({ data: nextMetadata });
+          } catch (metadataSyncError) {
+            console.error(
+              "Failed to update auth metadata role",
+              metadataSyncError,
+            );
+          }
+        }
+      }
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
