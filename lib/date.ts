@@ -1,6 +1,6 @@
-const OPERATIONAL_DAY_ROLLOVER_HOUR = 6;
-const JOB_VISIBILITY_BLOCK_START_HOUR = 6;
-const JOB_VISIBILITY_BLOCK_END_HOUR = 14;
+const OPERATIONAL_DAY_ROLLOVER_HOUR: number = 6;
+const JOB_VISIBILITY_BLOCK_START_HOUR: number = 6;
+const JOB_VISIBILITY_BLOCK_END_HOUR: number = 14;
 
 export function getLocalISODate(date: Date = new Date()): string {
   const year = date.getFullYear();
