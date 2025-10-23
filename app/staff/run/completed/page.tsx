@@ -12,6 +12,7 @@ import {
 import { clearPlannedRun } from "@/lib/planned-run";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
+  getOperationalDate,
   getOperationalDayIndex,
   getOperationalDayName,
   getOperationalISODate,
@@ -149,6 +150,7 @@ function CompletedRunContent() {
 
   useEffect(() => {
     let isActive = true;
+    const now = getOperationalDate();
 
     async function loadNextAssignment() {
       try {
