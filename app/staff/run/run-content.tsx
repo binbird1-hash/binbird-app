@@ -13,7 +13,11 @@ import type { JobRecord } from "@/lib/database.types";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
-import { getOperationalDayIndex, getOperationalDayName } from "@/lib/date";
+import {
+  getOperationalDayIndex,
+  getOperationalDayName,
+  isJobVisibilityRestricted,
+} from "@/lib/date";
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -159,6 +163,20 @@ function RunPageContent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    if (isJobVisibilityRestricted()) {
+      hasRedirectedToRoute.current = false;
+      setPlannerLocked(false);
+      setIsPlanned(false);
+      setJobs([]);
+      setOrdered([]);
+      setRoutePath([]);
+      setStart(null);
+      setEnd(null);
+      setStartAddress("");
+      setEndAddress("");
+      return;
+    }
+
     const stored = readPlannedRun();
     if (stored) {
       setPlannerLocked(true);
@@ -199,6 +217,12 @@ function RunPageContent() {
       console.log("=== FETCH JOBS START ===");
 
       try {
+        if (isJobVisibilityRestricted()) {
+          console.log("Job visibility restricted. Skipping job fetch.");
+          setJobs([]);
+          return;
+        }
+
         const { data: { user }, error: userErr } = await supabase.auth.getUser();
         
         // ✅ log raw

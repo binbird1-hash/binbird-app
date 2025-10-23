@@ -1,4 +1,6 @@
 const OPERATIONAL_DAY_ROLLOVER_HOUR = 6;
+const JOB_VISIBILITY_BLOCK_START_HOUR = 6;
+const JOB_VISIBILITY_BLOCK_END_HOUR = 14;
 
 export function getLocalISODate(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -28,4 +30,24 @@ export function getOperationalDayName(
 
 export function getOperationalISODate(now: Date = new Date()): string {
   return getLocalISODate(getOperationalDate(now));
+}
+
+export function isJobVisibilityRestricted(now: Date = new Date()): boolean {
+  const hour = now.getHours();
+
+  if (JOB_VISIBILITY_BLOCK_START_HOUR === JOB_VISIBILITY_BLOCK_END_HOUR) {
+    return true;
+  }
+
+  if (JOB_VISIBILITY_BLOCK_START_HOUR < JOB_VISIBILITY_BLOCK_END_HOUR) {
+    return (
+      hour >= JOB_VISIBILITY_BLOCK_START_HOUR &&
+      hour < JOB_VISIBILITY_BLOCK_END_HOUR
+    );
+  }
+
+  return (
+    hour >= JOB_VISIBILITY_BLOCK_START_HOUR ||
+    hour < JOB_VISIBILITY_BLOCK_END_HOUR
+  );
 }

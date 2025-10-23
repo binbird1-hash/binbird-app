@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getOperationalISODate } from "@/lib/date";
+import { getOperationalISODate, isJobVisibilityRestricted } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
@@ -173,6 +173,11 @@ export default function ProofPageContent() {
 
   // parse jobs + idx from params
   useEffect(() => {
+    if (isJobVisibilityRestricted()) {
+      setJobs([]);
+      return;
+    }
+
     try {
       const rawJobs = params.get("jobs");
       const rawIdx = params.get("idx");

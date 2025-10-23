@@ -6,6 +6,7 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
+import { isJobVisibilityRestricted } from "@/lib/date";
 
 const WEEKDAYS = [
   "Sunday",
@@ -72,6 +73,14 @@ function WeeklyJobsContent() {
           if (!isActive) return;
           setState("error");
           setErrorMessage("Sign in to see your upcoming jobs.");
+          setJobs([]);
+          return;
+        }
+
+        if (isJobVisibilityRestricted()) {
+          if (!isActive) return;
+          setState("error");
+          setErrorMessage("Weekly jobs will be available after 2 pm.");
           setJobs([]);
           return;
         }
