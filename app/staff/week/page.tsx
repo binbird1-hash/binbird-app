@@ -6,7 +6,6 @@ import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
-import clsx from "clsx";
 
 const WEEKDAYS = [
   "Sunday",
@@ -19,24 +18,8 @@ const WEEKDAYS = [
 ];
 
 const JOB_TYPE_LABELS: Record<Job["job_type"], string> = {
-  put_out: "Put bins out",
-  bring_in: "Bring bins in",
-};
-
-const JOB_TYPE_STYLES: Record<
-  Job["job_type"],
-  { background: string; border: string; text: string }
-> = {
-  put_out: {
-    background: "bg-[#ff5757]/15",
-    border: "border-[#ff5757]/30",
-    text: "text-[#ffb3b3]",
-  },
-  bring_in: {
-    background: "bg-white/10",
-    border: "border-white/15",
-    text: "text-white/80",
-  },
+  put_out: "Put Out",
+  bring_in: "Bring In",
 };
 
 type DayBucket = {
@@ -52,36 +35,6 @@ function getParsedBins(bins: Job["bins"]) {
     .split(",")
     .map((bin) => bin.trim())
     .filter(Boolean);
-}
-
-function getBinColorStyles(bin: string) {
-  const normalized = bin.toLowerCase();
-  if (normalized.includes("red")) {
-    return {
-      background: "bg-red-600",
-      border: "border-red-500/70",
-      text: "text-white",
-    } as const;
-  }
-  if (normalized.includes("yellow")) {
-    return {
-      background: "bg-amber-300",
-      border: "border-amber-300/70",
-      text: "text-black",
-    } as const;
-  }
-  if (normalized.includes("green")) {
-    return {
-      background: "bg-emerald-600",
-      border: "border-emerald-500/70",
-      text: "text-white",
-    } as const;
-  }
-  return {
-    background: "bg-neutral-800",
-    border: "border-neutral-600/70",
-    text: "text-white",
-  } as const;
 }
 
 function WeeklyJobsContent() {
@@ -258,35 +211,15 @@ function WeeklyJobsContent() {
                         {job.address || "Address unavailable"}
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
-                        <span
-                          className={clsx(
-                            "inline-flex h-8 items-center justify-center rounded-full border px-4 text-[11px] font-semibold uppercase tracking-[0.18em]",
-                            JOB_TYPE_STYLES[job.job_type].background,
-                            JOB_TYPE_STYLES[job.job_type].border,
-                            JOB_TYPE_STYLES[job.job_type].text
-                          )}
-                        >
+                        <span className="text-xs font-semibold uppercase tracking-wide text-white">
                           {JOB_TYPE_LABELS[job.job_type]}
                         </span>
                         {parsedBins.length ? (
-                          parsedBins.map((bin, idx) => {
-                            const styles = getBinColorStyles(bin);
-                            return (
-                              <span
-                                key={`${job.id}-bin-${idx}`}
-                                className={clsx(
-                                  "inline-flex h-8 min-w-[96px] items-center justify-center rounded-full border px-4 text-[11px] font-semibold uppercase tracking-wide",
-                                  styles.background,
-                                  styles.text,
-                                  styles.border
-                                )}
-                              >
-                                {bin}
-                              </span>
-                            );
-                          })
+                          <span className="text-xs uppercase tracking-wide text-white/70">
+                            {parsedBins.join(", ")}
+                          </span>
                         ) : (
-                          <span className="inline-flex h-8 items-center justify-center rounded-full border border-white/10 bg-black/50 px-4 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+                          <span className="text-xs uppercase tracking-wide text-white/50">
                             Bins not specified
                           </span>
                         )}
