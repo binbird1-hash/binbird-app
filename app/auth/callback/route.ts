@@ -4,21 +4,7 @@ import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
 
-type PortalRole = 'staff' | 'client' | 'admin' | null
-
-function normalizeRole(role: unknown): PortalRole {
-  if (typeof role !== 'string') {
-    return null
-  }
-
-  const normalized = role.trim().toLowerCase()
-
-  if (normalized === 'admin' || normalized === 'staff' || normalized === 'client') {
-    return normalized
-  }
-
-  return null
-}
+import { normalizePortalRole } from '@/lib/portalRoles'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -31,7 +17,7 @@ export async function GET(req: Request) {
 
     if (!error) {
       const sessionUser = data.session?.user ?? data.user ?? null
-      const metadataRole = normalizeRole(sessionUser?.user_metadata?.role)
+      const metadataRole = normalizePortalRole(sessionUser?.user_metadata?.role)
       const userId = sessionUser?.id ?? null
 
       if (metadataRole && userId) {

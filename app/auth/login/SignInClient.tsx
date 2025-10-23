@@ -5,24 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
-
-type PortalRole = "staff" | "client" | "admin" | null;
-
-function normalizeRole(role: unknown): PortalRole {
-  if (typeof role !== "string") {
-    return null;
-  }
-
-  const normalized = role.trim().toLowerCase();
-
-  if (normalized === "admin" || normalized === "staff" || normalized === "client") {
-    return normalized;
-  }
-
-  return null;
-}
 
 function resolveDestination(role: PortalRole) {
   if (role === "admin") {
@@ -77,7 +62,9 @@ export default function SignInClient() {
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole = normalizeRole(signInData.user?.user_metadata?.role);
+      const metadataRole = normalizePortalRole(
+        signInData.user?.user_metadata?.role,
+      );
 
       if (!userId) {
         setError("We couldn't verify your account. Please try again.");
@@ -98,7 +85,7 @@ export default function SignInClient() {
       }
 
       const profileRoleRaw = typeof profile?.role === "string" ? profile.role : null;
-      const profileRole = normalizeRole(profileRoleRaw);
+      const profileRole = normalizePortalRole(profileRoleRaw);
 
       const resolvedRole = metadataRole ?? profileRole;
 

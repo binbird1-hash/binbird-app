@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import AdminSidebar, { type AdminNavItem } from "@/components/admin/AdminSidebar";
 import AdminMobileNav from "@/components/admin/AdminMobileNav";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
+import { normalizePortalRole } from "@/lib/portalRoles";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function resolveAdminContext() {
@@ -21,7 +22,9 @@ async function resolveAdminContext() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (profile?.role !== "admin") {
+  const profileRole = normalizePortalRole(profile?.role);
+
+  if (profileRole !== "admin") {
     redirect("/");
   }
 
