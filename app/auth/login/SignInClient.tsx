@@ -5,10 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
-
-type PortalRole = "staff" | "client" | "admin" | null;
 
 function resolveDestination(role: PortalRole) {
   if (role === "admin") {
@@ -63,8 +62,9 @@ export default function SignInClient() {
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole =
-        (signInData.user?.user_metadata?.role as PortalRole) ?? null;
+      const metadataRole = normalizePortalRole(
+        signInData.user?.user_metadata?.role,
+      );
 
       if (!userId) {
         setError("We couldn't verify your account. Please try again.");
@@ -84,16 +84,33 @@ export default function SignInClient() {
         return;
       }
 
-      if (metadataRole && profile?.role !== metadataRole) {
-        await supabase
-          .from("user_profile")
-          .upsert(
-            { user_id: userId, role: metadataRole },
-            { onConflict: "user_id" },
-          );
+      const profileRoleRaw = typeof profile?.role === "string" ? profile.role : null;
+      const profileRole = normalizePortalRole(profileRoleRaw);
+
+      const resolvedRole = metadataRole ?? profileRole;
+
+      if (resolvedRole) {
+        const shouldPersistMetadataRole =
+          metadataRole && profileRoleRaw !== metadataRole;
+        const shouldNormalizeProfileRole =
+          !metadataRole && profileRole && profileRoleRaw !== profileRole;
+
+        if (shouldPersistMetadataRole || shouldNormalizeProfileRole) {
+          const { error: upsertError } = await supabase
+            .from("user_profile")
+            .upsert(
+              { user_id: userId, role: resolvedRole },
+              { onConflict: "user_id" },
+            );
+
+          if (upsertError) {
+            setError("We couldn't update your account role. Please try again.");
+            setLoading(false);
+            return;
+          }
+        }
       }
 
-      const resolvedRole = metadataRole ?? (profile?.role as PortalRole);
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
