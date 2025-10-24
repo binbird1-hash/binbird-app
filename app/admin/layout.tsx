@@ -22,9 +22,11 @@ async function resolveAdminContext() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const metadataRole = normalizePortalRole(user.user_metadata?.role);
   const profileRole = normalizePortalRole(profile?.role);
+  const resolvedRole = profileRole ?? metadataRole;
 
-  if (profileRole !== "admin") {
+  if (resolvedRole !== "admin") {
     redirect("/");
   }
 
