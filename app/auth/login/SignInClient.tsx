@@ -111,6 +111,23 @@ export default function SignInClient() {
         }
       }
 
+      if (signInData.session) {
+        try {
+          await fetch("/auth/callback", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              event: "SIGNED_IN",
+              session: signInData.session,
+            }),
+          });
+        } catch (callbackError) {
+          console.error("Failed to persist Supabase session", callbackError);
+        }
+      }
+
       const destination = resolveDestination(resolvedRole);
 
       if (typeof window !== "undefined") {
