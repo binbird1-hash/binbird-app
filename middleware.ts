@@ -60,12 +60,28 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  let role: ReturnType<typeof normalizePortalRole> = null
+  let role: ReturnType<typeof normalizePortalRole> = normalizePortalRole(
+    session?.user?.user_metadata?.role,
+  )
 
   if (session) {
-    const { data, error } = await supabase.rpc('get_my_role')
-    if (!error) {
-      role = normalizePortalRole(data)
+    if (!role) {
+      const { data, error } = await supabase.rpc('get_my_role')
+      if (!error) {
+        role = normalizePortalRole(data)
+      }
+    }
+
+    if (!role) {
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profile')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+
+      if (!profileError) {
+        role = normalizePortalRole(profile?.role)
+      }
     }
 
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
