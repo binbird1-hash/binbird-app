@@ -9,6 +9,7 @@ import { normalizePortalRole } from '@/lib/portalRoles'
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
+  // ✅ Allow Next.js internals through
   if (pathname.startsWith('/_next/')) {
     return NextResponse.next()
   }
@@ -16,6 +17,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
+  // ✅ Get Supabase session
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -45,33 +47,39 @@ export async function middleware(req: NextRequest) {
     '/staff/run',
   ])
 
-  // Staff & Ops routes → require login
   const staffAuthPaths = new Set(['/auth/login', '/auth/sign-up', '/staff/login', '/staff/sign-up'])
 
+  // ✅ Require login for protected routes
   if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops') || pathname.startsWith('/admin'))) {
     const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
-
     if (!isStaffAuthRoute) {
       const redirect = NextResponse.redirect(new URL('/auth/login', req.url))
-      if (hasActiveRunCookie) {
-        redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
-      }
+      if (hasActiveRunCookie) redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
       return redirect
     }
   }
 
+  // =====================================================
+  // 🧩 ROLE DETECTION SECTION
+  // =====================================================
   let role: ReturnType<typeof normalizePortalRole> = normalizePortalRole(
     session?.user?.user_metadata?.role,
   )
 
   if (session) {
+    // 🧠 Try to get role from RPC if not in metadata
     if (!role) {
       const { data, error } = await supabase.rpc('get_my_role')
-      if (!error) {
+      console.log('🧩 RPC get_my_role result:', { data, error })
+
+      if (error) {
+        console.error('Error fetching role from RPC:', error.message)
+      } else if (data) {
         role = normalizePortalRole(data)
       }
     }
 
+    // 🧱 Fallback: direct query from user_profile
     if (!role) {
       const { data: profile, error: profileError } = await supabase
         .from('user_profile')
@@ -79,11 +87,18 @@ export async function middleware(req: NextRequest) {
         .eq('user_id', session.user.id)
         .maybeSingle()
 
-      if (!profileError) {
-        role = normalizePortalRole(profile?.role)
-      }
+      if (profileError) console.error('Profile fallback error:', profileError.message)
+      role = normalizePortalRole(profile?.role)
     }
 
+    console.log('🧠 Final resolved role:', role)
+
+    // ✅ Fix: redirect admin correctly after login
+    if (role === 'admin' && normalizedPathname === '/auth/login') {
+      return NextResponse.redirect(new URL('/admin', req.url))
+    }
+
+    // 🏃 Active run cookie logic
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
       if (role === 'staff' || role === 'admin') {
         return NextResponse.redirect(new URL('/staff/route', req.url))
@@ -94,6 +109,7 @@ export async function middleware(req: NextRequest) {
       return redirect
     }
 
+    // 🚪 Redirect signed-in users away from login/signup
     if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
       const destination =
         role === 'admin'
@@ -104,6 +120,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL(destination, req.url))
     }
 
+    // 🧱 Role-based route access
     if (role) {
       if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
         return NextResponse.redirect(new URL('/', req.url))
@@ -121,7 +138,9 @@ export async function middleware(req: NextRequest) {
     res.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
   }
 
-  // Check client portal tokens
+  // =====================================================
+  // 💬 Client portal token check
+  // =====================================================
   if (pathname.startsWith('/c/') && !pathname.startsWith('/c/error')) {
     const token = pathname.split('/c/')[1]
     if (token) {
@@ -138,7 +157,6 @@ export async function middleware(req: NextRequest) {
       }
 
       const scope = await resolvePortalScope(supabase, decodedToken)
-
       if (!scope) {
         return NextResponse.redirect(new URL('/c/error', req.url))
       }
