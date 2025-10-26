@@ -28,6 +28,7 @@ export async function middleware(req: NextRequest) {
       : pathname
 
   const hasActiveRunCookie = req.cookies.get(ACTIVE_RUN_COOKIE_NAME)?.value === 'true'
+  const adminAccessDenied = req.nextUrl.searchParams.get('adminAccessDenied') === '1'
 
   const signedInRestrictedPaths = new Set([
     '/',
@@ -110,7 +111,11 @@ export async function middleware(req: NextRequest) {
     }
 
     // 🚪 Redirect signed-in users away from login/signup
-    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
+    if (
+      !hasActiveRunCookie &&
+      signedInRestrictedPaths.has(normalizedPathname) &&
+      !adminAccessDenied
+    ) {
       const destination =
         role === 'admin'
           ? '/admin'
@@ -129,7 +134,13 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL('/', req.url))
       }
       if (pathname.startsWith('/admin') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
+        const redirectUrl = new URL('/auth/login', req.url)
+        redirectUrl.searchParams.set('adminAccessDenied', '1')
+        redirectUrl.searchParams.set(
+          'adminAccessReason',
+          'You do not have permission to access the admin portal. Please sign in with an admin account or contact your administrator.',
+        )
+        return NextResponse.redirect(redirectUrl)
       }
     }
   }

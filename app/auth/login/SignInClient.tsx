@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
@@ -28,12 +28,19 @@ function resolveDestination(role: PortalRole) {
 export default function SignInClient() {
   const router = useRouter();
   const supabase = useSupabase();
+  const searchParams = useSearchParams();
+  const adminAccessDenied = searchParams.get("adminAccessDenied") === "1";
+  const adminAccessMessage = adminAccessDenied
+    ? searchParams.get("adminAccessReason") ??
+      "You do not have permission to access the admin portal. Please sign in with an admin account or contact your administrator."
+    : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [staySignedIn, setStaySignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(adminAccessMessage);
+  const [hasShownAccessDenied, setHasShownAccessDenied] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -42,6 +49,14 @@ export default function SignInClient() {
       setStaySignedIn(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (hasShownAccessDenied || !adminAccessMessage) return;
+
+    window.alert(adminAccessMessage);
+    setHasShownAccessDenied(true);
+  }, [adminAccessMessage, hasShownAccessDenied]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
