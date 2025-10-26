@@ -16,6 +16,8 @@ async function resolveAdminContext() {
     redirect("/auth/login");
   }
 
+  const metadataRole = normalizePortalRole(user.user_metadata?.role);
+
   const { data: profile } = await supabase
     .from("user_profile")
     .select("role, full_name")
@@ -23,8 +25,9 @@ async function resolveAdminContext() {
     .maybeSingle();
 
   const profileRole = normalizePortalRole(profile?.role);
+  const resolvedRole = profileRole ?? metadataRole;
 
-  if (profileRole !== "admin") {
+  if (resolvedRole !== "admin") {
     redirect("/");
   }
 
