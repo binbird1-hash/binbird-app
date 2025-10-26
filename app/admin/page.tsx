@@ -4,10 +4,33 @@ import { supabaseServer } from "@/lib/supabaseServer";
 async function loadDashboardData() {
   const supabase = supabaseServer();
 
-  const [clientsResult, jobsResult, logsResult] = await Promise.all([
-    supabase.from("client_list").select("property_id", { count: "exact", head: true }),
+  const [
+    clientsResult,
+    logsResult,
+    jobsResult,
+    unassignedJobsResult,
+  ] = await Promise.all([
+    supabase
+      .from("client_list")
+      .select("property_id, client_name, company, address, assigned_to", {
+        count: "exact",
+      })
+      .order("client_name", { ascending: true })
+      .limit(6),
+    supabase
+      .from("logs")
+      .select("id, client_name, address, task_type, done_on, created_at", {
+        count: "exact",
+      })
+      .order("created_at", { ascending: false })
+      .limit(5),
     supabase.from("jobs").select("id", { count: "exact", head: true }),
-    supabase.from("logs").select("id", { count: "exact", head: true }),
+    supabase
+      .from("jobs")
+      .select("id, address, day_of_week, job_type, assigned_to")
+      .is("assigned_to", null)
+      .order("day_of_week", { ascending: true })
+      .limit(6),
   ]);
 
   const stats = {
@@ -16,30 +39,11 @@ async function loadDashboardData() {
     logs: logsResult.count ?? 0,
   };
 
-  const { data: recentClients } = await supabase
-    .from("client_list")
-    .select("property_id, client_name, company, address, assigned_to")
-    .order("client_name", { ascending: true })
-    .limit(6);
-
-  const { data: recentLogs } = await supabase
-    .from("logs")
-    .select("id, client_name, address, task_type, done_on, created_at")
-    .order("created_at", { ascending: false })
-    .limit(5);
-
-  const { data: unassignedJobs } = await supabase
-    .from("jobs")
-    .select("id, address, day_of_week, job_type, assigned_to")
-    .is("assigned_to", null)
-    .order("day_of_week", { ascending: true })
-    .limit(6);
-
   return {
     stats,
-    recentClients: recentClients ?? [],
-    recentLogs: recentLogs ?? [],
-    unassignedJobs: unassignedJobs ?? [],
+    recentClients: clientsResult.data ?? [],
+    recentLogs: logsResult.data ?? [],
+    unassignedJobs: unassignedJobsResult.data ?? [],
   };
 }
 
