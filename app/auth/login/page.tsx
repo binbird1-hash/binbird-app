@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import SignInClient from "./SignInClient";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function AuthLoginPage() {
-  return <SignInClient />;
+  return (
+    <Suspense fallback={null}>
+      <SignInClient />
+    </Suspense>
+  );
 }
