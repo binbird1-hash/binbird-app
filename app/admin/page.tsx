@@ -4,26 +4,27 @@ import { supabaseServer } from "@/lib/supabaseServer";
 async function loadDashboardData() {
   const supabase = supabaseServer();
 
-  const [clientsResult, pendingResult, jobsResult, logsResult] = await Promise.all([
+  const [clientsResult, jobsResult, logsResult] = await Promise.all([
     supabase.from("client_list").select("property_id", { count: "exact", head: true }),
-    supabase
-      .from("property_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending"),
     supabase.from("jobs").select("id", { count: "exact", head: true }),
     supabase.from("logs").select("id", { count: "exact", head: true }),
   ]);
 
   const stats = {
     clients: clientsResult.count ?? 0,
-    pendingRequests: pendingResult.count ?? 0,
     jobs: jobsResult.count ?? 0,
     logs: logsResult.count ?? 0,
   };
 
-  const { data: recentRequests } = await supabase
-    .from("property_requests")
-    .select("id, account_name, status, created_at")
+  const { data: recentClients } = await supabase
+    .from("client_list")
+    .select("property_id, client_name, company, address, assigned_to")
+    .order("client_name", { ascending: true })
+    .limit(6);
+
+  const { data: recentLogs } = await supabase
+    .from("logs")
+    .select("id, client_name, address, task_type, done_on, created_at")
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -36,7 +37,8 @@ async function loadDashboardData() {
 
   return {
     stats,
-    recentRequests: recentRequests ?? [],
+    recentClients: recentClients ?? [],
+    recentLogs: recentLogs ?? [],
     unassignedJobs: unassignedJobs ?? [],
   };
 }
@@ -45,11 +47,10 @@ const cardClass =
   "rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm transition hover:border-red-400 hover:shadow-lg hover:shadow-red-900/30";
 
 export default async function AdminDashboardPage() {
-  const { stats, recentRequests, unassignedJobs } = await loadDashboardData();
+  const { stats, recentClients, recentLogs, unassignedJobs } = await loadDashboardData();
 
   const cards = [
     { label: "Active clients", value: stats.clients, href: "/admin/clients" },
-    { label: "Pending requests", value: stats.pendingRequests, href: "/admin/property-requests" },
     { label: "Jobs scheduled", value: stats.jobs, href: "/admin/jobs" },
     { label: "Logs captured", value: stats.logs, href: "/admin/logs" },
   ];
@@ -76,30 +77,27 @@ export default async function AdminDashboardPage() {
         <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-white">Recent property requests</h2>
-              <p className="text-xs text-slate-400">Review the latest submissions awaiting approval.</p>
+              <h2 className="text-lg font-semibold text-white">Latest client updates</h2>
+              <p className="text-xs text-slate-400">Keep track of newly added properties and account assignments.</p>
             </div>
             <Link
-              href="/admin/property-requests"
+              href="/admin/clients"
               className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
             >
-              View all
+              Manage clients
             </Link>
           </div>
-          {recentRequests.length === 0 ? (
-            <p className="text-sm text-slate-300">No property requests submitted yet.</p>
+          {recentClients.length === 0 ? (
+            <p className="text-sm text-slate-300">No client records found yet.</p>
           ) : (
             <ul className="space-y-3">
-              {recentRequests.map((request) => (
-                <li key={request.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-sm font-semibold text-white">{request.account_name ?? "Client account"}</p>
+              {recentClients.map((client) => (
+                <li key={client.property_id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-sm font-semibold text-white">{client.client_name ?? client.company ?? "Client account"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                    <span className="rounded-full bg-slate-800 px-2 py-1 capitalize text-slate-200">
-                      {request.status?.toLowerCase() ?? "pending"}
-                    </span>
-                    {request.created_at && (
-                      <span>Submitted {new Date(request.created_at).toLocaleString()}</span>
-                    )}
+                    <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-200">{client.property_id}</span>
+                    {client.address && <span>{client.address}</span>}
+                    {client.assigned_to && <span>Assigned to {client.assigned_to}</span>}
                   </div>
                 </li>
               ))}
@@ -139,6 +137,36 @@ export default async function AdminDashboardPage() {
           )}
         </section>
       </div>
+
+      <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Recent logs</h2>
+            <p className="text-xs text-slate-400">Latest proof uploads and visit notes captured by the team.</p>
+          </div>
+          <Link
+            href="/admin/logs"
+            className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+          >
+            View logs
+          </Link>
+        </div>
+        {recentLogs.length === 0 ? (
+          <p className="text-sm text-slate-300">No logs recorded yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {recentLogs.map((log) => (
+              <li key={log.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-sm font-semibold text-white">{log.address ?? log.client_name ?? "Log entry"}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                  {log.task_type && <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-200">{log.task_type}</span>}
+                  {log.done_on && <span>Completed {new Date(log.done_on).toLocaleString()}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

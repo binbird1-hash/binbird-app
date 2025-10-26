@@ -11,11 +11,6 @@ export type Client = {
   name: string | null
 }
 
-export type ClientTokenRow = {
-  token: string
-  account: Client | null
-}
-
 export type JobRecord = {
   id: string
   account_id: string | null

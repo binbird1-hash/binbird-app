@@ -9,12 +9,6 @@ export type PortalClientRow = {
   notes: string | null
 }
 
-type PortalTokenRow = {
-  account_id: string | null
-  property_id: string | null
-  expires_at: string | null
-}
-
 const escapeFilterValue = (value: string) => value.replace(/,/g, '\\,').replace(/'/g, "''")
 
 export const deriveAccountId = (row: PortalClientRow): string => {
@@ -24,68 +18,6 @@ export const deriveAccountId = (row: PortalClientRow): string => {
 
 export const deriveAccountName = (row: PortalClientRow): string =>
   row.company?.trim() || row.client_name?.trim() || 'Client Account'
-
-async function fetchPortalClientRows(
-  supabase: SupabaseClient,
-  accountIds: string[],
-  propertyIds: string[],
-): Promise<PortalClientRow[]> {
-  const filters: string[] = []
-
-  accountIds.forEach((accountId) => {
-    const trimmed = accountId.trim()
-    if (trimmed) {
-      filters.push(`account_id.eq.${escapeFilterValue(trimmed)}`)
-    }
-  })
-
-  propertyIds.forEach((propertyId) => {
-    const trimmed = propertyId.trim()
-    if (trimmed) {
-      filters.push(`property_id.eq.${escapeFilterValue(trimmed)}`)
-    }
-  })
-
-  if (!filters.length) {
-    return []
-  }
-
-  const { data, error } = await supabase
-    .from('client_list')
-    .select('property_id, account_id, client_name, company, address, notes')
-    .or(filters.join(','))
-
-  if (error) {
-    console.warn('Failed to load client portal rows', error)
-    return []
-  }
-
-  const deduped = new Map<string, PortalClientRow>()
-
-  ;(data ?? []).forEach((row) => {
-    const propertyId =
-      typeof row.property_id === 'string' ? row.property_id.trim() : null
-    if (!propertyId) return
-
-    deduped.set(propertyId, {
-      property_id: propertyId,
-      account_id: typeof row.account_id === 'string' ? row.account_id : null,
-      client_name: typeof row.client_name === 'string' ? row.client_name : null,
-      company: typeof row.company === 'string' ? row.company : null,
-      address: typeof row.address === 'string' ? row.address : null,
-      notes: typeof row.notes === 'string' ? row.notes : null,
-    })
-  })
-
-  return Array.from(deduped.values())
-}
-
-const tokenExpired = (row: PortalTokenRow | null): boolean => {
-  if (!row?.expires_at) return false
-  const expiresAt = Date.parse(row.expires_at)
-  if (Number.isNaN(expiresAt)) return false
-  return expiresAt < Date.now()
-}
 
 export type PortalScope = {
   accountId: string
@@ -104,72 +36,101 @@ export async function resolvePortalScope(
     return null
   }
 
-  const { data: tokenRow, error: tokenError } = await supabase
-    .from('client_portal_tokens')
-    .select('account_id, property_id, expires_at')
-    .eq('token', trimmedToken)
-    .maybeSingle()
+  const selectColumns =
+    'property_id, account_id, client_name, company, address, notes'
 
-  if (tokenError) {
-    console.warn('Failed to validate client portal token', tokenError)
+  const { data: propertyMatches, error: propertyError } = await supabase
+    .from('client_list')
+    .select(selectColumns)
+    .eq('property_id', trimmedToken)
+
+  if (propertyError) {
+    console.warn('Failed to resolve client portal scope', propertyError)
     return null
   }
 
-  if (!tokenRow || tokenExpired(tokenRow)) {
-    return null
-  }
+  const normaliseRow = (row: PortalClientRow): PortalClientRow => ({
+    property_id: typeof row.property_id === 'string' ? row.property_id.trim() : '',
+    account_id:
+      typeof row.account_id === 'string' && row.account_id.trim().length
+        ? row.account_id.trim()
+        : null,
+    client_name:
+      typeof row.client_name === 'string' && row.client_name.trim().length
+        ? row.client_name.trim()
+        : null,
+    company:
+      typeof row.company === 'string' && row.company.trim().length
+        ? row.company.trim()
+        : null,
+    address:
+      typeof row.address === 'string' && row.address.trim().length
+        ? row.address.trim()
+        : null,
+    notes:
+      typeof row.notes === 'string' && row.notes.trim().length ? row.notes.trim() : null,
+  })
 
-  const candidateAccountIds: string[] = []
-  const candidatePropertyIds: string[] = []
-
-  if (tokenRow.account_id && tokenRow.account_id.trim().length) {
-    candidateAccountIds.push(tokenRow.account_id.trim())
-  }
-
-  if (tokenRow.property_id && tokenRow.property_id.trim().length) {
-    candidatePropertyIds.push(tokenRow.property_id.trim())
-  }
-
-  const clientRows = await fetchPortalClientRows(
-    supabase,
-    candidateAccountIds,
-    candidatePropertyIds,
-  )
-
-  if (!clientRows.length) {
-    return null
-  }
-
-  const canonicalAccountId =
-    candidateAccountIds.find((value) => value.trim().length) ??
-    (() => {
-      if (tokenRow.property_id) {
-        const target = clientRows.find(
-          (row) => row.property_id === tokenRow.property_id,
-        )
-        return target ? deriveAccountId(target) : null
+  const normaliseRows = (rows: PortalClientRow[] | null | undefined) => {
+    const deduped = new Map<string, PortalClientRow>()
+    ;(rows ?? []).forEach((row) => {
+      const normalised = normaliseRow(row)
+      if (normalised.property_id) {
+        deduped.set(normalised.property_id, normalised)
       }
-      return deriveAccountId(clientRows[0]!)
-    })()
-
-  if (!canonicalAccountId) {
-    return null
+    })
+    return Array.from(deduped.values())
   }
 
-  const scopedRows = tokenRow.property_id
-    ? clientRows.filter((row) => row.property_id === tokenRow.property_id)
-    : clientRows.filter((row) => deriveAccountId(row) === canonicalAccountId)
+  let scopedRows: PortalClientRow[] = normaliseRows(propertyMatches as PortalClientRow[])
+  let canonicalAccountId: string | null = scopedRows.length
+    ? deriveAccountId(scopedRows[0]!)
+    : null
+
+  if (!scopedRows.length) {
+    const { data: accountMatches, error: accountError } = await supabase
+      .from('client_list')
+      .select(selectColumns)
+      .eq('account_id', trimmedToken)
+
+    if (accountError) {
+      console.warn('Failed to resolve client portal account scope', accountError)
+      return null
+    }
+
+    scopedRows = normaliseRows(accountMatches as PortalClientRow[])
+    canonicalAccountId = scopedRows.length
+      ? deriveAccountId(scopedRows[0]!)
+      : trimmedToken
+  } else if (canonicalAccountId && canonicalAccountId !== trimmedToken) {
+    const { data: accountRows, error: accountError } = await supabase
+      .from('client_list')
+      .select(selectColumns)
+      .eq('account_id', canonicalAccountId)
+
+    if (accountError) {
+      console.warn('Failed to load additional client rows', accountError)
+    } else {
+      const additionalRows = normaliseRows(accountRows as PortalClientRow[] | null | undefined)
+      scopedRows = normaliseRows([...scopedRows, ...additionalRows])
+    }
+  }
 
   if (!scopedRows.length) {
     return null
   }
 
+  const accountId = canonicalAccountId ?? deriveAccountId(scopedRows[0]!)
+  if (!accountId) {
+    return null
+  }
+
   return {
-    accountId: canonicalAccountId,
+    accountId,
     accountName: deriveAccountName(scopedRows[0]!),
     propertyIds: scopedRows.map((row) => row.property_id),
     rows: scopedRows,
-    expiresAt: tokenRow.expires_at,
+    expiresAt: null,
   }
 }
 
