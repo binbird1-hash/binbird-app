@@ -25,6 +25,22 @@ function toKebab(value: string | null | undefined, fallback: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function generateSequentialFileName(
+  baseName: string,
+  extension: string,
+  existingNames: string[]
+): string {
+  const existing = new Set(existingNames);
+  const defaultLabel = `${baseName}${extension}`;
+  if (!existing.has(defaultLabel)) return defaultLabel;
+
+  let counter = 2;
+  while (existing.has(`${baseName} (${counter})${extension}`)) {
+    counter += 1;
+  }
+  return `${baseName} (${counter})${extension}`;
+}
+
 // custom week helper (Monday-Saturday cycle, Sunday joins next week)
 function getCustomWeek(date: Date) {
   const d = new Date(date);
@@ -286,12 +302,24 @@ export default function ProofPageContent() {
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
       const folderPath = `${safeClient}/${safeAddress}/${year}/${week}`;
-      const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const baseFileName = job.job_type === "bring_in" ? "Bring In" : "Put Out";
+      const fileExtension = ".jpg";
+      const { data: existingFiles, error: listErr } = await supabase.storage
+        .from("proofs")
+        .list(folderPath, { limit: 100 });
+      if (listErr) {
+        console.warn("Unable to check existing proof photos", listErr);
+      }
+      const fileLabel = generateSequentialFileName(
+        baseFileName,
+        fileExtension,
+        existingFiles?.map((file) => file.name) ?? []
+      );
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
       const { error: uploadErr } = await supabase.storage
         .from("proofs")
-        .upload(path, uploadFile, { upsert: true });
+        .upload(path, uploadFile, { upsert: false });
       if (uploadErr) throw uploadErr;
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
