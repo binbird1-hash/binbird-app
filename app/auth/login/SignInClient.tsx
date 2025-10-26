@@ -87,15 +87,10 @@ export default function SignInClient() {
       const profileRoleRaw = typeof profile?.role === "string" ? profile.role : null;
       const profileRole = normalizePortalRole(profileRoleRaw);
 
-      const resolvedRole = metadataRole ?? profileRole;
+      const resolvedRole = profileRole ?? metadataRole;
 
       if (resolvedRole) {
-        const shouldPersistMetadataRole =
-          metadataRole && profileRoleRaw !== metadataRole;
-        const shouldNormalizeProfileRole =
-          !metadataRole && profileRole && profileRoleRaw !== profileRole;
-
-        if (shouldPersistMetadataRole || shouldNormalizeProfileRole) {
+        if (profileRoleRaw !== resolvedRole) {
           const { error: upsertError } = await supabase
             .from("user_profile")
             .upsert(
@@ -105,6 +100,18 @@ export default function SignInClient() {
 
           if (upsertError) {
             setError("We couldn't update your account role. Please try again.");
+            setLoading(false);
+            return;
+          }
+        }
+
+        if (metadataRole !== resolvedRole) {
+          const { error: metadataUpdateError } = await supabase.auth.updateUser({
+            data: { role: resolvedRole },
+          });
+
+          if (metadataUpdateError) {
+            setError("We couldn't confirm your account role. Please try again.");
             setLoading(false);
             return;
           }

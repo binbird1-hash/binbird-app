@@ -134,7 +134,6 @@ export function SettingsForm() {
       full_name: values.fullName,
       phone: values.phone,
       email: user.email,
-      role: 'client',
       map_style_pref: profile?.timezone ?? null,
       nav_pref: profile?.companyName ?? null,
       created_at: new Date().toISOString(),
