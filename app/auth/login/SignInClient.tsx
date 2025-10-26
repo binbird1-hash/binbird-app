@@ -90,6 +90,18 @@ export default function SignInClient() {
       const resolvedRole = metadataRole ?? profileRole;
 
       if (resolvedRole) {
+        if (metadataRole !== resolvedRole) {
+          const { error: updateMetadataError } = await supabase.auth.updateUser({
+            data: { role: resolvedRole },
+          });
+
+          if (updateMetadataError) {
+            setError("We couldn't update your account role. Please try again.");
+            setLoading(false);
+            return;
+          }
+        }
+
         const shouldPersistMetadataRole =
           metadataRole && profileRoleRaw !== metadataRole;
         const shouldNormalizeProfileRole =
