@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import AdminSidebar, { type AdminNavItem } from "@/components/admin/AdminSidebar";
 import AdminMobileNav from "@/components/admin/AdminMobileNav";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
-import { normalizePortalRole } from "@/lib/portalRoles";
+import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function resolveAdminContext() {
@@ -16,16 +16,37 @@ async function resolveAdminContext() {
     redirect("/auth/login");
   }
 
-  const { data: profile } = await supabase
+  const metadataRole = normalizePortalRole(user.user_metadata?.role);
+
+  const { data: profile, error: profileError } = await supabase
     .from("user_profile")
     .select("role, full_name")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const profileRole = normalizePortalRole(profile?.role);
+  if (profileError) {
+    console.error("Failed to load user profile", profileError.message);
+  }
 
-  if (profileRole !== "admin") {
-    redirect("/");
+  const profileRole = normalizePortalRole(profile?.role);
+  const resolvedRole: PortalRole = metadataRole ?? profileRole;
+
+  if (metadataRole === "admin" && profileRole !== "admin") {
+    await supabase
+      .from("user_profile")
+      .upsert({ user_id: user.id, role: "admin" }, { onConflict: "user_id" });
+  }
+
+  if (resolvedRole !== "admin") {
+    if (resolvedRole === "staff") {
+      redirect("/staff/run");
+    }
+
+    if (resolvedRole === "client") {
+      redirect("/client/dashboard");
+    }
+
+    redirect("/auth/login");
   }
 
   const displayName = profile?.full_name?.trim().length
