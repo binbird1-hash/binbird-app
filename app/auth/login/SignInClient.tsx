@@ -87,7 +87,10 @@ export default function SignInClient() {
       const profileRoleRaw = typeof profile?.role === "string" ? profile.role : null;
       const profileRole = normalizePortalRole(profileRoleRaw);
 
-      const resolvedRole = profileRole ?? metadataRole;
+      const resolvedRole =
+        profileRole === "admin" || metadataRole === "admin"
+          ? "admin"
+          : profileRole ?? metadataRole;
 
       if (resolvedRole) {
         if (profileRoleRaw !== resolvedRole) {
@@ -138,6 +141,7 @@ export default function SignInClient() {
       }
 
       router.push(destination);
+      setLoading(false);
     } catch (unknownError) {
       const message =
         unknownError instanceof Error
