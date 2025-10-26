@@ -17,6 +17,13 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
+  const withSupabaseCookies = (response: NextResponse) => {
+    res.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return response
+  }
+
   // ✅ Get Supabase session
   const {
     data: { session },
@@ -53,7 +60,9 @@ export async function middleware(req: NextRequest) {
   if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops') || pathname.startsWith('/admin'))) {
     const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
     if (!isStaffAuthRoute) {
-      const redirect = NextResponse.redirect(new URL('/auth/login', req.url))
+      const redirect = withSupabaseCookies(
+        NextResponse.redirect(new URL('/auth/login', req.url)),
+      )
       if (hasActiveRunCookie) redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
       return redirect
     }
@@ -95,16 +104,22 @@ export async function middleware(req: NextRequest) {
 
     // ✅ Fix: redirect admin correctly after login
     if (role === 'admin' && normalizedPathname === '/auth/login') {
-      return NextResponse.redirect(new URL('/admin', req.url))
+      return withSupabaseCookies(
+        NextResponse.redirect(new URL('/admin', req.url)),
+      )
     }
 
     // 🏃 Active run cookie logic
     if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
       if (role === 'staff' || role === 'admin') {
-        return NextResponse.redirect(new URL('/staff/route', req.url))
+        return withSupabaseCookies(
+          NextResponse.redirect(new URL('/staff/route', req.url)),
+        )
       }
 
-      const redirect = NextResponse.redirect(new URL('/client/dashboard', req.url))
+      const redirect = withSupabaseCookies(
+        NextResponse.redirect(new URL('/client/dashboard', req.url)),
+      )
       redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
       return redirect
     }
@@ -117,19 +132,21 @@ export async function middleware(req: NextRequest) {
           : role === 'staff'
             ? '/staff/run'
             : '/client/dashboard'
-      return NextResponse.redirect(new URL(destination, req.url))
+      return withSupabaseCookies(
+        NextResponse.redirect(new URL(destination, req.url)),
+      )
     }
 
     // 🧱 Role-based route access
     if (role) {
       if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
+        return withSupabaseCookies(NextResponse.redirect(new URL('/', req.url)))
       }
       if (pathname.startsWith('/ops') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
+        return withSupabaseCookies(NextResponse.redirect(new URL('/', req.url)))
       }
       if (pathname.startsWith('/admin') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
+        return withSupabaseCookies(NextResponse.redirect(new URL('/', req.url)))
       }
     }
   }
@@ -149,19 +166,27 @@ export async function middleware(req: NextRequest) {
         decodedToken = decodeURIComponent(token).trim()
       } catch (error) {
         console.warn('Failed to decode client portal token', error)
-        return NextResponse.redirect(new URL('/c/error', req.url))
+        return withSupabaseCookies(
+          NextResponse.redirect(new URL('/c/error', req.url)),
+        )
       }
 
       if (!decodedToken) {
-        return NextResponse.redirect(new URL('/c/error', req.url))
+        return withSupabaseCookies(
+          NextResponse.redirect(new URL('/c/error', req.url)),
+        )
       }
 
       const scope = await resolvePortalScope(supabase, decodedToken)
       if (!scope) {
-        return NextResponse.redirect(new URL('/c/error', req.url))
+        return withSupabaseCookies(
+          NextResponse.redirect(new URL('/c/error', req.url)),
+        )
       }
     } else {
-      return NextResponse.redirect(new URL('/c/error', req.url))
+      return withSupabaseCookies(
+        NextResponse.redirect(new URL('/c/error', req.url)),
+      )
     }
   }
 
