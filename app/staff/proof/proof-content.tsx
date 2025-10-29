@@ -165,6 +165,16 @@ export default function ProofPageContent() {
   }, []);
 
   useEffect(() => {
+    const activeSession = getActiveRunSession();
+    if (!activeSession) {
+      const planned = readPlannedRun();
+      if (!planned) {
+        router.replace("/staff/run");
+      }
+    }
+  }, [getActiveRunSession, router]);
+
+  useEffect(() => {
     let isCancelled = false;
     async function fetchReferenceImages() {
       if (!job?.photo_path) return;
