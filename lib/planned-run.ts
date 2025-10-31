@@ -1,5 +1,6 @@
 import type { Job } from "./jobs";
 import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
+import { getOperationalISODate } from "./date";
 
 export type PlannedRunLocation = { lat: number; lng: number };
 
@@ -15,6 +16,21 @@ export type PlannedRunPayload = {
 };
 
 const PLANNED_RUN_STORAGE_KEY = "binbird:planned-run";
+
+function getOperationalIsoForString(value: string | null): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return getOperationalISODate({ now: parsed });
+}
+
+function isPlannedRunCurrent(payload: PlannedRunPayload): boolean {
+  const createdIso = getOperationalIsoForString(payload.createdAt);
+  if (!createdIso) return false;
+
+  const todayIso = getOperationalISODate();
+  return createdIso === todayIso;
+}
 
 type StorageKey = "sessionStorage" | "localStorage";
 
@@ -162,6 +178,11 @@ export function readPlannedRun(): PlannedRunPayload | null {
 
     const parsed = parsePlannedRun(raw);
     if (parsed) {
+      if (!isPlannedRunCurrent(parsed)) {
+        clearPlannedRun();
+        return null;
+      }
+
       if (index > 0) {
         writePlannedRun(parsed);
       }

@@ -1,3 +1,5 @@
+import { getOperationalISODate } from "./date";
+
 export type RunSessionRecord = {
   startedAt: string;
   endedAt: string | null;
@@ -6,6 +8,21 @@ export type RunSessionRecord = {
 };
 
 const RUN_SESSION_STORAGE_KEY = "binbird:active-run";
+
+function getOperationalIsoForString(value: string | null): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return getOperationalISODate({ now: parsed });
+}
+
+function isRunSessionCurrent(record: RunSessionRecord): boolean {
+  const sessionIso = getOperationalIsoForString(record.startedAt);
+  if (!sessionIso) return false;
+
+  const todayIso = getOperationalISODate();
+  return sessionIso === todayIso;
+}
 
 type StorageKey = "sessionStorage" | "localStorage";
 
@@ -77,6 +94,11 @@ export function readRunSession(): RunSessionRecord | null {
 
     const parsed = parseRunSession(raw);
     if (parsed) {
+      if (!isRunSessionCurrent(parsed)) {
+        clearRunSession();
+        return null;
+      }
+
       if (index > 0) {
         writeRunSession(parsed);
       }
