@@ -462,7 +462,7 @@ export default function ProofPageContent() {
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
               <p className="font-semibold text-white">Confirm the property</p>
-              <p className="text-gray-400">I am at <span className="text-white">{job.address}</span>.</p>
+              <p className="text-gray-400">I am at {job.address}.</p>
             </div>
             <input
               type="checkbox"
