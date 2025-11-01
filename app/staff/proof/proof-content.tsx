@@ -655,7 +655,6 @@ export default function ProofPageContent() {
 
         {/* note box */}
         <div>
-          <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Leave any notes"
             className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
           />
