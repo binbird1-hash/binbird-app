@@ -443,16 +443,9 @@ export default function ProofPageContent() {
   const hasPhoto = Boolean(file);
   const readyToSubmit = hasPhoto && allChecklistChecked;
   const binCardsForInstructions = renderBinCards("instructions");
-  const binCardsForQuickReference = renderBinCards("quick-reference");
-  const subtleFallbackCard = (
+  const instructionsFallbackCard = (
     <div className="w-full rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-center text-base font-semibold uppercase text-white">
       All Bins
-    </div>
-  );
-
-  const quickReferenceContent = (
-    <div className="pt-1">
-      <div className="flex flex-col gap-2">{binCardsForQuickReference ?? subtleFallbackCard}</div>
     </div>
   );
 
@@ -469,7 +462,7 @@ export default function ProofPageContent() {
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
               <p className="font-semibold text-white">Confirm the property</p>
-              <p className="text-gray-400">I am at <span className="font-semibold text-white">{job.address}</span>.</p>
+              <p className="text-gray-400">I am at <span className="text-white">{job.address}</span>.</p>
             </div>
             <input
               type="checkbox"
@@ -517,7 +510,7 @@ export default function ProofPageContent() {
             }`}
           >
             <div className="overflow-hidden pt-4">
-              <div className="flex flex-col gap-2">{binCardsForInstructions ?? subtleFallbackCard}</div>
+              <div className="flex flex-col gap-2">{binCardsForInstructions ?? instructionsFallbackCard}</div>
             </div>
           </div>
         </div>
@@ -608,8 +601,6 @@ export default function ProofPageContent() {
           </div>
         </div>
       </div>
-
-      {quickReferenceContent}
     </section>
   );
 
