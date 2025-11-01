@@ -462,87 +462,97 @@ export default function ProofPageContent() {
     setChecklist((prev) => ({ ...prev, [key]: checked }));
   };
 
-  return (
-    <div className="relative flex min-h-full flex-col text-white">
-      <div className="flex-1 p-6 pb-32 space-y-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
-          {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
-        </h1>
-        <p className="text-lg font-semibold text-gray-200">{job.address}</p>
-
-        {/* Checklist section */}
-        <section className="space-y-5 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <h2 className="text-lg font-bold text-white">Follow these steps before you take a photo</h2>
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-4 shadow-sm">
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5 rounded border border-neutral-600 bg-neutral-900 text-[#ff5757] focus:ring-[#ff5757]"
-                  checked={checklist.propertyConfirmed}
-                  onChange={handleChecklistChange("propertyConfirmed")}
-                />
-                <span className="text-sm text-white">
-                  I am at <span className="font-semibold">{job.address}</span> and the property matches the photo.
-                </span>
-              </label>
-              <div className="relative mt-4">
+  const checklistContainer = (
+    <section className="space-y-5 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
+      <h2 className="text-lg font-bold text-white">Follow these steps before you take a photo</h2>
+      <div className="space-y-3">
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Confirm the property</p>
+              <p className="text-gray-400">I am at <span className="font-semibold text-white">{job.address}</span>.</p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.propertyConfirmed}
+              onChange={handleChecklistChange("propertyConfirmed")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.propertyConfirmed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4">
+              <div className="relative">
                 <img
                   src={bringInImageSrc}
                   alt="Property reference"
-                  className="w-full aspect-[3/4] object-cover rounded-lg border border-neutral-800/70"
+                  className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
                 <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
                   Check property
                 </span>
               </div>
-              <p className="mt-3 text-xs text-gray-300">
-                Use the Bring In reference photo to double-check you are servicing the correct property before touching the bins.
-              </p>
             </div>
+          </div>
+        </div>
 
-            <div className="rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-4 shadow-sm">
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5 rounded border border-neutral-600 bg-neutral-900 text-[#ff5757] focus:ring-[#ff5757]"
-                  checked={checklist.binColoursConfirmed}
-                  onChange={handleChecklistChange("binColoursConfirmed")}
-                />
-                <span className="text-sm text-white">
-                  {isPutOutJob ? "Put out" : "Bring in"} every bin in the colours shown below.
-                </span>
-              </label>
-              <div className="mt-4 flex flex-col gap-2">{binCardsForInstructions ?? subtleFallbackCard}</div>
-              <p className="mt-3 text-xs text-gray-300">Not sure which colours are scheduled? Take every bin in the list.</p>
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Confirm the bin colours</p>
+              <p className="text-gray-400">{isPutOutJob ? "Put out" : "Bring in"} every bin shown below.</p>
             </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.binColoursConfirmed}
+              onChange={handleChecklistChange("binColoursConfirmed")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.binColoursConfirmed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4">
+              <div className="flex flex-col gap-2">{binCardsForInstructions ?? subtleFallbackCard}</div>
+            </div>
+          </div>
+        </div>
 
-            <div className="rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-4 shadow-sm">
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5 rounded border border-neutral-600 bg-neutral-900 text-[#ff5757] focus:ring-[#ff5757]"
-                  checked={checklist.placementUnderstood}
-                  onChange={handleChecklistChange("placementUnderstood")}
-                />
-                <span className="text-sm text-white">
-                  Move the bins carefully and stage them exactly like the reference photo.
-                </span>
-              </label>
-              <div className="relative mt-4">
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Stage the bins like this</p>
+              <p className="text-gray-400">Match the spacing shown below when you move the bins.</p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.placementUnderstood}
+              onChange={handleChecklistChange("placementUnderstood")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.placementUnderstood ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4 space-y-4">
+              <div className="relative rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
                 <img
-                  src={endImageSrc}
-                  alt={`${endLocationLabel} reference`}
-                  className="w-full aspect-[3/4] object-cover rounded-lg border border-neutral-800/70"
+                  src="/images/binPlacement.png"
+                  alt="Example spacing for bins"
+                  className="w-full h-auto rounded-lg object-contain"
                 />
                 <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                  Place bins here
-                </span>
-                <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">
-                  {endLocationLabel}
+                  Keep this spacing
                 </span>
               </div>
-              <ul className="mt-3 space-y-2 text-sm text-gray-300">
+              <ul className="space-y-2 text-sm text-gray-300">
                 {moveStepLines.map((line) => (
                   <li key={line} className="flex items-start gap-2">
                     <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
@@ -553,20 +563,39 @@ export default function ProofPageContent() {
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
 
-            <div className="rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-4 shadow-sm">
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5 rounded border border-neutral-600 bg-neutral-900 text-[#ff5757] focus:ring-[#ff5757]"
-                  checked={checklist.neatnessConfirmed}
-                  onChange={handleChecklistChange("neatnessConfirmed")}
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Final check</p>
+              <p className="text-gray-400">Everything is neat with room for the truck.</p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.neatnessConfirmed}
+              onChange={handleChecklistChange("neatnessConfirmed")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.neatnessConfirmed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4 space-y-4">
+              <div className="relative">
+                <img
+                  src={endImageSrc}
+                  alt={`${endLocationLabel} reference`}
+                  className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
-                <span className="text-sm text-white">
-                  Bins are lined up neatly with enough space for the truck to collect.
+                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                  Final placement
                 </span>
-              </label>
-              <ul className="mt-3 space-y-2 text-sm text-gray-300">
+              </div>
+              <ul className="space-y-2 text-sm text-gray-300">
                 {neatnessChecklist.map((line) => (
                   <li key={line} className="flex items-start gap-2">
                     <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
@@ -578,9 +607,23 @@ export default function ProofPageContent() {
               </ul>
             </div>
           </div>
+        </div>
+      </div>
 
-          {quickReferenceContent}
-        </section>
+      {quickReferenceContent}
+    </section>
+  );
+
+  return (
+    <div className="relative flex min-h-full flex-col text-white">
+      <div className="flex-1 p-6 pb-32 space-y-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
+          {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
+        </h1>
+        <p className="text-lg font-semibold text-gray-200">{job.address}</p>
+
+        {/* Checklist section */}
+        {checklistContainer}
 
         {job.notes && (
           <div className="bg-neutral-800 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
