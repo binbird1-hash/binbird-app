@@ -452,7 +452,6 @@ export default function ProofPageContent() {
 
   const quickReferenceContent = (
     <div className="pt-1">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Bin colours today</p>
       <div className="flex flex-col gap-2">{binCardsForQuickReference ?? subtleFallbackCard}</div>
     </div>
   );
