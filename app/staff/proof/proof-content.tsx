@@ -64,6 +64,26 @@ function generateSequentialFileName(
   return `${baseName} (${counter})${extension}`;
 }
 
+function isDuplicateStorageError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+
+  const possible = err as { statusCode?: number; message?: string; error?: string };
+  if (typeof possible.statusCode === "number" && possible.statusCode === 409) {
+    return true;
+  }
+
+  const message =
+    typeof possible.message === "string"
+      ? possible.message
+      : typeof possible.error === "string"
+        ? possible.error
+        : "";
+
+  if (!message) return false;
+  const lowered = message.toLowerCase();
+  return lowered.includes("already exists") || lowered.includes("duplicate");
+}
+
 async function prepareFileAsJpeg(originalFile: File, desiredName: string): Promise<File> {
   const isAlreadyJpeg =
     originalFile.type === "image/jpeg" ||
@@ -422,23 +442,50 @@ export default function ProofPageContent() {
       const folderPath = `${safeClient}/${safeAddress}/${year}/${week}`;
       const baseFileName = job.job_type === "bring_in" ? "Bring In" : "Put Out";
       const fileExtension = ".jpg";
-      const { data: existingFiles, error: listErr } = await supabase.storage
-        .from("proofs")
-        .list(folderPath, { limit: 100 });
+      const bucket = supabase.storage.from("proofs");
+      const { data: existingFiles, error: listErr } = await bucket.list(folderPath, { limit: 100 });
       if (listErr) {
         console.warn("Unable to check existing proof photos", listErr);
       }
-      const fileLabel = generateSequentialFileName(
-        baseFileName,
-        fileExtension,
-        existingFiles?.map((existingFile) => existingFile.name) ?? [],
-      );
-      const uploadFile = await prepareFileAsJpeg(file, fileLabel);
-      const path = `${folderPath}/${fileLabel}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("proofs")
-        .upload(path, uploadFile, { upsert: false });
-      if (uploadErr) throw uploadErr;
+      const existingNames = existingFiles?.map((existingFile) => existingFile.name) ?? [];
+      const attemptedNames = new Set(existingNames);
+      let fileLabel = generateSequentialFileName(baseFileName, fileExtension, existingNames);
+      let uploadError: unknown = null;
+      let path: string | null = null;
+
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        attemptedNames.add(fileLabel);
+        const uploadFile = await prepareFileAsJpeg(file, fileLabel);
+        const candidatePath = `${folderPath}/${fileLabel}`;
+        const { error: uploadErr } = await bucket.upload(candidatePath, uploadFile, { upsert: false });
+
+        if (!uploadErr) {
+          path = candidatePath;
+          break;
+        }
+
+        uploadError = uploadErr;
+        if (!isDuplicateStorageError(uploadErr)) {
+          throw uploadErr;
+        }
+
+        fileLabel = generateSequentialFileName(
+          baseFileName,
+          fileExtension,
+          Array.from(attemptedNames),
+        );
+      }
+
+      if (!path) {
+        const fallbackLabel = `${baseFileName} ${Date.now()}${fileExtension}`;
+        const fallbackFile = await prepareFileAsJpeg(file, fallbackLabel);
+        const fallbackPath = `${folderPath}/${fallbackLabel}`;
+        const { error: fallbackError } = await bucket.upload(fallbackPath, fallbackFile, { upsert: false });
+        if (fallbackError) {
+          throw uploadError ?? fallbackError;
+        }
+        path = fallbackPath;
+      }
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
       const { error: logErr } = await supabase.from("logs").insert({
