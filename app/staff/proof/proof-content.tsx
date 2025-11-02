@@ -132,7 +132,17 @@ export default function ProofPageContent() {
   });
   const [referenceLookupComplete, setReferenceLookupComplete] = useState(false);
 
-  const [gpsData, setGpsData] = useState<{ lat: number | null; lng: number | null; acc: number | null; time: string | null; }>({ lat: null, lng: null, acc: null, time: null });
+  const [gpsData, setGpsData] = useState<{
+    lat: number | null;
+    lng: number | null;
+    acc: number | null;
+    time: string | null;
+  }>({
+    lat: null,
+    lng: null,
+    acc: null,
+    time: null,
+  });
   const [gpsError, setGpsError] = useState<string | null>(null);
 
   const [checklist, setChecklist] = useState({
@@ -161,6 +171,9 @@ export default function ProofPageContent() {
       console.error("Parse failed:", err);
     }
   }, [params]);
+
+  const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
+  const job = jobs[currentIdx];
 
   const getActiveRunSession = useCallback(() => {
     const existing = readRunSession();
@@ -204,7 +217,7 @@ export default function ProofPageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [jobs, idx, supabase]);
+  }, [jobs, idx, supabase, job?.photo_path]);
 
   useEffect(() => {
     if (!jobs.length) return;
@@ -260,22 +273,26 @@ export default function ProofPageContent() {
     };
   }, [preview]);
 
-  const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
-  const job = jobs[currentIdx];
   if (!job) return <div className="p-6 text-white">No job found.</div>;
 
   // bins helpers
   function getParsedBins(bins: string | null | undefined) {
     if (!bins) return [] as string[];
-    return bins.split(",").map((b) => b.trim()).filter(Boolean);
+    return bins
+      .split(",")
+      .map((b) => b.trim())
+      .filter(Boolean);
   }
   const parsedBins = getParsedBins(job.bins);
 
   function getBinColorStyles(bin: string) {
     const normalized = bin.toLowerCase();
-    if (normalized.includes("red")) return { background: "bg-red-600", border: "border-red-500/70", text: "text-white" };
-    if (normalized.includes("yellow")) return { background: "bg-amber-300", border: "border-amber-300/70", text: "text-black" };
-    if (normalized.includes("green")) return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
+    if (normalized.includes("red"))
+      return { background: "bg-red-600", border: "border-red-500/70", text: "text-white" };
+    if (normalized.includes("yellow"))
+      return { background: "bg-amber-300", border: "border-amber-300/70", text: "text-black" };
+    if (normalized.includes("green"))
+      return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
     return { background: "bg-neutral-800", border: "border-neutral-600/70", text: "text-white" };
   }
   function getBinLabel(bin: string) {
@@ -285,7 +302,10 @@ export default function ProofPageContent() {
     if (normalized.includes("green")) return "All Green Bins";
     const cleaned = bin.replace(/bins?/gi, "").trim();
     if (!cleaned) return "All Bins";
-    const titleCase = cleaned.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    const titleCase = cleaned
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
     return `All ${titleCase} Bins`;
   }
   function renderBinCards(prefix: "instructions" | "quick-reference") {
@@ -311,7 +331,10 @@ export default function ProofPageContent() {
     }
     setSubmitting(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
       if (authError) throw authError;
       if (!user) throw new Error("You must be signed in to submit proof.");
       const now = new Date();
@@ -419,7 +442,9 @@ export default function ProofPageContent() {
   const propertyReferenceLabel = isPutOutJob ? null : "";
   const propertyReferenceAlt = "Property reference";
   const finalPlacementImageSrc = isPutOutJob ? endImageSrc : bringInImageSrc;
-  const finalPlacementAlt = isPutOutJob ? `${endLocationLabel} reference` : "Bins returned to property reference";
+  const finalPlacementAlt = isPutOutJob
+    ? `${endLocationLabel} reference`
+    : "Bins returned to property reference";
   const neatnessChecklist = isPutOutJob
     ? [
         "Bins are on the kerb in a straight line with space between each one.",
@@ -433,7 +458,7 @@ export default function ProofPageContent() {
       ];
 
   const checklistValues = Object.entries(checklist).filter(
-    ([key]) => isPutOutJob || key !== "placementUnderstood",
+    ([key]) => isPutOutJob || key !== "placementUnderstood"
   );
   const allChecklistChecked = checklistValues.every(([, value]) => Boolean(value));
   const hasPhoto = Boolean(file);
@@ -445,10 +470,11 @@ export default function ProofPageContent() {
     </div>
   );
 
-  const handleChecklistChange = (key: keyof typeof checklist) => (event: ChangeEvent<HTMLInputElement>) => {
-    const { checked } = event.target;
-    setChecklist((prev) => ({ ...prev, [key]: checked }));
-  };
+  const handleChecklistChange = (key: keyof typeof checklist) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const { checked } = event.target;
+      setChecklist((prev) => ({ ...prev, [key]: checked }));
+    };
 
   const checklistTickClass = isPutOutJob
     ? "mt-0.5 text-[#ff5757]"
@@ -600,7 +626,7 @@ export default function ProofPageContent() {
 
   return (
     <div className="relative flex min-h-full flex-col text-white">
-      <div className="flex-1 p-6 pb-32 space-y-6">
+      <div className="flex-1 space-y-6 p-6 pb-32">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
@@ -610,14 +636,14 @@ export default function ProofPageContent() {
         {checklistContainer}
 
         {job.notes && (
-          <div className="bg-neutral-800 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
-            <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
-            <p className="text-white font-medium">{job.notes}</p>
+          <div className="rounded-xl border border-neutral-800/70 bg-neutral-800 p-4 shadow-lg">
+            <p className="mb-1 text-sm text-gray-400">Property Notes:</p>
+            <p className="font-medium text-white">{job.notes}</p>
           </div>
         )}
 
         {/* photo input + preview */}
-        <div className="flex flex-col gap-3 mt-10">
+        <div className="mt-10 flex flex-col gap-3">
           <input
             type="file"
             accept="image/*"
@@ -637,9 +663,18 @@ export default function ProofPageContent() {
           />
           {preview && (
             <div className="flex flex-col items-center gap-2">
-              <img src={preview} alt="preview" className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-lg" onClick={() => fileInputRef.current?.click()} />
+              <img
+                src={preview}
+                alt="preview"
+                className="aspect-[3/4] w-full rounded-xl border border-neutral-800/70 object-cover shadow-lg"
+                onClick={() => fileInputRef.current?.click()}
+              />
               {!submitting && (
-                <button type="button" className="text-sm text-gray-300 underline" onClick={() => fileInputRef.current?.click()}>
+                <button
+                  type="button"
+                  className="text-sm text-gray-300 underline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   Need a new photo?
                 </button>
               )}
@@ -649,16 +684,23 @@ export default function ProofPageContent() {
 
         {/* note box */}
         <div>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Leave any notes"
-            className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Leave any notes"
+            className="min-h-[100px] w-full rounded-lg bg-neutral-900 p-3 text-white placeholder-gray-500"
           />
         </div>
 
-        {gpsError && <div className="text-sm text-red-400"><p>{gpsError}</p></div>}
+        {gpsError && (
+          <div className="text-sm text-red-400">
+            <p>{gpsError}</p>
+          </div>
+        )}
       </div>
 
       {/* bottom button */}
-      <div className="absolute bottom-2 inset-x-0 p-4">
+      <div className="absolute inset-x-0 bottom-2 p-4">
         <button
           onClick={() => {
             if (submitting || !allChecklistChecked) return;
@@ -669,7 +711,7 @@ export default function ProofPageContent() {
             void handleMarkDone();
           }}
           disabled={submitting || !allChecklistChecked}
-          className={`w-full px-4 py-2 rounded-lg font-semibold transition relative z-10 disabled:opacity-60 disabled:cursor-not-allowed
+          className={`relative z-10 w-full rounded-lg px-4 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60
             ${readyToSubmit ? "bg-[#ff5757] text-white hover:bg-[#e04b4b]" : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
         >
           {submitting
