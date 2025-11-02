@@ -413,10 +413,14 @@ export default function ProofPageContent() {
       ? referenceUrls.bringIn
       : BRING_IN_PLACEHOLDER_URL;
   const isPutOutJob = job.job_type === "put_out";
-  const propertyReferenceImageSrc = putOutImageSrc;
-  const finalPlacementImageSrc = bringInImageSrc;
-  const propertyReferenceLabel = "Put Out reference";
-  const finalPlacementLabel = "Bring In reference";
+  const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
+  const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
+  const propertyReferenceImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
+  const propertyReferenceLabel = isPutOutJob ? "Check property" : "Put Out reference";
+  const propertyReferenceAlt = isPutOutJob ? "Property reference" : "Put Out property reference";
+  const finalPlacementImageSrc = isPutOutJob ? endImageSrc : bringInImageSrc;
+  const finalPlacementLabel = isPutOutJob ? "Final placement" : "Bring In reference";
+  const finalPlacementAlt = isPutOutJob ? `${endLocationLabel} reference` : "Bring In reference";
 
   const moveStepLines = isPutOutJob
     ? [
@@ -456,6 +460,10 @@ export default function ProofPageContent() {
     setChecklist((prev) => ({ ...prev, [key]: checked }));
   };
 
+  const checklistTickClass = isPutOutJob
+    ? "mt-0.5 text-[#ff5757]"
+    : "mt-0.5 text-[#ff5757] text-lg leading-none font-semibold";
+
   const checklistContainer = (
     <section className="space-y-5 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
       <h2 className="text-lg font-bold text-white">Follow these steps before you take a photo</h2>
@@ -463,9 +471,15 @@ export default function ProofPageContent() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
-              <p className="font-semibold text-white">Confirm the property & spacing</p>
+              <p className="font-semibold text-white">
+                {isPutOutJob ? "Confirm the property" : "Confirm the property & spacing"}
+              </p>
               <p className="text-gray-400">
-                I am at {job.address} and the bins are spaced like this when they are out.
+                {isPutOutJob ? (
+                  <>I am at {job.address}.</>
+                ) : (
+                  <>I am at {job.address} and the bins are spaced like this when they are out.</>
+                )}
               </p>
             </div>
             <input
@@ -485,16 +499,18 @@ export default function ProofPageContent() {
                 <div className="relative">
                   <img
                     src={propertyReferenceImageSrc}
-                    alt="Put Out property reference"
+                    alt={propertyReferenceAlt}
                     className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                   />
                   <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
                     {propertyReferenceLabel}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Match the kerbside spacing shown here when bins are placed out before collection.
-                </p>
+                {!isPutOutJob && (
+                  <p className="text-xs text-gray-400">
+                    Match the kerbside spacing shown here when bins are placed out before collection.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -527,9 +543,13 @@ export default function ProofPageContent() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
-              <p className="font-semibold text-white">Stage the bins correctly</p>
+              <p className="font-semibold text-white">
+                {isPutOutJob ? "Stage the bins like this" : "Stage the bins correctly"}
+              </p>
               <p className="text-gray-400">
-                Follow these steps when you move the bins {isPutOutJob ? "out" : "back in"}.
+                {isPutOutJob
+                  ? "Match the spacing shown below when you move the bins."
+                  : "Follow these steps when you move the bins back in."}
               </p>
             </div>
             <input
@@ -545,10 +565,22 @@ export default function ProofPageContent() {
             }`}
           >
             <div className="overflow-hidden pt-4 space-y-4">
+              {isPutOutJob && (
+                <div className="relative rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
+                  <img
+                    src="/images/binPlacement.png"
+                    alt="Example spacing for bins"
+                    className="w-full h-auto rounded-lg object-contain"
+                  />
+                  <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                    Keep this spacing
+                  </span>
+                </div>
+              )}
               <ul className="space-y-2 text-sm text-gray-300">
                 {moveStepLines.map((line) => (
                   <li key={line} className="flex items-start gap-2">
-                    <span aria-hidden="true" className="mt-0.5 text-[#ff5757] text-lg leading-none font-semibold">
+                    <span aria-hidden="true" className={checklistTickClass}>
                       ✓
                     </span>
                     <span>{line}</span>
@@ -581,20 +613,22 @@ export default function ProofPageContent() {
               <div className="relative">
                 <img
                   src={finalPlacementImageSrc}
-                  alt="Bring In reference"
+                  alt={finalPlacementAlt}
                   className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
                 <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
                   {finalPlacementLabel}
                 </span>
               </div>
-              <p className="text-xs text-gray-400">
-                When you finish, the bins should look like this inside the property.
-              </p>
+              {!isPutOutJob && (
+                <p className="text-xs text-gray-400">
+                  When you finish, the bins should look like this inside the property.
+                </p>
+              )}
               <ul className="space-y-2 text-sm text-gray-300">
                 {neatnessChecklist.map((line) => (
                   <li key={line} className="flex items-start gap-2">
-                    <span aria-hidden="true" className="mt-0.5 text-[#ff5757] text-lg leading-none font-semibold">
+                    <span aria-hidden="true" className={checklistTickClass}>
                       ✓
                     </span>
                     <span>{line}</span>
