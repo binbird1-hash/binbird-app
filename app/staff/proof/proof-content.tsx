@@ -419,8 +419,7 @@ export default function ProofPageContent() {
   const propertyReferenceLabel = isPutOutJob ? null : "";
   const propertyReferenceAlt = "Property reference";
   const finalPlacementImageSrc = isPutOutJob ? endImageSrc : bringInImageSrc;
-  const finalPlacementLabel = isPutOutJob ? null : "Bring In reference";
-  const finalPlacementAlt = isPutOutJob ? `${endLocationLabel} reference` : "Bring In reference";
+  const finalPlacementAlt = isPutOutJob ? `${endLocationLabel} reference` : "Bins returned to property reference";
   const neatnessChecklist = isPutOutJob
     ? [
         "Bins are on the kerb in a straight line with space between each one.",
@@ -559,7 +558,7 @@ export default function ProofPageContent() {
               <p className="text-gray-400">
                 {isPutOutJob
                   ? "Line the bins like the image."
-                  : "Bins are returned to property are shown below."}
+                  : "Bins are returned to property as shown below."}
               </p>
             </div>
             <input
@@ -581,11 +580,6 @@ export default function ProofPageContent() {
                   alt={finalPlacementAlt}
                   className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
-                {finalPlacementLabel && (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
-                    {finalPlacementLabel}
-                  </p>
-                )}
               </div>
               {!isPutOutJob && (
                 <p className="text-xs text-gray-400">
