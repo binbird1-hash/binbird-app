@@ -582,6 +582,9 @@ export default function ProofPageContent() {
                 />
               </div>
               {!isPutOutJob && (
+                <p className="text-sm text-gray-400">
+                  When you finish, the bins should look like this inside the property.
+                </p>
               )}
               <ul className="space-y-2 text-sm text-gray-300">
                 {neatnessChecklist.map((line) => (
