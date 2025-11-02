@@ -1,15 +1,13 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { getOperationalISODate, isJobVisibilityRestricted } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
-const TRANSPARENT_PIXEL =
-  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 const PUT_OUT_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Put+Bins+Out";
 const BRING_IN_PLACEHOLDER_URL =
@@ -48,6 +46,22 @@ function getCustomWeek(date: Date) {
     year: target.getFullYear(),
     week: `Week-${week}`,
   };
+}
+
+function generateSequentialFileName(
+  baseName: string,
+  extension: string,
+  existingNames: string[],
+): string {
+  const existing = new Set(existingNames);
+  const defaultLabel = `${baseName}${extension}`;
+  if (!existing.has(defaultLabel)) return defaultLabel;
+
+  let counter = 2;
+  while (existing.has(`${baseName} (${counter})${extension}`)) {
+    counter += 1;
+  }
+  return `${baseName} (${counter})${extension}`;
 }
 
 async function prepareFileAsJpeg(originalFile: File, desiredName: string): Promise<File> {
@@ -115,11 +129,21 @@ export default function ProofPageContent() {
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [referenceUrls, setReferenceUrls] = useState<{ putOut: string | null; bringIn: string | null; }>({ putOut: null, bringIn: null });
+  const [referenceUrls, setReferenceUrls] = useState<{ putOut: string | null; bringIn: string | null }>({
+    putOut: null,
+    bringIn: null,
+  });
   const [referenceLookupComplete, setReferenceLookupComplete] = useState(false);
 
   const [gpsData, setGpsData] = useState<{ lat: number | null; lng: number | null; acc: number | null; time: string | null; }>({ lat: null, lng: null, acc: null, time: null });
   const [gpsError, setGpsError] = useState<string | null>(null);
+
+  const [checklist, setChecklist] = useState({
+    propertyConfirmed: false,
+    binColoursConfirmed: false,
+    placementUnderstood: false,
+    neatnessConfirmed: false,
+  });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasRedirectedRef = useRef(false);
@@ -206,15 +230,30 @@ export default function ProofPageContent() {
     return existing;
   }, []);
 
+  const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
+  const job = jobs[currentIdx];
+  const jobId = job?.id ?? null;
+  const photoPath = job?.photo_path ?? null;
+
   useEffect(() => {
     let isCancelled = false;
+
+    if (!photoPath) {
+      setReferenceUrls({ putOut: null, bringIn: null });
+      setReferenceLookupComplete(false);
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    setReferenceLookupComplete(false);
+    setReferenceUrls({ putOut: null, bringIn: null });
+
     async function fetchReferenceImages() {
-      if (!job?.photo_path) return;
-      const basePath = job.photo_path;
       const bucket = supabase.storage.from("proofs");
       const [putOutRes, bringInRes] = await Promise.all([
-        bucket.createSignedUrl(`${basePath}/Put Out.jpg`, 3600),
-        bucket.createSignedUrl(`${basePath}/Bring In.jpg`, 3600),
+        bucket.createSignedUrl(`${photoPath}/Put Out.jpg`, 3600),
+        bucket.createSignedUrl(`${photoPath}/Bring In.jpg`, 3600),
       ]);
       if (!isCancelled) {
         setReferenceUrls({
@@ -224,11 +263,13 @@ export default function ProofPageContent() {
         setReferenceLookupComplete(true);
       }
     }
-    fetchReferenceImages();
+
+    void fetchReferenceImages();
+
     return () => {
       isCancelled = true;
     };
-  }, [jobs, idx, supabase]);
+  }, [photoPath, supabase]);
 
   useEffect(() => {
     if (!jobs.length) return;
@@ -285,8 +326,23 @@ export default function ProofPageContent() {
     };
   }, [preview]);
 
-  const currentIdx = Math.min(idx, Math.max(jobs.length - 1, 0));
-  const job = jobs[currentIdx];
+  useEffect(() => {
+    if (!jobId) return;
+    setChecklist({
+      propertyConfirmed: false,
+      binColoursConfirmed: false,
+      placementUnderstood: false,
+      neatnessConfirmed: false,
+    });
+    setFile(null);
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [jobId]);
 
   if (!authChecked) {
     return <div className="p-6 text-white">Checking session…</div>;
@@ -339,6 +395,10 @@ export default function ProofPageContent() {
       alert("Please take a photo before marking the job done.");
       return;
     }
+    if (!allChecklistChecked) {
+      alert("Please complete the checklist before submitting proof.");
+      return;
+    }
     const accountId = job.account_id;
     if (!accountId) {
       alert("Unable to log completion: missing account identifier for job.");
@@ -360,14 +420,25 @@ export default function ProofPageContent() {
       const safeClient = toKebab(job.client_name, "unknown-client");
       const safeAddress = toKebab(job.address, "unknown-address");
       const folderPath = `${safeClient}/${safeAddress}/${year}/${week}`;
-      const fileLabel = job.job_type === "bring_in" ? "Bring In.jpg" : "Put Out.jpg";
+      const baseFileName = job.job_type === "bring_in" ? "Bring In" : "Put Out";
+      const fileExtension = ".jpg";
+      const { data: existingFiles, error: listErr } = await supabase.storage
+        .from("proofs")
+        .list(folderPath, { limit: 100 });
+      if (listErr) {
+        console.warn("Unable to check existing proof photos", listErr);
+      }
+      const fileLabel = generateSequentialFileName(
+        baseFileName,
+        fileExtension,
+        existingFiles?.map((existingFile) => existingFile.name) ?? [],
+      );
       const uploadFile = await prepareFileAsJpeg(file, fileLabel);
       const path = `${folderPath}/${fileLabel}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage
+      const { error: uploadErr } = await supabase.storage
         .from("proofs")
-        .upload(path, uploadFile, { upsert: true });
+        .upload(path, uploadFile, { upsert: false });
       if (uploadErr) throw uploadErr;
-      const savePath = uploadData?.path ?? path;
       const staffNote = note.trim();
       const noteValue = staffNote.length ? staffNote : null;
       const { error: logErr } = await supabase.from("logs").insert({
@@ -379,7 +450,7 @@ export default function ProofPageContent() {
         task_type: job.job_type,
         bins: job.bins ?? null,
         notes: noteValue,
-        photo_path: savePath,
+        photo_path: path,
         done_on: dateStr,
         gps_lat: gpsData.lat ?? null,
         gps_lng: gpsData.lng ?? null,
@@ -436,43 +507,200 @@ export default function ProofPageContent() {
   }
 
   // images & copy
-  const putOutImageSrc = referenceLookupComplete ? referenceUrls.putOut ?? PUT_OUT_PLACEHOLDER_URL : TRANSPARENT_PIXEL;
-  const bringInImageSrc = referenceLookupComplete ? referenceUrls.bringIn ?? BRING_IN_PLACEHOLDER_URL : TRANSPARENT_PIXEL;
+  const putOutImageSrc =
+    referenceLookupComplete && referenceUrls.putOut
+      ? referenceUrls.putOut
+      : PUT_OUT_PLACEHOLDER_URL;
+  const bringInImageSrc =
+    referenceLookupComplete && referenceUrls.bringIn
+      ? referenceUrls.bringIn
+      : BRING_IN_PLACEHOLDER_URL;
   const isPutOutJob = job.job_type === "put_out";
-  const startImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
   const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
-  const startLocationLabel = isPutOutJob ? "Storage Area" : "Kerb";
   const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
+  const propertyReferenceImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
+  const propertyReferenceLabel = isPutOutJob ? null : "";
+  const propertyReferenceAlt = "Property reference";
+  const finalPlacementImageSrc = isPutOutJob ? endImageSrc : bringInImageSrc;
+  const finalPlacementAlt = isPutOutJob
+    ? `${endLocationLabel} reference`
+    : "Bins returned to property reference";
+  const neatnessChecklist = isPutOutJob
+    ? [
+        "Bins are on the kerb in a straight line with space between each one.",
+        "There is clear room for the truck to collect and nothing blocks the road or footpath.",
+        "Lids are closed tight and the area is tidy.",
+      ]
+    : [
+        "Bins are parked neatly in the storage area.",
+        "Doors, paths, and emergency exits are clear.",
+        "Lids are closed tight and the area is tidy.",
+      ];
 
-  const startBodyCopy = isPutOutJob
-    ? { primary: "Go to the storage area to find the bins.", secondary: "If no bins are there, skip to Step 4." }
-    : { primary: "Go to the kerb to find the bins waiting.", secondary: "If no bins are there, skip to Step 4." };
-  const endBodyCopy = isPutOutJob
-    ? { primary: "Park bins neatly on the kerb for collection.", secondary: "Line them up exactly like this photo." }
-    : { primary: "Park bins neatly in the storage area.", secondary: "Line them up exactly like this photo." };
-
-  const moveStepLines = isPutOutJob
-    ? ["Roll every scheduled bin from the storage area to the kerb.", "Leave the storage area empty when you finish.", "Keep paths, doors, and kerbs clear while you move."]
-    : ["Roll every scheduled bin from the kerb back inside.", "Leave the kerb clear when you finish.", "Keep paths, doors, and kerbs clear while you move."];
-  const finalCheckLines = isPutOutJob
-    ? ["All bins are on the kerb", "Lids are closed tight", "Kerbside is neat, nothing blocking driveways or footpaths"]
-    : ["All bins are back inside", "Lids are closed tight", "Storage area is neat, nothing blocking doors or paths"];
-
+  const checklistValues = Object.entries(checklist).filter(
+    ([key]) => isPutOutJob || key !== "placementUnderstood"
+  );
+  const allChecklistChecked = checklistValues.every(([, value]) => Boolean(value));
   const hasPhoto = Boolean(file);
-  const readyToSubmit = hasPhoto;
+  const readyToSubmit = hasPhoto && allChecklistChecked;
   const binCardsForInstructions = renderBinCards("instructions");
-  const binCardsForQuickReference = renderBinCards("quick-reference");
-  const subtleFallbackCard = (
+  const instructionsFallbackCard = (
     <div className="w-full rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-center text-base font-semibold uppercase text-white">
       All Bins
     </div>
   );
 
-  const quickReferenceContent = (
-    <div className="pt-1">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Bin colours today</p>
-      <div className="flex flex-col gap-2">{binCardsForQuickReference ?? subtleFallbackCard}</div>
-    </div>
+  const handleChecklistChange = (key: keyof typeof checklist) => (event: ChangeEvent<HTMLInputElement>) => {
+    const { checked } = event.target;
+    setChecklist((prev) => ({ ...prev, [key]: checked }));
+  };
+
+  const checklistTickClass = isPutOutJob
+    ? "mt-0.5 text-[#ff5757]"
+    : "mt-0.5 text-[#ff5757] text-lg leading-none font-semibold";
+
+  const checklistContainer = (
+    <section className="space-y-5 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
+      <h2 className="text-lg font-bold text-white">Follow these steps before you take a photo</h2>
+      <div className="space-y-3">
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Confirm the property</p>
+              <p className="text-gray-400">I am at {job.address}.</p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.propertyConfirmed}
+              onChange={handleChecklistChange("propertyConfirmed")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.propertyConfirmed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4">
+              <div className="space-y-3">
+                <div>
+                  <img
+                    src={propertyReferenceImageSrc}
+                    alt={propertyReferenceAlt}
+                    className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
+                  />
+                  {propertyReferenceLabel && (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
+                      {propertyReferenceLabel}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Confirm the bin colours</p>
+              <p className="text-gray-400">{isPutOutJob ? "Put out" : "Bring in"} every bin shown below.</p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.binColoursConfirmed}
+              onChange={handleChecklistChange("binColoursConfirmed")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.binColoursConfirmed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4">
+              <div className="flex flex-col gap-2">{binCardsForInstructions ?? instructionsFallbackCard}</div>
+            </div>
+          </div>
+        </div>
+
+        {isPutOutJob && (
+          <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-gray-200">
+                <p className="font-semibold text-white">Stage the bins like this</p>
+                <p className="text-gray-400">Match the spacing shown below when you move the bins.</p>
+              </div>
+              <input
+                type="checkbox"
+                className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+                checked={checklist.placementUnderstood}
+                onChange={handleChecklistChange("placementUnderstood")}
+              />
+            </div>
+            <div
+              className={`grid transition-all duration-500 ease-in-out ${
+                checklist.placementUnderstood ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+              }`}
+            >
+              <div className="overflow-hidden pt-4">
+                <div className="rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
+                  <img
+                    src="/images/binPlacement.png"
+                    alt="Example spacing for bins"
+                    className="w-full h-auto rounded-lg object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-gray-200">
+              <p className="font-semibold text-white">Final check</p>
+              <p className="text-gray-400">
+                {isPutOutJob
+                  ? "Line the bins like the image."
+                  : "Bins are returned to property as shown below."}
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              checked={checklist.neatnessConfirmed}
+              onChange={handleChecklistChange("neatnessConfirmed")}
+            />
+          </div>
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              checklist.neatnessConfirmed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden pt-4 space-y-4">
+              <div>
+                <img
+                  src={finalPlacementImageSrc}
+                  alt={finalPlacementAlt}
+                  className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
+                />
+              </div>
+              <ul className="space-y-2 text-sm text-gray-300">
+                {neatnessChecklist.map((line) => (
+                  <li key={line} className="flex items-start gap-2">
+                    <span aria-hidden="true" className={checklistTickClass}>
+                      ✓
+                    </span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 
   return (
@@ -483,96 +711,8 @@ export default function ProofPageContent() {
         </h1>
         <p className="text-lg font-semibold text-gray-200">{job.address}</p>
 
-        {/* Instructions section styled as box */}
-        <section className="space-y-4 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
-          <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-            <summary className="px-4 py-3 font-bold cursor-pointer focus:outline-none">Instructions</summary>
-            <div className="p-4 space-y-3">
-              {/* Step 1 */}
-              <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">Step 1 – Start Spot</summary>
-                <div className="p-4 space-y-3 text-left">
-                  <div className="relative">
-                    <img src={startImageSrc} alt={`${startLocationLabel} example`} className="w-full aspect-[3/4] object-cover rounded-lg" />
-                    <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">START HERE</span>
-                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">{startLocationLabel}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-white">{startBodyCopy.primary}</p>
-                  <p className="text-sm text-gray-300">{startBodyCopy.secondary}</p>
-                </div>
-              </details>
-
-              {/* Step 2 */}
-              <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">Step 2 – Today’s Bins</summary>
-                <div className="p-4 space-y-3 text-left">
-                  <div className="flex flex-col gap-2">{binCardsForInstructions ?? subtleFallbackCard}</div>
-                  <p className="text-sm font-semibold text-white">Roll every bin in the colours shown above.</p>
-                  <p className="text-xs text-gray-300">Not sure? Take every bin.</p>
-                </div>
-              </details>
-
-              {/* Step 3 */}
-              <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">
-                  Step 3 – Move the Bins
-                </summary>
-                <div className="p-4 space-y-3 text-left">
-                  {/* 👇 New image above the writings */}
-                  <div className="relative">
-                    <img
-                      src="/images/binPlacement.png"
-                      alt="Example of moving bins"
-                      className="w-full h-auto object-contain rounded-lg border border-neutral-800/70 shadow-md"
-                    />
-                  </div>
-
-                  {/* Existing text list */}
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    {moveStepLines.map((line) => (
-                      <li key={line} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">✓</span>
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
-
-
-
-              {/* Step 4 */}
-              <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">Step 4 – Finish Spot</summary>
-                <div className="p-4 space-y-3 text-left">
-                  <div className="relative">
-                    <img src={endImageSrc} alt={`${endLocationLabel} example`} className="w-full aspect-[3/4] object-cover rounded-lg" />
-                    <span className="absolute top-3 left-3 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">END HERE</span>
-                    <span className="absolute bottom-3 left-3 rounded bg-black/70 px-3 py-1 text-xs uppercase tracking-wide">{endLocationLabel}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-white">{endBodyCopy.primary}</p>
-                  <p className="text-sm text-gray-300">{endBodyCopy.secondary}</p>
-                </div>
-              </details>
-
-              {/* Step 5 */}
-              <details className="rounded-2xl border border-neutral-800/70 bg-neutral-950/70 shadow-sm">
-                <summary className="px-4 py-3 font-semibold cursor-pointer focus:outline-none">Step 5 – Final Check</summary>
-                <div className="p-4 text-left">
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    {finalCheckLines.map((line) => (
-                      <li key={line} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">✓</span>
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
-            </div>
-          </details>
-          {quickReferenceContent}
-        </section>
+        {/* Checklist section */}
+        {checklistContainer}
 
         {job.notes && (
           <div className="bg-neutral-800 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
@@ -584,19 +724,36 @@ export default function ProofPageContent() {
         {/* photo input + preview */}
         <div className="flex flex-col gap-3 mt-10">
           <input
-            type="file" accept="image/*" capture="environment" id="photo-upload"
-            className="hidden" ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            id="photo-upload"
+            className="hidden"
+            ref={fileInputRef}
             onChange={(e) => {
               const f = e.target.files?.[0] ?? null;
               setFile(f);
-              setPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return f ? URL.createObjectURL(f) : null; });
+              setPreview((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return f ? URL.createObjectURL(f) : null;
+              });
             }}
+            disabled={!allChecklistChecked}
           />
           {preview && (
             <div className="flex flex-col items-center gap-2">
-              <img src={preview} alt="preview" className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-lg" onClick={() => fileInputRef.current?.click()} />
+              <img
+                src={preview}
+                alt="preview"
+                className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70 shadow-lg"
+                onClick={() => fileInputRef.current?.click()}
+              />
               {!submitting && (
-                <button type="button" className="text-sm text-gray-300 underline" onClick={() => fileInputRef.current?.click()}>
+                <button
+                  type="button"
+                  className="text-sm text-gray-300 underline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   Need a new photo?
                 </button>
               )}
@@ -606,24 +763,43 @@ export default function ProofPageContent() {
 
         {/* note box */}
         <div>
-          <p className="text-sm text-gray-400 mb-1">Leave a note:</p>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Leave any notes"
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Leave any notes"
             className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
           />
         </div>
 
-        {gpsError && <div className="text-sm text-red-400"><p>{gpsError}</p></div>}
+        {gpsError && (
+          <div className="text-sm text-red-400">
+            <p>{gpsError}</p>
+          </div>
+        )}
       </div>
 
       {/* bottom button */}
       <div className="absolute bottom-2 inset-x-0 p-4">
         <button
-          onClick={() => { if (submitting) return; if (!file) { fileInputRef.current?.click(); return; } void handleMarkDone(); }}
-          disabled={submitting}
+          onClick={() => {
+            if (submitting || !allChecklistChecked) return;
+            if (!file) {
+              fileInputRef.current?.click();
+              return;
+            }
+            void handleMarkDone();
+          }}
+          disabled={submitting || !allChecklistChecked}
           className={`w-full px-4 py-2 rounded-lg font-semibold transition relative z-10 disabled:opacity-60 disabled:cursor-not-allowed
             ${readyToSubmit ? "bg-[#ff5757] text-white hover:bg-[#e04b4b]" : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
         >
-          {submitting ? "Saving…" : readyToSubmit ? "Mark Done" : "Take Photo"}
+          {submitting
+            ? "Saving…"
+            : !allChecklistChecked
+            ? "Complete the checklist"
+            : readyToSubmit
+            ? "Mark Done"
+            : "Take Photo"}
         </button>
       </div>
     </div>
