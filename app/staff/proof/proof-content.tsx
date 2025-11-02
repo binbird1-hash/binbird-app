@@ -413,8 +413,10 @@ export default function ProofPageContent() {
       ? referenceUrls.bringIn
       : BRING_IN_PLACEHOLDER_URL;
   const isPutOutJob = job.job_type === "put_out";
-  const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
-  const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
+  const propertyReferenceImageSrc = putOutImageSrc;
+  const finalPlacementImageSrc = bringInImageSrc;
+  const propertyReferenceLabel = "Put Out reference";
+  const finalPlacementLabel = "Bring In reference";
 
   const moveStepLines = isPutOutJob
     ? [
@@ -461,8 +463,10 @@ export default function ProofPageContent() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
-              <p className="font-semibold text-white">Confirm the property</p>
-              <p className="text-gray-400">I am at {job.address}.</p>
+              <p className="font-semibold text-white">Confirm the property & spacing</p>
+              <p className="text-gray-400">
+                I am at {job.address} and the bins are spaced like this when they are out.
+              </p>
             </div>
             <input
               type="checkbox"
@@ -477,15 +481,20 @@ export default function ProofPageContent() {
             }`}
           >
             <div className="overflow-hidden pt-4">
-              <div className="relative">
-                <img
-                  src={bringInImageSrc}
-                  alt="Property reference"
-                  className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
-                />
-                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                  Check property
-                </span>
+              <div className="space-y-3">
+                <div className="relative">
+                  <img
+                    src={propertyReferenceImageSrc}
+                    alt="Put Out property reference"
+                    className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
+                  />
+                  <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                    {propertyReferenceLabel}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Match the kerbside spacing shown here when bins are placed out before collection.
+                </p>
               </div>
             </div>
           </div>
@@ -518,8 +527,10 @@ export default function ProofPageContent() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
-              <p className="font-semibold text-white">Stage the bins like this</p>
-              <p className="text-gray-400">Match the spacing shown below when you move the bins.</p>
+              <p className="font-semibold text-white">Stage the bins correctly</p>
+              <p className="text-gray-400">
+                Follow these steps when you move the bins {isPutOutJob ? "out" : "back in"}.
+              </p>
             </div>
             <input
               type="checkbox"
@@ -534,20 +545,10 @@ export default function ProofPageContent() {
             }`}
           >
             <div className="overflow-hidden pt-4 space-y-4">
-              <div className="relative rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
-                <img
-                  src="/images/binPlacement.png"
-                  alt="Example spacing for bins"
-                  className="w-full h-auto rounded-lg object-contain"
-                />
-                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                  Keep this spacing
-                </span>
-              </div>
               <ul className="space-y-2 text-sm text-gray-300">
                 {moveStepLines.map((line) => (
                   <li key={line} className="flex items-start gap-2">
-                    <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                    <span aria-hidden="true" className="mt-0.5 text-[#ff5757] text-lg leading-none font-semibold">
                       ✓
                     </span>
                     <span>{line}</span>
@@ -579,18 +580,21 @@ export default function ProofPageContent() {
             <div className="overflow-hidden pt-4 space-y-4">
               <div className="relative">
                 <img
-                  src={endImageSrc}
-                  alt={`${endLocationLabel} reference`}
+                  src={finalPlacementImageSrc}
+                  alt="Bring In reference"
                   className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
                 <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                  Final placement
+                  {finalPlacementLabel}
                 </span>
               </div>
+              <p className="text-xs text-gray-400">
+                When you finish, the bins should look like this inside the property.
+              </p>
               <ul className="space-y-2 text-sm text-gray-300">
                 {neatnessChecklist.map((line) => (
                   <li key={line} className="flex items-start gap-2">
-                    <span aria-hidden="true" className="mt-0.5 text-[#ff5757]">
+                    <span aria-hidden="true" className="mt-0.5 text-[#ff5757] text-lg leading-none font-semibold">
                       ✓
                     </span>
                     <span>{line}</span>
