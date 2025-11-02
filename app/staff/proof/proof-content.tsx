@@ -416,23 +416,11 @@ export default function ProofPageContent() {
   const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
   const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
   const propertyReferenceImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
-  const propertyReferenceLabel = isPutOutJob ? "Check property" : "Put Out reference";
-  const propertyReferenceAlt = isPutOutJob ? "Property reference" : "Put Out property reference";
+  const propertyReferenceLabel = isPutOutJob ? null : "";
+  const propertyReferenceAlt = "Property reference";
   const finalPlacementImageSrc = isPutOutJob ? endImageSrc : bringInImageSrc;
-  const finalPlacementLabel = isPutOutJob ? "Final placement" : "Bring In reference";
+  const finalPlacementLabel = isPutOutJob ? null : "Bring In reference";
   const finalPlacementAlt = isPutOutJob ? `${endLocationLabel} reference` : "Bring In reference";
-
-  const moveStepLines = isPutOutJob
-    ? [
-        "Roll every scheduled bin from the storage area to the kerb.",
-        "Leave the storage area empty when you finish.",
-        "Keep paths, doors, and kerbs clear while you move.",
-      ]
-    : [
-        "Roll every scheduled bin from the kerb back inside.",
-        "Leave the kerb clear when you finish.",
-        "Keep paths, doors, and kerbs clear while you move.",
-      ];
   const neatnessChecklist = isPutOutJob
     ? [
         "Bins are on the kerb in a straight line with space between each one.",
@@ -440,12 +428,15 @@ export default function ProofPageContent() {
         "Lids are closed tight and the area is tidy.",
       ]
     : [
-        "Bins are parked neatly in the storage area with space to access each bin.",
-        "Doors, paths, and emergency exits are clear for the truck or building users.",
+        "Bins are parked neatly in the storage area.",
+        "Doors, paths, and emergency exits are clear.",
         "Lids are closed tight and the area is tidy.",
       ];
 
-  const allChecklistChecked = Object.values(checklist).every(Boolean);
+  const checklistValues = Object.entries(checklist).filter(
+    ([key]) => isPutOutJob || key !== "placementUnderstood",
+  );
+  const allChecklistChecked = checklistValues.every(([, value]) => Boolean(value));
   const hasPhoto = Boolean(file);
   const readyToSubmit = hasPhoto && allChecklistChecked;
   const binCardsForInstructions = renderBinCards("instructions");
@@ -471,16 +462,8 @@ export default function ProofPageContent() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
-              <p className="font-semibold text-white">
-                {isPutOutJob ? "Confirm the property" : "Confirm the property & spacing"}
-              </p>
-              <p className="text-gray-400">
-                {isPutOutJob ? (
-                  <>I am at {job.address}.</>
-                ) : (
-                  <>I am at {job.address} and the bins are spaced like this when they are out.</>
-                )}
-              </p>
+              <p className="font-semibold text-white">Confirm the property</p>
+              <p className="text-gray-400">I am at {job.address}.</p>
             </div>
             <input
               type="checkbox"
@@ -502,15 +485,12 @@ export default function ProofPageContent() {
                     alt={propertyReferenceAlt}
                     className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                   />
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
-                    {propertyReferenceLabel}
-                  </p>
+                  {propertyReferenceLabel && (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
+                      {propertyReferenceLabel}
+                    </p>
+                  )}
                 </div>
-                {!isPutOutJob && (
-                  <p className="text-xs text-gray-400">
-                    Match the kerbside spacing shown here when bins are placed out before collection.
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -540,62 +520,47 @@ export default function ProofPageContent() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div className="text-sm text-gray-200">
-              <p className="font-semibold text-white">
-                {isPutOutJob ? "Stage the bins like this" : "Stage the bins correctly"}
-              </p>
-              <p className="text-gray-400">
-                {isPutOutJob
-                  ? "Match the spacing shown below when you move the bins."
-                  : "Follow these steps when you move the bins back in."}
-              </p>
+        {isPutOutJob && (
+          <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-gray-200">
+                <p className="font-semibold text-white">Stage the bins like this</p>
+                <p className="text-gray-400">Match the spacing shown below when you move the bins.</p>
+              </div>
+              <input
+                type="checkbox"
+                className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+                checked={checklist.placementUnderstood}
+                onChange={handleChecklistChange("placementUnderstood")}
+              />
             </div>
-            <input
-              type="checkbox"
-              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
-              checked={checklist.placementUnderstood}
-              onChange={handleChecklistChange("placementUnderstood")}
-            />
-          </div>
-          <div
-            className={`grid transition-all duration-500 ease-in-out ${
-              checklist.placementUnderstood ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
-            }`}
-          >
-            <div className="overflow-hidden pt-4 space-y-4">
-              {isPutOutJob && (
+            <div
+              className={`grid transition-all duration-500 ease-in-out ${
+                checklist.placementUnderstood ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+              }`}
+            >
+              <div className="overflow-hidden pt-4">
                 <div className="rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
                   <img
                     src="/images/binPlacement.png"
                     alt="Example spacing for bins"
                     className="w-full h-auto rounded-lg object-contain"
                   />
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-300">
-                    Keep this spacing
-                  </p>
                 </div>
-              )}
-              <ul className="space-y-2 text-sm text-gray-300">
-                {moveStepLines.map((line) => (
-                  <li key={line} className="flex items-start gap-2">
-                    <span aria-hidden="true" className={checklistTickClass}>
-                      ✓
-                    </span>
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-200">
               <p className="font-semibold text-white">Final check</p>
-              <p className="text-gray-400">Everything is neat with room for the truck.</p>
+              <p className="text-gray-400">
+                {isPutOutJob
+                  ? "Line the bins like the image."
+                  : "Bins are returned to property are shown below."}
+              </p>
             </div>
             <input
               type="checkbox"
@@ -616,9 +581,11 @@ export default function ProofPageContent() {
                   alt={finalPlacementAlt}
                   className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
-                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
-                  {finalPlacementLabel}
-                </p>
+                {finalPlacementLabel && (
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
+                    {finalPlacementLabel}
+                  </p>
+                )}
               </div>
               {!isPutOutJob && (
                 <p className="text-xs text-gray-400">
