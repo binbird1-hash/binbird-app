@@ -416,17 +416,11 @@ export default function ProofPageContent() {
   const endImageSrc = isPutOutJob ? putOutImageSrc : bringInImageSrc;
   const endLocationLabel = isPutOutJob ? "Kerb" : "Storage Area";
   const propertyReferenceImageSrc = isPutOutJob ? bringInImageSrc : putOutImageSrc;
-  const propertyReferenceLabel = isPutOutJob ? "Check property" : "";
+  const propertyReferenceLabel = isPutOutJob ? null : "";
   const propertyReferenceAlt = "Property reference";
   const finalPlacementImageSrc = isPutOutJob ? endImageSrc : bringInImageSrc;
-  const finalPlacementLabel = isPutOutJob ? "Final placement" : "Bring In reference";
+  const finalPlacementLabel = isPutOutJob ? null : "Bring In reference";
   const finalPlacementAlt = isPutOutJob ? `${endLocationLabel} reference` : "Bring In reference";
-
-  const moveStepLines = [
-    "Roll every scheduled bin from the storage area to the kerb.",
-    "Leave the storage area empty when you finish.",
-    "Keep paths, doors, and kerbs clear while you move.",
-  ];
   const neatnessChecklist = isPutOutJob
     ? [
         "Bins are on the kerb in a straight line with space between each one.",
@@ -545,27 +539,14 @@ export default function ProofPageContent() {
                 checklist.placementUnderstood ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
               }`}
             >
-              <div className="overflow-hidden pt-4 space-y-4">
+              <div className="overflow-hidden pt-4">
                 <div className="rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
                   <img
                     src="/images/binPlacement.png"
                     alt="Example spacing for bins"
                     className="w-full h-auto rounded-lg object-contain"
                   />
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-300">
-                    Keep this spacing
-                  </p>
                 </div>
-                <ul className="space-y-2 text-sm text-gray-300">
-                  {moveStepLines.map((line) => (
-                    <li key={line} className="flex items-start gap-2">
-                      <span aria-hidden="true" className={checklistTickClass}>
-                        ✓
-                      </span>
-                      <span>{line}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           </div>
@@ -577,7 +558,7 @@ export default function ProofPageContent() {
               <p className="font-semibold text-white">Final check</p>
               <p className="text-gray-400">
                 {isPutOutJob
-                  ? "Everything is neat with room for the truck."
+                  ? "Line the bins like the image."
                   : "Bins are returned to property are shown below."}
               </p>
             </div>
@@ -600,9 +581,11 @@ export default function ProofPageContent() {
                   alt={finalPlacementAlt}
                   className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
-                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
-                  {finalPlacementLabel}
-                </p>
+                {finalPlacementLabel && (
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
+                    {finalPlacementLabel}
+                  </p>
+                )}
               </div>
               {!isPutOutJob && (
                 <p className="text-xs text-gray-400">
