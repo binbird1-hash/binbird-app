@@ -496,15 +496,15 @@ export default function ProofPageContent() {
           >
             <div className="overflow-hidden pt-4">
               <div className="space-y-3">
-                <div className="relative">
+                <div>
                   <img
                     src={propertyReferenceImageSrc}
                     alt={propertyReferenceAlt}
                     className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                   />
-                  <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
                     {propertyReferenceLabel}
-                  </span>
+                  </p>
                 </div>
                 {!isPutOutJob && (
                   <p className="text-xs text-gray-400">
@@ -566,15 +566,15 @@ export default function ProofPageContent() {
           >
             <div className="overflow-hidden pt-4 space-y-4">
               {isPutOutJob && (
-                <div className="relative rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
+                <div className="rounded-xl border border-neutral-800/70 bg-neutral-900/60 p-3">
                   <img
                     src="/images/binPlacement.png"
                     alt="Example spacing for bins"
                     className="w-full h-auto rounded-lg object-contain"
                   />
-                  <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-300">
                     Keep this spacing
-                  </span>
+                  </p>
                 </div>
               )}
               <ul className="space-y-2 text-sm text-gray-300">
@@ -610,15 +610,15 @@ export default function ProofPageContent() {
             }`}
           >
             <div className="overflow-hidden pt-4 space-y-4">
-              <div className="relative">
+              <div>
                 <img
                   src={finalPlacementImageSrc}
                   alt={finalPlacementAlt}
                   className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-800/70"
                 />
-                <span className="absolute top-3 left-3 rounded-full bg-[#ff5757] px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-lg">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-300">
                   {finalPlacementLabel}
-                </span>
+                </p>
               </div>
               {!isPutOutJob && (
                 <p className="text-xs text-gray-400">
