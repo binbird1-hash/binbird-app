@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -9,8 +9,9 @@ import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
-import { readPlannedRun, writePlannedRun } from "@/lib/planned-run";
-import { isJobVisibilityRestricted } from "@/lib/date";
+import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
+import { clearRunSession } from "@/lib/run-session";
+import { getOperationalISODate, isJobVisibilityRestricted } from "@/lib/date";
 
 function RoutePageContent() {
   const supabase = useSupabase();
@@ -52,10 +53,42 @@ function RoutePageContent() {
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
   const [hasStoredPlan, setHasStoredPlan] = useState(false);
+  const operationalDayRef = useRef(getOperationalISODate(new Date()));
+  const rolloverHandledRef = useRef(false);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const enforceFreshOperationalDay = () => {
+      const currentDay = getOperationalISODate(new Date());
+      if (operationalDayRef.current === currentDay) {
+        return;
+      }
+
+      operationalDayRef.current = currentDay;
+      clearRunSession();
+      clearPlannedRun();
+      setJobs([]);
+      setHasStoredPlan(false);
+      setLockNavigation(false);
+      setActiveIdx(0);
+      setPopupMsg("Your previous run has ended. Please start a new run.");
+
+      if (!rolloverHandledRef.current) {
+        rolloverHandledRef.current = true;
+        router.replace("/staff/run");
+      }
+    };
+
+    enforceFreshOperationalDay();
+    const interval = window.setInterval(enforceFreshOperationalDay, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, [router]);
 
   // Load user settings from Supabase
   useEffect(() => {
@@ -435,3 +468,4 @@ export default function RoutePage() {
     </MapSettingsProvider>
   );
 }
+

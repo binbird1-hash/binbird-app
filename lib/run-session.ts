@@ -1,3 +1,5 @@
+import { getOperationalISODate } from "./date";
+
 export type RunSessionRecord = {
   startedAt: string;
   endedAt: string | null;
@@ -59,6 +61,18 @@ function parseRunSession(raw: string): RunSessionRecord | null {
   return null;
 }
 
+function isRunSessionStale(record: RunSessionRecord, now: Date = new Date()): boolean {
+  const startedAt = new Date(record.startedAt);
+  if (Number.isNaN(startedAt.getTime())) {
+    return true;
+  }
+
+  const currentOperational = getOperationalISODate(now);
+  const sessionOperational = getOperationalISODate(startedAt);
+
+  return currentOperational !== sessionOperational;
+}
+
 export function readRunSession(): RunSessionRecord | null {
   const storages = getAvailableStorages();
   if (!storages.length) return null;
@@ -77,6 +91,10 @@ export function readRunSession(): RunSessionRecord | null {
 
     const parsed = parseRunSession(raw);
     if (parsed) {
+      if (isRunSessionStale(parsed)) {
+        clearRunSession();
+        return null;
+      }
       if (index > 0) {
         writeRunSession(parsed);
       }

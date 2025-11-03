@@ -4,7 +4,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { getOperationalISODate, isJobVisibilityRestricted } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
-import { readRunSession, writeRunSession, type RunSessionRecord } from "@/lib/run-session";
+import {
+  clearRunSession,
+  readRunSession,
+  writeRunSession,
+  type RunSessionRecord,
+} from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
@@ -14,6 +19,7 @@ const BRING_IN_PLACEHOLDER_URL =
   "https://via.placeholder.com/600x800?text=Bring+Bins+In";
 
 const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
+const RUN_ROLLOVER_MESSAGE = "Your previous run has ended. Please start a new run.";
 
 // kebab-case helper
 function toKebab(value: string | null | undefined, fallback: string): string {
@@ -167,6 +173,8 @@ export default function ProofPageContent() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasRedirectedRef = useRef(false);
+  const operationalDayRef = useRef(getOperationalISODate(new Date()));
+  const rolloverHandledRef = useRef(false);
 
   const redirectToLogin = useCallback(() => {
     if (hasRedirectedRef.current) return;
@@ -214,6 +222,46 @@ export default function ProofPageContent() {
       isActive = false;
     };
   }, [redirectToLogin, supabase]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const enforceFreshOperationalDay = () => {
+      const currentDay = getOperationalISODate(new Date());
+      if (operationalDayRef.current === currentDay) {
+        return;
+      }
+
+      operationalDayRef.current = currentDay;
+      clearRunSession();
+      clearPlannedRun();
+      setJobs([]);
+      setIdx(0);
+      setReferenceUrls({ putOut: null, bringIn: null });
+      setReferenceLookupComplete(false);
+      setFile(null);
+      setPreview(null);
+      setNote("");
+      setSubmitting(false);
+      setChecklist({
+        propertyConfirmed: false,
+        binColoursConfirmed: false,
+        placementUnderstood: false,
+        neatnessConfirmed: false,
+      });
+
+      if (!rolloverHandledRef.current) {
+        rolloverHandledRef.current = true;
+        alert(RUN_ROLLOVER_MESSAGE);
+        router.replace("/staff/run");
+      }
+    };
+
+    enforceFreshOperationalDay();
+    const interval = window.setInterval(enforceFreshOperationalDay, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, [router]);
 
   // parse jobs + idx from params
   useEffect(() => {
