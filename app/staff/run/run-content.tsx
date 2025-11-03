@@ -447,6 +447,9 @@ function RunPageContent() {
           ...stored,
           hasStarted: true,
           nextIdx: options?.resetNextIdx ? 0 : stored.nextIdx ?? 0,
+          createdAt: stored.hasStarted
+            ? stored.createdAt
+            : new Date().toISOString(),
         };
 
         if (!stored.hasStarted || options?.resetNextIdx) {

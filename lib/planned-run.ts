@@ -1,6 +1,6 @@
 import type { Job } from "./jobs";
 import { clearActiveRunCookie, syncActiveRunCookie } from "./active-run-cookie";
-import { isJobVisibilityRestricted } from "./date";
+import { getOperationalISODate, isJobVisibilityRestricted } from "./date";
 
 export type PlannedRunLocation = { lat: number; lng: number };
 
@@ -153,6 +153,22 @@ function parsePlannedRun(raw: string): PlannedRunPayload | null {
   }
 }
 
+function isPlannedRunStale(payload: PlannedRunPayload, now: Date = new Date()): boolean {
+  if (!payload.hasStarted) {
+    return false;
+  }
+
+  const createdAt = new Date(payload.createdAt);
+  if (Number.isNaN(createdAt.getTime())) {
+    return true;
+  }
+
+  const currentOperational = getOperationalISODate(now);
+  const planOperational = getOperationalISODate(createdAt);
+
+  return currentOperational !== planOperational;
+}
+
 export function readPlannedRun(): PlannedRunPayload | null {
   const storages = getAvailableStorages();
   if (!storages.length) return null;
@@ -172,6 +188,10 @@ export function readPlannedRun(): PlannedRunPayload | null {
     const parsed = parsePlannedRun(raw);
     if (parsed) {
       if (isJobVisibilityRestricted()) {
+        return null;
+      }
+      if (isPlannedRunStale(parsed)) {
+        clearPlannedRun();
         return null;
       }
       if (index > 0) {
