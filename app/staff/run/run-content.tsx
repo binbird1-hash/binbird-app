@@ -7,6 +7,7 @@ import polyline from "@mapbox/polyline";
 import { useRouter } from "next/navigation";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
+import { NoticeModal } from "@/components/UI/NoticeModal";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import type { JobRecord } from "@/lib/database.types";
@@ -75,6 +76,10 @@ function RunPageContent() {
   const [blackoutNoticeOpen, setBlackoutNoticeOpen] = useState(() =>
     isJobVisibilityRestricted()
   );
+  const [plannerNotice, setPlannerNotice] = useState<{
+    title: string;
+    description?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -548,7 +553,7 @@ function RunPageContent() {
   const buildRoute = async () => {
     console.log("Building route with:", { start, end, jobs });
     if (!start || !end || jobs.length === 0) {
-      alert("Need start, end, and jobs");
+      setPlannerNotice({ title: "Need start, end, and jobs" });
       return;
     }
     setRoutePath([]);
@@ -566,11 +571,14 @@ function RunPageContent() {
     });
     const opt = await resp.json();
     console.log("Optimize API response:", opt);
-    if (!resp.ok || !opt?.polyline) return alert("Could not build route.");
+    if (!resp.ok || !opt?.polyline) {
+      setPlannerNotice({ title: "Could not build route." });
+      return;
+    }
 
     const plannedJobs = (opt.order || []).map((i: number) => jobs[i]);
     if (!plannedJobs.length) {
-      alert("Could not build route.");
+      setPlannerNotice({ title: "Could not build route." });
       return;
     }
 
@@ -929,19 +937,17 @@ function RunPageContent() {
       </div>
       </div>
 
-      {blackoutNoticeOpen && jobVisibilityRestricted && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 text-center text-black shadow-xl">
-            <p className="mb-2">Jobs will appear after 2&nbsp;pm.</p>
-            <button
-              onClick={() => setBlackoutNoticeOpen(false)}
-              className="mt-4 w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
+      <NoticeModal
+        open={blackoutNoticeOpen && jobVisibilityRestricted}
+        title="Jobs will appear after 2 pm."
+        onClose={() => setBlackoutNoticeOpen(false)}
+      />
+      <NoticeModal
+        open={Boolean(plannerNotice)}
+        title={plannerNotice?.title ?? ""}
+        description={plannerNotice?.description}
+        onClose={() => setPlannerNotice(null)}
+      />
     </>
   );
 }
