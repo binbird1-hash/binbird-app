@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
+import { NoticeModal } from "@/components/UI/NoticeModal";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { normalizeJobs, type Job } from "@/lib/jobs";
@@ -49,7 +50,7 @@ function RoutePageContent() {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
-  const [popupMsg, setPopupMsg] = useState<string | null>(null);
+  const [popupNotice, setPopupNotice] = useState<{ title: string; description?: string } | null>(null);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [lockNavigation, setLockNavigation] = useState(false);
   const [hasStoredPlan, setHasStoredPlan] = useState(false);
@@ -76,7 +77,9 @@ function RoutePageContent() {
       setHasStoredPlan(false);
       setLockNavigation(false);
       setActiveIdx(0);
-      setPopupMsg("Your previous run has ended. Please start a new run.");
+      setPopupNotice({
+        title: "Your previous run has ended. Please start a new run.",
+      });
 
       if (!rolloverHandledRef.current) {
         rolloverHandledRef.current = true;
@@ -335,7 +338,7 @@ function RoutePageContent() {
 
   function handleArrivedAtLocation() {
     if (!navigator.geolocation) {
-      setPopupMsg("Geolocation not supported");
+      setPopupNotice({ title: "Geolocation not supported" });
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -346,12 +349,15 @@ function RoutePageContent() {
             `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
           );
         } else {
-          setPopupMsg(`You are too far from the job location. (${Math.round(dist)}m away)`);
+          setPopupNotice({
+            title: "You are too far from the job location.",
+            description: `${Math.round(dist)}m away`,
+          });
         }
       },
       (err) => {
         console.error("Geolocation error", err);
-        setPopupMsg("Unable to get your current location.");
+        setPopupNotice({ title: "Unable to get your current location." });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -433,26 +439,12 @@ function RoutePageContent() {
         </div>
       </div>
       
-      {popupMsg && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
-          <div className="bg-white text-black p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-            {/* Split into two lines */}
-            <p className="mb-2">
-              {popupMsg.includes("(") ? popupMsg.split("(")[0] : popupMsg}
-            </p>
-            {popupMsg.includes("(") && (
-              <p className="text-sm text-gray-700">({popupMsg.split("(")[1]}</p>
-            )}
-      
-            <button
-              onClick={() => setPopupMsg(null)}
-              className="mt-4 w-full bg-[#ff5757] text-white px-4 py-2 rounded-lg font-semibold"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
+      <NoticeModal
+        open={Boolean(popupNotice)}
+        title={popupNotice?.title ?? ""}
+        description={popupNotice?.description}
+        onClose={() => setPopupNotice(null)}
+      />
 
     </div>
   );
