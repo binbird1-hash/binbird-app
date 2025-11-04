@@ -34,8 +34,8 @@ export default function ResetPasswordConfirmPage() {
 
     async function prepareSession() {
       const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
+        access_token: accessToken!,
+        refresh_token: refreshToken!,
       });
 
       if (sessionError) {
