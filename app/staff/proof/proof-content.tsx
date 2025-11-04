@@ -794,13 +794,25 @@ export default function ProofPageContent() {
             </div>
           </div>
         </div>
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="space-y-1 text-sm text-gray-200">
+            <p className="font-semibold text-white">Leave a note (optional)</p>
+            <p className="text-gray-400">Share anything unusual or helpful for the next visit.</p>
+          </div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Add a quick note"
+            className="mt-4 w-full min-h-[110px] resize-y rounded-xl border border-neutral-800/70 bg-neutral-900 p-3 text-sm text-white placeholder-gray-500 focus:border-[#ff5757] focus:outline-none focus:ring-2 focus:ring-[#ff5757]/40"
+          />
+        </div>
       </div>
     </section>
   );
 
   return (
     <div className="relative flex min-h-full flex-col text-white">
-      <div className="flex-1 p-6 pb-32 space-y-6">
+      <div className="flex-1 space-y-6 p-6 pb-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
@@ -856,16 +868,6 @@ export default function ProofPageContent() {
           )}
         </div>
 
-        {/* note box */}
-        <div>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Leave any notes"
-            className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
-          />
-        </div>
-
         {gpsError && (
           <div className="text-sm text-red-400">
             <p>{gpsError}</p>
@@ -874,28 +876,30 @@ export default function ProofPageContent() {
       </div>
 
       {/* bottom button */}
-      <div className="absolute bottom-2 inset-x-0 p-4">
-        <button
-          onClick={() => {
-            if (submitting || !allChecklistChecked) return;
-            if (!file) {
-              fileInputRef.current?.click();
-              return;
-            }
-            void handleMarkDone();
-          }}
-          disabled={submitting || !allChecklistChecked}
-          className={`w-full px-4 py-2 rounded-lg font-semibold transition relative z-10 disabled:opacity-60 disabled:cursor-not-allowed
+      <div className="sticky bottom-0 inset-x-0 z-20 border-t border-white/10 bg-black/95 p-4 backdrop-blur">
+        <div className="pb-[env(safe-area-inset-bottom)]">
+          <button
+            onClick={() => {
+              if (submitting || !allChecklistChecked) return;
+              if (!file) {
+                fileInputRef.current?.click();
+                return;
+              }
+              void handleMarkDone();
+            }}
+            disabled={submitting || !allChecklistChecked}
+            className={`relative z-10 w-full rounded-lg px-4 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60
             ${readyToSubmit ? "bg-[#ff5757] text-white hover:bg-[#e04b4b]" : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
-        >
-          {submitting
-            ? "Saving…"
-            : !allChecklistChecked
-            ? "Complete the checklist"
-            : readyToSubmit
-            ? "Mark Done"
-            : "Take Photo"}
-        </button>
+          >
+            {submitting
+              ? "Saving…"
+              : !allChecklistChecked
+              ? "Complete the checklist"
+              : readyToSubmit
+              ? "Mark Done"
+              : "Take Photo"}
+          </button>
+        </div>
       </div>
     </div>
   );
