@@ -532,11 +532,7 @@ export default function ProofPageContent() {
       alert("Please complete the checklist before submitting proof.");
       return;
     }
-    const accountId = job.account_id;
-    if (!accountId) {
-      alert("Unable to log completion: missing account identifier for job.");
-      return;
-    }
+    const accountId = job.account_id ?? null;
     setSubmitting(true);
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
