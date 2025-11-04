@@ -21,6 +21,52 @@ const BRING_IN_PLACEHOLDER_URL =
 const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
 const RUN_ROLLOVER_MESSAGE = "Your previous run has ended. Please start a new run.";
 
+const referenceImagePreloadCache = new Map<string, Promise<void>>();
+
+function preloadImage(url: string) {
+  if (referenceImagePreloadCache.has(url)) {
+    return referenceImagePreloadCache.get(url)!;
+  }
+
+  const promise = new Promise<void>((resolve, reject) => {
+    const img = new Image();
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+
+    img.onload = () => {
+      cleanup();
+      resolve();
+    };
+    img.onerror = () => {
+      cleanup();
+      reject(new Error("Failed to preload image"));
+    };
+    img.src = url;
+
+    if (typeof img.decode === "function") {
+      img
+        .decode()
+        .then(() => {
+          cleanup();
+          resolve();
+        })
+        .catch(() => {
+          // If decode fails, rely on load event.
+        });
+    }
+  });
+
+  const trackedPromise = promise.catch((error) => {
+    referenceImagePreloadCache.delete(url);
+    throw error;
+  });
+
+  referenceImagePreloadCache.set(url, trackedPromise);
+  return trackedPromise;
+}
+
 // kebab-case helper
 function toKebab(value: string | null | undefined, fallback: string): string {
   if (!value || typeof value !== "string") return fallback;
@@ -319,16 +365,35 @@ export default function ProofPageContent() {
 
     async function fetchReferenceImages() {
       const bucket = supabase.storage.from("proofs");
-      const [putOutRes, bringInRes] = await Promise.all([
-        bucket.createSignedUrl(`${photoPath}/Put Out.jpg`, 3600),
-        bucket.createSignedUrl(`${photoPath}/Bring In.jpg`, 3600),
-      ]);
-      if (!isCancelled) {
-        setReferenceUrls({
-          putOut: putOutRes.data?.signedUrl ?? null,
-          bringIn: bringInRes.data?.signedUrl ?? null,
-        });
-        setReferenceLookupComplete(true);
+
+      try {
+        const [putOutRes, bringInRes] = await Promise.all([
+          bucket.createSignedUrl(`${photoPath}/Put Out.jpg`, 3600),
+          bucket.createSignedUrl(`${photoPath}/Bring In.jpg`, 3600),
+        ]);
+
+        if (isCancelled) return;
+
+        const putOutUrl = putOutRes.data?.signedUrl ?? null;
+        const bringInUrl = bringInRes.data?.signedUrl ?? null;
+
+        await Promise.all([
+          putOutUrl ? preloadImage(putOutUrl) : Promise.resolve(),
+          bringInUrl ? preloadImage(bringInUrl) : Promise.resolve(),
+        ]);
+
+        if (isCancelled) return;
+
+        setReferenceUrls({ putOut: putOutUrl, bringIn: bringInUrl });
+      } catch (error) {
+        console.warn("[ProofPageContent] Unable to load reference images", error);
+        if (!isCancelled) {
+          setReferenceUrls({ putOut: null, bringIn: null });
+        }
+      } finally {
+        if (!isCancelled) {
+          setReferenceLookupComplete(true);
+        }
       }
     }
 
