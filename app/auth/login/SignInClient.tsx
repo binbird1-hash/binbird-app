@@ -144,12 +144,9 @@ export default function SignInClient() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">
-          Sign in to BinBird
-        </h2>
+        <h2 className="text-2xl font-semibold text-white">Welcome to BinBird</h2>
         <p className="text-sm text-white/60">
-          Use your credentials to access the staff workspace or the client
-          dashboard.
+          Sign in to manage your bins or jobs.
         </p>
       </div>
 

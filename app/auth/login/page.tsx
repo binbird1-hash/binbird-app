@@ -1,7 +1,7 @@
 import SignInClient from "./SignInClient";
 
 export const metadata = {
-  title: "Sign in to BinBird",
+  title: "Welcome to BinBird",
 };
 
 export default function AuthLoginPage() {
