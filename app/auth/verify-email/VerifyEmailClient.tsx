@@ -152,7 +152,7 @@ export default function VerifyEmailClient() {
   const hasPendingData = Boolean(pendingData);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12 sm:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-black px-6 py-12 sm:px-8">
       <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-2xl sm:p-10">
         <div className="space-y-3 text-center">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-binbird-red">
