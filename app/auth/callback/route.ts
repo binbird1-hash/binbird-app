@@ -5,6 +5,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
 
 import { normalizePortalRole } from '@/lib/portalRoles'
+import { isEmailConfirmed } from '@/lib/auth/isEmailConfirmed'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
       const metadataRole = normalizePortalRole(sessionUser?.user_metadata?.role)
       const userId = sessionUser?.id ?? null
 
-      if (metadataRole && userId) {
+      if (metadataRole && userId && isEmailConfirmed(sessionUser ?? null)) {
         await supabase
           .from('user_profile')
           .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })

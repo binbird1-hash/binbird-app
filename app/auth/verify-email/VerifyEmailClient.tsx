@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { isEmailConfirmed } from "@/lib/auth/isEmailConfirmed";
 import {
   PendingSignUpData,
   clearPendingSignUp,
@@ -62,8 +63,16 @@ export default function VerifyEmailClient() {
       return;
     }
 
-    if (!data.session) {
+    if (!data.session && !data.user) {
       setError("Verification failed. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    const confirmedUser = data.user ?? (await supabase.auth.getUser()).data.user ?? null;
+
+    if (!isEmailConfirmed(confirmedUser)) {
+      setError("Please confirm your email before continuing.");
       setLoading(false);
       return;
     }
@@ -83,8 +92,7 @@ export default function VerifyEmailClient() {
       return;
     }
 
-    const userId =
-      data.user?.id ?? (await supabase.auth.getUser()).data.user?.id ?? null;
+    const userId = confirmedUser?.id ?? null;
 
     if (userId) {
       const { error: profileError } = await supabase
