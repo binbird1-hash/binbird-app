@@ -14,9 +14,9 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 
 const PUT_OUT_PLACEHOLDER_URL =
-  "https://via.placeholder.com/600x800?text=Put+Bins+Out";
+  "/images/put-out-placeholder.jpg";
 const BRING_IN_PLACEHOLDER_URL =
-  "https://via.placeholder.com/600x800?text=Bring+Bins+In";
+  "/images/bring-in-placeholder.jpg";
 
 const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
 const RUN_ROLLOVER_MESSAGE = "Your previous run has ended. Please start a new run.";
