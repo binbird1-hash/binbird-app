@@ -152,38 +152,47 @@ export default function VerifyEmailClient() {
   const hasPendingData = Boolean(pendingData);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">Verify your email</h2>
-        <p className="text-sm text-white/60">
-          Enter the 6-digit code we sent to <span className="font-medium">{emailToDisplay}</span> to finish creating your
-          account.
-        </p>
+    <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold text-white">Verify your email</h2>
+          <p className="text-sm leading-relaxed text-white/70">
+            Enter the 6-digit code we sent to <span className="font-medium text-white">{emailToDisplay}</span> to finish creating
+            your account.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/auth/sign-up")}
+          className="text-sm font-medium text-binbird-red transition hover:text-binbird-red/80"
+        >
+          Start over
+        </button>
       </div>
 
       {!hasPendingData && (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
+        <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-200">
           We couldn’t find your sign up session. Please start over.
         </div>
       )}
 
       {status && (
-        <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-200">
+        <div className="rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-200">
           {status}
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleVerify} className="space-y-4">
-        <div>
+      <form onSubmit={handleVerify} className="space-y-6">
+        <div className="space-y-2">
           <label
             htmlFor="verification-code"
-            className="mb-2 block text-sm font-medium text-white/80"
+            className="block text-sm font-medium text-white/80"
           >
             Verification code
           </label>
@@ -214,24 +223,14 @@ export default function VerifyEmailClient() {
       </form>
 
       <div className="space-y-2 text-center text-sm text-white/60">
-        <p>Didn’t get the code?</p>
+        <p className="text-white/70">Didn’t get the code?</p>
         <button
           type="button"
           onClick={handleResend}
           disabled={!hasPendingData || resending}
-          className="font-medium text-binbird-red hover:underline disabled:opacity-60"
+          className="font-medium text-binbird-red transition hover:text-binbird-red/80 disabled:opacity-60"
         >
           {resending ? "Resending…" : "Resend code"}
-        </button>
-      </div>
-
-      <div className="text-center text-sm text-white/60">
-        <button
-          type="button"
-          onClick={() => router.push("/auth/sign-up")}
-          className="font-medium text-binbird-red hover:underline"
-        >
-          Start over
         </button>
       </div>
     </div>
