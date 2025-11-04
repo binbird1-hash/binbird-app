@@ -34,7 +34,7 @@ export default function VerifyEmailClient() {
 
   const emailToDisplay = useMemo(() => {
     if (pendingData) return pendingData.email;
-    return emailFromQuery ?? "your email";
+    return emailFromQuery ?? "example@gmail.com";
   }, [emailFromQuery, pendingData]);
 
   async function handleVerify(e: React.FormEvent) {
@@ -152,39 +152,40 @@ export default function VerifyEmailClient() {
   const hasPendingData = Boolean(pendingData);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">Verify your email</h2>
-        <p className="text-sm text-white/60">
-          Enter the 6-digit code we sent to <span className="font-medium">{emailToDisplay}</span> to finish creating your
-          account.
+    <div className="space-y-8">
+      <div className="space-y-3 text-center">
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-binbird-red">
+          Secure sign up
+        </p>
+        <h1 className="text-3xl font-semibold text-white">Verification</h1>
+        <p className="text-sm leading-6 text-white/70">
+          Enter the verification code that was sent to
+          <span className="font-semibold text-white"> {emailToDisplay}</span>. If you don’t find the
+          email in your inbox, please check your spam folder.
         </p>
       </div>
 
       {!hasPendingData && (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
+        <div className="rounded-2xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-100">
           We couldn’t find your sign up session. Please start over.
         </div>
       )}
 
       {status && (
-        <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-200">
+        <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
           {status}
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleVerify} className="space-y-4">
-        <div>
-          <label
-            htmlFor="verification-code"
-            className="mb-2 block text-sm font-medium text-white/80"
-          >
+      <form onSubmit={handleVerify} className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="verification-code" className="block text-sm font-medium text-white/80">
             Verification code
           </label>
           <input
@@ -197,39 +198,40 @@ export default function VerifyEmailClient() {
               setCode(event.target.value.replace(/[^0-9]/g, ""));
               setError(null);
             }}
-            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center text-2xl tracking-[0.4em] text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-2xl font-semibold tracking-[0.5em] text-white placeholder:text-white/30 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/40"
             placeholder="123456"
             disabled={!hasPendingData || loading}
             required
           />
+          <p className="text-xs text-white/50">Code is 6 digits without spaces</p>
         </div>
 
         <button
           type="submit"
           disabled={!hasPendingData || loading || code.length !== 6}
-          className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
+          className="w-full rounded-2xl bg-binbird-red py-3 text-base font-semibold text-white shadow-[0_18px_30px_-12px_rgba(255,87,87,0.55)] transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-4 focus:ring-binbird-red/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Verifying…" : "Verify and continue"}
+          {loading ? "Verifying…" : "Verify"}
         </button>
       </form>
 
-      <div className="space-y-2 text-center text-sm text-white/60">
-        <p>Didn’t get the code?</p>
+      <div className="space-y-2 text-center text-sm">
+        <p className="text-white/50">Didn’t get the code?</p>
         <button
           type="button"
           onClick={handleResend}
           disabled={!hasPendingData || resending}
-          className="font-medium text-binbird-red hover:underline disabled:opacity-60"
+          className="font-semibold text-binbird-red hover:text-[#ff6c6c] disabled:opacity-60"
         >
           {resending ? "Resending…" : "Resend code"}
         </button>
       </div>
 
-      <div className="text-center text-sm text-white/60">
+      <div className="text-center text-xs text-white/40">
         <button
           type="button"
           onClick={() => router.push("/auth/sign-up")}
-          className="font-medium text-binbird-red hover:underline"
+          className="font-medium text-binbird-red hover:text-[#ff6c6c]"
         >
           Start over
         </button>
