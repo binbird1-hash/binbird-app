@@ -34,7 +34,7 @@ export default function VerifyEmailClient() {
 
   const emailToDisplay = useMemo(() => {
     if (pendingData) return pendingData.email;
-    return emailFromQuery ?? "your email";
+    return emailFromQuery ?? "example@gmail.com";
   }, [emailFromQuery, pendingData]);
 
   async function handleVerify(e: React.FormEvent) {
@@ -152,87 +152,91 @@ export default function VerifyEmailClient() {
   const hasPendingData = Boolean(pendingData);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-semibold text-white">Verify your email</h2>
-        <p className="text-sm text-white/60">
-          Enter the 6-digit code we sent to <span className="font-medium">{emailToDisplay}</span> to finish creating your
-          account.
-        </p>
-      </div>
-
-      {!hasPendingData && (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
-          We couldn’t find your sign up session. Please start over.
+    <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12 sm:px-8">
+      <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-2xl sm:p-10">
+        <div className="space-y-3 text-center">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-binbird-red">
+            Secure sign up
+          </p>
+          <h1 className="text-3xl font-semibold text-black">Verification</h1>
+          <p className="text-sm leading-6 text-neutral-600">
+            Enter the verification code that was sent to
+            <span className="font-semibold text-black"> {emailToDisplay}</span>. If you don’t find
+            the email in your inbox, please check your spam folder.
+          </p>
         </div>
-      )}
 
-      {status && (
-        <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-200">
-          {status}
-        </div>
-      )}
+        {!hasPendingData && (
+          <div className="mt-6 rounded-2xl border border-yellow-400/40 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            We couldn’t find your sign up session. Please start over.
+          </div>
+        )}
 
-      {error && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-          {error}
-        </div>
-      )}
+        {status && (
+          <div className="mt-6 rounded-2xl border border-emerald-500/40 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {status}
+          </div>
+        )}
 
-      <form onSubmit={handleVerify} className="space-y-4">
-        <div>
-          <label
-            htmlFor="verification-code"
-            className="mb-2 block text-sm font-medium text-white/80"
+        {error && (
+          <div className="mt-6 rounded-2xl border border-red-500/40 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleVerify} className="mt-8 space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="verification-code" className="block text-sm font-medium text-neutral-700">
+              Verification code
+            </label>
+            <input
+              id="verification-code"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={code}
+              onChange={(event) => {
+                setCode(event.target.value.replace(/[^0-9]/g, ""));
+                setError(null);
+              }}
+              className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-center text-2xl font-semibold tracking-[0.5em] text-black placeholder:text-neutral-300 focus:border-binbird-red focus:outline-none focus:ring-4 focus:ring-binbird-red/20"
+              placeholder="123456"
+              disabled={!hasPendingData || loading}
+              required
+            />
+            <p className="text-xs text-neutral-500">Code is 6 digits without spaces</p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!hasPendingData || loading || code.length !== 6}
+            className="w-full rounded-2xl bg-binbird-red py-3 text-base font-semibold text-white shadow-[0_18px_30px_-12px_rgba(255,87,87,0.55)] transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-4 focus:ring-binbird-red/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Verification code
-          </label>
-          <input
-            id="verification-code"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            value={code}
-            onChange={(event) => {
-              setCode(event.target.value.replace(/[^0-9]/g, ""));
-              setError(null);
-            }}
-            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center text-2xl tracking-[0.4em] text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-            placeholder="123456"
-            disabled={!hasPendingData || loading}
-            required
-          />
+            {loading ? "Verifying…" : "Verify"}
+          </button>
+        </form>
+
+        <div className="mt-6 space-y-2 text-center text-sm">
+          <p className="text-neutral-500">Didn’t get the code?</p>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={!hasPendingData || resending}
+            className="font-semibold text-binbird-red hover:text-[#ff6c6c] disabled:opacity-60"
+          >
+            {resending ? "Resending…" : "Resend code"}
+          </button>
         </div>
 
-        <button
-          type="submit"
-          disabled={!hasPendingData || loading || code.length !== 6}
-          className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
-        >
-          {loading ? "Verifying…" : "Verify and continue"}
-        </button>
-      </form>
-
-      <div className="space-y-2 text-center text-sm text-white/60">
-        <p>Didn’t get the code?</p>
-        <button
-          type="button"
-          onClick={handleResend}
-          disabled={!hasPendingData || resending}
-          className="font-medium text-binbird-red hover:underline disabled:opacity-60"
-        >
-          {resending ? "Resending…" : "Resend code"}
-        </button>
-      </div>
-
-      <div className="text-center text-sm text-white/60">
-        <button
-          type="button"
-          onClick={() => router.push("/auth/sign-up")}
-          className="font-medium text-binbird-red hover:underline"
-        >
-          Start over
-        </button>
+        <div className="mt-8 text-center text-xs text-neutral-400">
+          <button
+            type="button"
+            onClick={() => router.push("/auth/sign-up")}
+            className="font-medium text-binbird-red hover:text-[#ff6c6c]"
+          >
+            Start over
+          </button>
+        </div>
       </div>
     </div>
   );
