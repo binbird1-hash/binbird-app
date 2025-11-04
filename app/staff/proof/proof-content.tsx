@@ -883,9 +883,19 @@ export default function ProofPageContent() {
         {checklistContainer}
 
         {job.notes && (
-          <div className="bg-neutral-800 border border-neutral-800/70 rounded-xl p-4 shadow-lg">
-            <p className="text-sm text-gray-400 mb-1">Property Notes:</p>
-            <p className="text-white font-medium">{job.notes}</p>
+          <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-900/70 text-lg font-semibold text-[#ff5757]"
+              >
+                !
+              </div>
+              <div className="space-y-2 text-sm text-gray-200">
+                <p className="text-base font-semibold text-white">Owner&apos;s Instructions</p>
+                <p className="whitespace-pre-line leading-relaxed text-gray-300">{job.notes}</p>
+              </div>
+            </div>
           </div>
         )}
 
