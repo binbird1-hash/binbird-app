@@ -74,10 +74,9 @@ export default function SignUpClient() {
 
     if (!data.session) {
       setLoading(false);
-      setErrors({
-        general:
-          "Please check your email to confirm your account before signing in.",
-      });
+      router.push(
+        `/auth/verify-email?email=${encodeURIComponent(email.trim())}`,
+      );
       return;
     }
 
