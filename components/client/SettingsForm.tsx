@@ -7,6 +7,7 @@ import clsx from 'clsx'
 import { useForm } from 'react-hook-form'
 import { useClientPortal } from './ClientPortalProvider'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { isEmailConfirmed } from '@/lib/auth/isEmailConfirmed'
 
 export type SettingsFormValues = {
   fullName: string
@@ -124,6 +125,11 @@ export function SettingsForm() {
     if (!user) {
       setSubmitError('You must be signed in to update your settings.')
       throw new Error('Not authenticated')
+    }
+
+    if (!isEmailConfirmed(user)) {
+      setSubmitError('Please verify your email before updating settings.')
+      throw new Error('Email not verified')
     }
 
     setSubmitError(null)

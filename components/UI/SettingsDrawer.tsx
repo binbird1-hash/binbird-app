@@ -9,6 +9,7 @@ import { useMapSettings } from "@/components/Context/MapSettingsContext";
 import { clearPlannedRun, readPlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { isEmailConfirmed } from "@/lib/auth/isEmailConfirmed";
 
 type NavOptionKey = "google" | "waze" | "apple";
 type MapStyleKey = "Dark" | "Light" | "Satellite";
@@ -120,7 +121,7 @@ export default function SettingsDrawer() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !isEmailConfirmed(user)) return;
 
       const { data: profile, error } = await supabase
         .from("user_profile")
@@ -185,7 +186,7 @@ export default function SettingsDrawer() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user || !isEmailConfirmed(user)) return;
 
     if (navChanged) {
       setNavPref(nextNavPref);

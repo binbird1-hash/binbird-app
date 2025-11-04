@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { isEmailConfirmed } from "@/lib/auth/isEmailConfirmed";
 
 export default function SettingsPage() {
   const [navPref, setNavPref] = useState<"google" | "waze" | "apple">("google");
@@ -25,7 +26,10 @@ export default function SettingsPage() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user) {
+        if (!user || !isEmailConfirmed(user)) {
+          if (!isCancelled) {
+            setError("Please verify your email before managing preferences.");
+          }
           setLoading(false);
           return;
         }
@@ -88,6 +92,11 @@ export default function SettingsPage() {
 
       if (!user) {
         setError("You must be signed in to save preferences.");
+        return;
+      }
+
+      if (!isEmailConfirmed(user)) {
+        setError("Please verify your email before saving preferences.");
         return;
       }
 

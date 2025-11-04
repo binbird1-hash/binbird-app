@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { isEmailConfirmed } from "@/lib/auth/isEmailConfirmed";
 import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
@@ -57,6 +58,13 @@ export default function SignInClient() {
 
       if (signInError) {
         setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!isEmailConfirmed(signInData.user)) {
+        setError("Please verify your email before signing in.");
+        await supabase.auth.signOut();
         setLoading(false);
         return;
       }
