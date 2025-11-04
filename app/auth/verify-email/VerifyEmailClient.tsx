@@ -53,7 +53,7 @@ export default function VerifyEmailClient() {
     const { data, error: verifyError } = await supabase.auth.verifyOtp({
       email: pendingData.email,
       token: code,
-      type: "signup",
+      type: "email",
     });
 
     if (verifyError) {
