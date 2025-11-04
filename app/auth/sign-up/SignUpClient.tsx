@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { savePendingSignUp } from "@/lib/auth/pendingSignup";
 
 type AccountRole = "staff" | "client";
 
@@ -47,11 +48,10 @@ export default function SignUpClient() {
     setLoading(true);
     setErrors({});
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        shouldCreateUser: true,
         data: {
           full_name: name,
           phone: `${countryCode}${phone}`,
@@ -72,40 +72,16 @@ export default function SignUpClient() {
       return;
     }
 
-    if (!data.session) {
-      setLoading(false);
-      setErrors({
-        general:
-          "Please check your email to confirm your account before signing in.",
-      });
-      return;
-    }
+    savePendingSignUp({
+      email,
+      password,
+      fullName: name,
+      phone: `${countryCode}${phone}`,
+      role,
+    });
 
-    const userId = data.user?.id;
-
-    if (userId) {
-      const { error: insertError } = await supabase
-        .from("user_profile")
-        .upsert({
-          user_id: userId,
-          full_name: name,
-          phone: `${countryCode}${phone}`,
-          email,
-          role,
-        })
-        .select();
-
-      if (insertError) {
-        setErrors({
-          general: "Account created, but failed to save profile.",
-        });
-        setLoading(false);
-        return;
-      }
-    }
-
-    const destination = role === "staff" ? "/staff/run" : "/client/dashboard";
-    router.push(destination);
+    setLoading(false);
+    router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
   }
 
   return (
