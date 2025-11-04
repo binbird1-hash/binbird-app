@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
-export default function ResetPasswordConfirmPage() {
+function ResetPasswordConfirmContent() {
   const supabase = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -199,5 +199,22 @@ export default function ResetPasswordConfirmPage() {
         {status === "submitting" ? "Updating…" : "Save new password"}
       </button>
     </form>
+  );
+}
+
+export default function ResetPasswordConfirmPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-4 text-center">
+          <h2 className="text-2xl font-semibold text-white">Checking link…</h2>
+          <p className="text-sm text-white/70">
+            Please wait while we verify your password reset link.
+          </p>
+        </div>
+      }
+    >
+      <ResetPasswordConfirmContent />
+    </Suspense>
   );
 }
