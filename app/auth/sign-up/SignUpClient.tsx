@@ -15,7 +15,6 @@ export default function SignUpClient() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("+61");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<AccountRole>("staff");
@@ -26,11 +25,16 @@ export default function SignUpClient() {
 
   function validate() {
     const newErrors: { [key: string]: string } = {};
+    const trimmedEmail = email.trim();
     if (!name.trim()) newErrors.name = "Full name is required";
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    if (!trimmedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       newErrors.email = "Enter a valid email";
     }
-    if (!phone.trim()) newErrors.phone = "Phone number is required";
+    if (!phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?\d+$/.test(phone)) {
+      newErrors.phone = "Phone number can only include numbers and +";
+    }
     if (password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
@@ -48,13 +52,14 @@ export default function SignUpClient() {
     setLoading(true);
     setErrors({});
 
+    const trimmedEmail = email.trim();
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: trimmedEmail,
       options: {
         shouldCreateUser: true,
         data: {
           full_name: name,
-          phone: `${countryCode}${phone}`,
+          phone,
           role,
         },
       },
@@ -73,15 +78,15 @@ export default function SignUpClient() {
     }
 
     savePendingSignUp({
-      email,
+      email: trimmedEmail,
       password,
       fullName: name,
-      phone: `${countryCode}${phone}`,
+      phone,
       role,
     });
 
     setLoading(false);
-    router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+    router.push(`/auth/verify-email?email=${encodeURIComponent(trimmedEmail)}`);
   }
 
   return (
@@ -140,32 +145,26 @@ export default function SignUpClient() {
           <label className="sr-only" htmlFor="signup-phone">
             Phone Number
           </label>
-          <div className="flex overflow-hidden rounded-xl border border-white/10 bg-white/10 focus-within:border-binbird-red focus-within:ring-2 focus-within:ring-binbird-red/30">
-            <select
-              value={countryCode}
-              onChange={(event) => setCountryCode(event.target.value)}
-              className="bg-black/40 px-3 py-3 text-sm text-white outline-none focus:outline-none"
-            >
-              <option value="+61">🇦🇺 +61</option>
-              <option value="+1">🇺🇸 +1</option>
-              <option value="+44">🇬🇧 +44</option>
-              <option value="+64">🇳🇿 +64</option>
-              <option value="+91">🇮🇳 +91</option>
-            </select>
-            <input
-              id="signup-phone"
-              type="tel"
-              placeholder="Phone Number"
-              value={phone}
-              onChange={(e) => {
-                setPhone(e.target.value);
-                setErrors((prev) => ({ ...prev, phone: "" }));
-              }}
-              className="flex-1 bg-transparent px-4 py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
-              autoComplete="tel"
-              required
-            />
-          </div>
+          <input
+            id="signup-phone"
+            type="tel"
+            placeholder="Phone Number"
+            value={phone}
+            inputMode="tel"
+            pattern="\+?\d*"
+            onChange={(e) => {
+              const rawValue = e.target.value;
+              const numericOnly = rawValue.replace(/[^+\d]/g, "");
+              const sanitizedValue = numericOnly.startsWith("+")
+                ? `+${numericOnly.slice(1).replace(/\+/g, "")}`
+                : numericOnly.replace(/\+/g, "");
+              setPhone(sanitizedValue);
+              setErrors((prev) => ({ ...prev, phone: "" }));
+            }}
+            className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+            autoComplete="tel"
+            required
+          />
           {errors.phone && (
             <p className="mt-1 text-sm text-red-200">{errors.phone}</p>
           )}
