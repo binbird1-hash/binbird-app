@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { buildAppUrl } from "@/lib/url";
 
 export default function ResetPasswordPage() {
   const supabase = useSupabase();
@@ -19,7 +20,7 @@ export default function ResetPasswordPage() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
         {
-          redirectTo: `${window.location.origin}/auth/reset/confirm`,
+          redirectTo: buildAppUrl("/auth/reset/confirm"),
         },
       );
 
