@@ -794,6 +794,23 @@ export default function ProofPageContent() {
             </div>
           </div>
         </div>
+        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-950/80 p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1 text-sm text-gray-200">
+              <p className="font-semibold text-white">Leave a note</p>
+              <p className="text-gray-400">Share anything unusual or helpful for the next visit.</p>
+            </div>
+            <span className="rounded-full border border-neutral-700 bg-neutral-900 px-3 py-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+              Optional
+            </span>
+          </div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Write any notes for the team"
+            className="mt-4 w-full min-h-[110px] resize-y rounded-xl border border-neutral-800/70 bg-neutral-900 p-3 text-sm text-white placeholder-gray-500 focus:border-[#ff5757] focus:outline-none focus:ring-2 focus:ring-[#ff5757]/40"
+          />
+        </div>
       </div>
     </section>
   );
@@ -854,16 +871,6 @@ export default function ProofPageContent() {
               )}
             </div>
           )}
-        </div>
-
-        {/* note box */}
-        <div>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Leave any notes"
-            className="w-full p-3 rounded-lg bg-neutral-900 text-white min-h-[100px] placeholder-gray-500"
-          />
         </div>
 
         {gpsError && (
