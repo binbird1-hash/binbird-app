@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import VerifyEmailClient from "./VerifyEmailClient";
 
 export const metadata = {
@@ -5,5 +7,9 @@ export const metadata = {
 };
 
 export default function VerifyEmailPage() {
-  return <VerifyEmailClient />;
+  return (
+    <Suspense fallback={<div className="text-white">Loading…</div>}>
+      <VerifyEmailClient />
+    </Suspense>
+  );
 }
