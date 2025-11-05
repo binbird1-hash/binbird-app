@@ -28,6 +28,7 @@ export async function middleware(req: NextRequest) {
       : pathname
 
   const hasActiveRunCookie = req.cookies.get(ACTIVE_RUN_COOKIE_NAME)?.value === 'true'
+  const isPasswordResetConfirmRoute = normalizedPathname === '/auth/reset/confirm'
 
   const signedInRestrictedPaths = new Set([
     '/',
@@ -50,7 +51,11 @@ export async function middleware(req: NextRequest) {
   const staffAuthPaths = new Set(['/auth/login', '/auth/sign-up', '/staff/login', '/staff/sign-up'])
 
   // ✅ Require login for protected routes
-  if (!session && (pathname.startsWith('/staff') || pathname.startsWith('/ops') || pathname.startsWith('/admin'))) {
+  if (
+    !session &&
+    !isPasswordResetConfirmRoute &&
+    (pathname.startsWith('/staff') || pathname.startsWith('/ops') || pathname.startsWith('/admin'))
+  ) {
     const isStaffAuthRoute = staffAuthPaths.has(normalizedPathname)
     if (!isStaffAuthRoute) {
       const redirect = NextResponse.redirect(new URL('/auth/login', req.url))
@@ -99,7 +104,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // 🏃 Active run cookie logic
-    if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
+    if (!isPasswordResetConfirmRoute && hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
       if (role === 'staff' || role === 'admin') {
         return NextResponse.redirect(new URL('/staff/route', req.url))
       }
@@ -110,7 +115,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // 🚪 Redirect signed-in users away from login/signup
-    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
+    if (!isPasswordResetConfirmRoute && !hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
       const destination =
         role === 'admin'
           ? '/admin'

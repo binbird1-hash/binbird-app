@@ -20,10 +20,15 @@ function ResetPasswordConfirmContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const accessToken = searchParams?.get("access_token");
-    const refreshToken = searchParams?.get("refresh_token");
-    const code = searchParams?.get("code");
-    const type = searchParams?.get("type");
+    const hashParams =
+      typeof window !== "undefined" && window.location.hash
+        ? new URLSearchParams(window.location.hash.slice(1))
+        : null;
+
+    const accessToken = searchParams?.get("access_token") ?? hashParams?.get("access_token");
+    const refreshToken = searchParams?.get("refresh_token") ?? hashParams?.get("refresh_token");
+    const code = searchParams?.get("code") ?? hashParams?.get("code");
+    const type = searchParams?.get("type") ?? hashParams?.get("type");
 
     async function initSession() {
       try {
