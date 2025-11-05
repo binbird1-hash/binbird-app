@@ -38,6 +38,52 @@ export default function SignInClient() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const hashParams = (() => {
+      const rawHash = window.location.hash?.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+
+      if (!rawHash) return null;
+
+      const queryString = rawHash.includes("?")
+        ? rawHash.split("?").slice(1).join("?")
+        : rawHash;
+
+      if (!queryString) return null;
+
+      return new URLSearchParams(queryString);
+    })();
+
+    const searchParams = new URLSearchParams(window.location.search);
+
+    const code = searchParams.get("code") ?? hashParams?.get("code");
+    const accessToken = searchParams.get("access_token") ?? hashParams?.get("access_token");
+    const refreshToken = searchParams.get("refresh_token") ?? hashParams?.get("refresh_token");
+    const type =
+      searchParams.get("type") ??
+      hashParams?.get("type") ??
+      hashParams?.get("token_type");
+
+    const hasRecoveryParams = Boolean(
+      type === "recovery" && (code || (accessToken && refreshToken)),
+    );
+
+    if (hasRecoveryParams) {
+      const redirectParams = new URLSearchParams();
+      if (code) redirectParams.set("code", code);
+      if (accessToken) redirectParams.set("access_token", accessToken);
+      if (refreshToken) redirectParams.set("refresh_token", refreshToken);
+      redirectParams.set("type", "recovery");
+
+      window.location.replace(
+        `/auth/reset/confirm?${redirectParams.toString()}`,
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     const storedPreference = window.localStorage.getItem(STAY_SIGNED_IN_KEY);
     if (storedPreference === "true") {
       setStaySignedIn(true);
