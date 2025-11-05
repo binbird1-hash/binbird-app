@@ -19,63 +19,62 @@ function ResetPasswordConfirmContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function initSession() {
+    async function handleRecovery() {
       try {
-        // Handle both query (?code=) and hash (#access_token=) formats
-        const code = searchParams.get("code");
+        const token = searchParams.get("token");
+        const type = searchParams.get("type");
+
+        // ✅ New Supabase PKCE recovery link (type=recovery & token=pkce_xxx)
+        if (type === "recovery" && token) {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(token);
+          if (exchangeError) throw exchangeError;
+
+          const userEmail = data.session?.user?.email ?? data.user?.email ?? null;
+          setEmail(userEmail);
+          setStatus("ready");
+
+          // Clean up the URL
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, "", "/auth/reset/confirm");
+          }
+          return;
+        }
+
+        // ✅ Legacy fallback (#access_token format)
         const hashParams =
           typeof window !== "undefined" && window.location.hash
             ? new URLSearchParams(window.location.hash.slice(1))
             : null;
-
         const accessToken = hashParams?.get("access_token");
         const refreshToken = hashParams?.get("refresh_token");
-        const type = hashParams?.get("type");
+        const legacyType = hashParams?.get("type");
 
-        // 🧹 Clean URL to remove hash from address bar
-        if (hashParams && typeof window !== "undefined") {
-          window.history.replaceState({}, "", window.location.pathname);
-        }
-
-        if (code) {
-          // ✅ New Supabase v2 password recovery flow
-          const { data, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) throw exchangeError;
-
-          const userEmail =
-            data.session?.user?.email ?? data.user?.email ?? null;
-          setEmail(userEmail);
-          setStatus("ready");
-          return;
-        }
-
-        if (accessToken && refreshToken && type === "recovery") {
-          // ✅ Legacy flow (old style token redirect)
+        if (accessToken && refreshToken && legacyType === "recovery") {
           const { data, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
           if (sessionError) throw sessionError;
 
-          const userEmail =
-            data.session?.user?.email ?? data.user?.email ?? null;
+          const userEmail = data.session?.user?.email ?? data.user?.email ?? null;
           setEmail(userEmail);
           setStatus("ready");
+
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, "", "/auth/reset/confirm");
+          }
           return;
         }
 
-        // If neither flow worked
-        throw new Error("Invalid link");
+        throw new Error("Invalid or expired recovery link.");
       } catch (err) {
-        setError(
-          "This password reset link is invalid or has expired. Please request a new one."
-        );
+        console.error("Password recovery error:", err);
+        setError("This password reset link is invalid or has expired. Please request a new one.");
         setStatus("error");
       }
     }
 
-    initSession();
+    handleRecovery();
   }, [searchParams, supabase]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -96,9 +95,7 @@ function ResetPasswordConfirmContent() {
     setStatus("submitting");
     setError(null);
 
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
-    });
+    const { error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
       setError(updateError.message);
