@@ -15,7 +15,8 @@ export async function middleware(req: NextRequest) {
 
   if (code && pathname === '/') {
     const explicitNext = searchParams.get('next') ?? searchParams.get('redirect_to')
-    const defaultNext = type === 'recovery' ? '/auth/reset/confirm?flow=recovery' : '/'
+    const isRecoveryLink = type === 'recovery' || type === null
+    const defaultNext = isRecoveryLink ? '/auth/reset/confirm?flow=recovery' : '/'
     const nextDestination = explicitNext ?? defaultNext
 
     const callbackUrl = new URL('/auth/callback', req.url)
