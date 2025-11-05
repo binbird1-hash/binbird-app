@@ -8,6 +8,22 @@ import { normalizePortalRole } from '@/lib/portalRoles'
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
+  const searchParams = req.nextUrl.searchParams
+
+  const code = searchParams.get('code')
+  const type = searchParams.get('type')
+
+  if (code && pathname === '/') {
+    const explicitNext = searchParams.get('next') ?? searchParams.get('redirect_to')
+    const defaultNext = type === 'recovery' ? '/auth/reset/confirm?flow=recovery' : '/'
+    const nextDestination = explicitNext ?? defaultNext
+
+    const callbackUrl = new URL('/auth/callback', req.url)
+    callbackUrl.searchParams.set('code', code)
+    callbackUrl.searchParams.set('next', nextDestination)
+
+    return NextResponse.redirect(callbackUrl)
+  }
 
   // ✅ Allow Next.js internals through
   if (pathname.startsWith('/_next/')) {
