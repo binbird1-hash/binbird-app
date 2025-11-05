@@ -21,12 +21,17 @@ function ResetPasswordConfirmContent() {
   useEffect(() => {
     async function handleRecovery() {
       try {
-        const token = searchParams.get("token");
         const type = searchParams.get("type");
+        const recoveryCode =
+          searchParams.get("code") ??
+          searchParams.get("token") ??
+          searchParams.get("token_hash");
 
-        // ✅ New Supabase PKCE recovery link (type=recovery & token=pkce_xxx)
-        if (type === "recovery" && token) {
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(token);
+        // ✅ New Supabase PKCE recovery link (type=recovery & code|token=pkce_xxx)
+        if (type === "recovery" && recoveryCode) {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(
+            recoveryCode,
+          );
           if (exchangeError) throw exchangeError;
 
           const userEmail = data.session?.user?.email ?? data.user?.email ?? null;
