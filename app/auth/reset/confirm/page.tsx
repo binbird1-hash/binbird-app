@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 function ResetPasswordConfirmContent() {
@@ -20,56 +19,63 @@ function ResetPasswordConfirmContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const hashParams =
-      typeof window !== "undefined" && window.location.hash
-        ? new URLSearchParams(window.location.hash.slice(1))
-        : null;
+    async function initSession() {
+      try {
+        // Handle both query (?code=) and hash (#access_token=) formats
+        const code = searchParams.get("code");
+        const hashParams =
+          typeof window !== "undefined" && window.location.hash
+            ? new URLSearchParams(window.location.hash.slice(1))
+            : null;
 
-    const accessToken =
-      searchParams?.get("access_token") ?? hashParams?.get("access_token");
-    const refreshToken =
-      searchParams?.get("refresh_token") ?? hashParams?.get("refresh_token");
-    const type = searchParams?.get("type") ?? hashParams?.get("type");
+        const accessToken = hashParams?.get("access_token");
+        const refreshToken = hashParams?.get("refresh_token");
+        const type = hashParams?.get("type");
 
-    if (hashParams && typeof window !== "undefined") {
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search,
-      );
-    }
+        // 🧹 Clean URL to remove hash from address bar
+        if (hashParams && typeof window !== "undefined") {
+          window.history.replaceState({}, "", window.location.pathname);
+        }
 
-    if (!accessToken || !refreshToken || type !== "recovery") {
-      setError(
-        "This password reset link is invalid or has expired. Please request a new one.",
-      );
-      setStatus("error");
-      return;
-    }
+        if (code) {
+          // ✅ New Supabase v2 password recovery flow
+          const { data, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
 
-    async function prepareSession() {
-      const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken!,
-        refresh_token: refreshToken!,
-      });
+          const userEmail =
+            data.session?.user?.email ?? data.user?.email ?? null;
+          setEmail(userEmail);
+          setStatus("ready");
+          return;
+        }
 
-      if (sessionError) {
+        if (accessToken && refreshToken && type === "recovery") {
+          // ✅ Legacy flow (old style token redirect)
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+
+          const userEmail =
+            data.session?.user?.email ?? data.user?.email ?? null;
+          setEmail(userEmail);
+          setStatus("ready");
+          return;
+        }
+
+        // If neither flow worked
+        throw new Error("Invalid link");
+      } catch (err) {
         setError(
-          sessionError.message ||
-            "We couldn't verify your reset link. Please request a new one.",
+          "This password reset link is invalid or has expired. Please request a new one."
         );
         setStatus("error");
-        return;
       }
-
-      const userEmail =
-        data.session?.user?.email ?? data.user?.email ?? null;
-
-      setEmail(userEmail);
-      setStatus("ready");
     }
 
-    void prepareSession();
+    initSession();
   }, [searchParams, supabase]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -108,6 +114,7 @@ function ResetPasswordConfirmContent() {
     }, 2000);
   }
 
+  // --- UI States ---
   if (status === "initializing") {
     return (
       <div className="space-y-4 text-center">
@@ -159,6 +166,7 @@ function ResetPasswordConfirmContent() {
     );
   }
 
+  // --- Main Form ---
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-3 text-center">
@@ -180,7 +188,10 @@ function ResetPasswordConfirmContent() {
         </div>
       )}
 
-      <label className="block text-left text-sm font-medium text-white/80" htmlFor="password">
+      <label
+        className="block text-left text-sm font-medium text-white/80"
+        htmlFor="password"
+      >
         New password
         <input
           id="password"
@@ -193,7 +204,10 @@ function ResetPasswordConfirmContent() {
         />
       </label>
 
-      <label className="block text-left text-sm font-medium text-white/80" htmlFor="confirmPassword">
+      <label
+        className="block text-left text-sm font-medium text-white/80"
+        htmlFor="confirmPassword"
+      >
         Confirm password
         <input
           id="confirmPassword"
