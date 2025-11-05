@@ -5,13 +5,19 @@ import Link from "next/link";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "sent" | "unavailable"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
+  const [unavailableMessage, setUnavailableMessage] = useState<string | null>(
+    null,
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("loading");
     setError(null);
+    setUnavailableMessage(null);
 
     try {
       const response = await fetch("/api/reset-password", {
@@ -25,7 +31,16 @@ export default function ResetPasswordPage() {
       const result = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setError(result.error ?? "Unable to send reset link. Please try again.");
+        const message =
+          result.error ?? "Unable to send reset link. Please try again.";
+
+        if (response.status === 503) {
+          setUnavailableMessage(message);
+          setStatus("unavailable");
+          return;
+        }
+
+        setError(message);
         setStatus("idle");
         return;
       }
@@ -65,6 +80,10 @@ export default function ResetPasswordPage() {
           <strong className="font-semibold">{email}</strong>. Check your inbox
           and follow the link within the next 24 hours.
         </div>
+      ) : status === "unavailable" ? (
+        <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+          {unavailableMessage ?? "Password reset is temporarily unavailable."}
+        </div>
       ) : (
         <label
           className="block text-left text-sm font-medium text-white/80"
@@ -82,7 +101,7 @@ export default function ResetPasswordPage() {
         </label>
       )}
 
-      {status !== "sent" && (
+      {status === "idle" || status === "loading" ? (
         <button
           type="submit"
           disabled={status === "loading"}
@@ -90,7 +109,7 @@ export default function ResetPasswordPage() {
         >
           {status === "loading" ? "Sending…" : "Send reset link"}
         </button>
-      )}
+      ) : null}
 
       <p className="text-center text-sm text-white/60">
         Remembered your password?{" "}

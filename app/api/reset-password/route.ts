@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: "Password reset is temporarily unavailable." },
-      { status: 500 },
+      { status: 503 },
     );
   }
 
