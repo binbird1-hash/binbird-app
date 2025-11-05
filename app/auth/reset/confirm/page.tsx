@@ -204,34 +204,17 @@ function ResetPasswordConfirmContent() {
 
 export default function ResetPasswordConfirmPage() {
   return (
-    <div className="space-y-8">
-      <Suspense
-        fallback={
-          <div className="space-y-4 text-center">
-            <h2 className="text-2xl font-semibold text-white">Checking link…</h2>
-            <p className="text-sm text-white/70">
-              Please wait while we verify your password reset link.
-            </p>
-          </div>
-        }
-      >
-        <ResetPasswordConfirmContent />
-      </Suspense>
-
-      <section className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-left text-sm text-white/80">
-        <div>
-          <h3 className="text-base font-semibold text-white">Update User</h3>
-          <p className="mt-1">
-            Update the user with a new email or password. Each key (email, password, and data) is optional
+    <Suspense
+      fallback={
+        <div className="space-y-4 text-center">
+          <h2 className="text-2xl font-semibold text-white">Checking link…</h2>
+          <p className="text-sm text-white/70">
+            Please wait while we verify your password reset link.
           </p>
         </div>
-        <p className="font-semibold text-white">Update User</p>
-        <pre className="overflow-x-auto rounded-xl bg-black/40 p-4 text-xs text-white">{`const { data, error } = await supabase.auth.updateUser({
-  email: "new@email.com",
-  password: "new-password",
-  data: { hello: 'world' }
-})`}</pre>
-      </section>
-    </div>
+      }
+    >
+      <ResetPasswordConfirmContent />
+    </Suspense>
   );
 }
