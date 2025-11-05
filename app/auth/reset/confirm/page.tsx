@@ -10,6 +10,7 @@ function ResetPasswordConfirmContent() {
   const supabase = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchParamsString = searchParams?.toString();
 
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -20,9 +21,17 @@ function ResetPasswordConfirmContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const accessToken = searchParams?.get("access_token");
-    const refreshToken = searchParams?.get("refresh_token");
-    const type = searchParams?.get("type");
+    const queryParams = new URLSearchParams(searchParamsString ?? "");
+    const hash = typeof window === "undefined" ? "" : window.location.hash;
+    const hashParams = new URLSearchParams(
+      hash.startsWith("#") ? hash.slice(1) : hash,
+    );
+
+    const accessToken =
+      hashParams.get("access_token") ?? queryParams.get("access_token");
+    const refreshToken =
+      hashParams.get("refresh_token") ?? queryParams.get("refresh_token");
+    const type = hashParams.get("type") ?? queryParams.get("type");
 
     if (!accessToken || !refreshToken || type !== "recovery") {
       setError(
@@ -34,8 +43,8 @@ function ResetPasswordConfirmContent() {
 
     async function prepareSession() {
       const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken!,
-        refresh_token: refreshToken!,
+        access_token,
+        refresh_token,
       });
 
       if (sessionError) {
@@ -54,8 +63,16 @@ function ResetPasswordConfirmContent() {
       setStatus("ready");
     }
 
+    if (typeof window !== "undefined" && hashParams.toString()) {
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+
     void prepareSession();
-  }, [searchParams, supabase]);
+  }, [searchParamsString, supabase]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
