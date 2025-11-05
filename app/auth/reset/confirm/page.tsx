@@ -41,11 +41,15 @@ function ResetPasswordConfirmContent() {
       return;
     }
 
+    const sessionTokens: { access_token: string; refresh_token: string } = {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+
     async function prepareSession() {
-      const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
+      const { data, error: sessionError } = await supabase.auth.setSession(
+        sessionTokens,
+      );
 
       if (sessionError) {
         setError(
