@@ -17,10 +17,14 @@ export default function ResetPasswordPage() {
     setError(null);
 
     try {
+      const redirectPath = `/auth/callback?next=${encodeURIComponent(
+        "/auth/reset/confirm?flow=recovery",
+      )}`;
+
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
         {
-          redirectTo: buildAppUrl("/auth/reset/confirm"),
+          redirectTo: buildAppUrl(redirectPath),
         },
       );
 

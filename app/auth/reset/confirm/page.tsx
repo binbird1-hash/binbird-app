@@ -20,23 +20,16 @@ function ResetPasswordConfirmContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const accessToken = searchParams?.get("access_token");
-    const refreshToken = searchParams?.get("refresh_token");
-    const type = searchParams?.get("type");
+    const code = searchParams?.get("code");
 
-    if (!accessToken || !refreshToken || type !== "recovery") {
-      setError(
-        "This password reset link is invalid or has expired. Please request a new one.",
-      );
-      setStatus("error");
+    if (code) {
+      const nextPath = encodeURIComponent("/auth/reset/confirm?flow=recovery");
+      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=${nextPath}`);
       return;
     }
 
     async function prepareSession() {
-      const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken!,
-        refresh_token: refreshToken!,
-      });
+      const { data, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError) {
         setError(
@@ -47,15 +40,22 @@ function ResetPasswordConfirmContent() {
         return;
       }
 
-      const userEmail =
-        data.session?.user?.email ?? data.user?.email ?? null;
+      const session = data.session;
 
-      setEmail(userEmail);
+      if (!session) {
+        setError(
+          "This password reset link is invalid or has expired. Please request a new one.",
+        );
+        setStatus("error");
+        return;
+      }
+
+      setEmail(session.user?.email ?? null);
       setStatus("ready");
     }
 
     void prepareSession();
-  }, [searchParams, supabase]);
+  }, [router, searchParams, supabase]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
