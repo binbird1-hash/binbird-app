@@ -22,39 +22,51 @@ function ResetPasswordConfirmContent() {
   useEffect(() => {
     const accessToken = searchParams?.get("access_token");
     const refreshToken = searchParams?.get("refresh_token");
+    const code = searchParams?.get("code");
     const type = searchParams?.get("type");
 
-    if (!accessToken || !refreshToken || type !== "recovery") {
-      setError(
-        "This password reset link is invalid or has expired. Please request a new one.",
-      );
-      setStatus("error");
-      return;
-    }
+    async function initSession() {
+      try {
+        if (code && !accessToken && !refreshToken) {
+          const { data, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
 
-    async function prepareSession() {
-      const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken!,
-        refresh_token: refreshToken!,
-      });
+          const userEmail =
+            data.session?.user?.email ?? data.user?.email ?? null;
+          setEmail(userEmail);
+          setStatus("ready");
+          return;
+        }
 
-      if (sessionError) {
+        if (!accessToken || !refreshToken || type !== "recovery") {
+          setError(
+            "This password reset link is invalid or has expired. Please request a new one.",
+          );
+          setStatus("error");
+          return;
+        }
+
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken!,
+          refresh_token: refreshToken!,
+        });
+
+        if (sessionError) throw sessionError;
+
+        const userEmail =
+          data.session?.user?.email ?? data.user?.email ?? null;
+        setEmail(userEmail);
+        setStatus("ready");
+      } catch (err) {
         setError(
-          sessionError.message ||
-            "We couldn't verify your reset link. Please request a new one.",
+          "We couldn't verify your reset link. Please request a new one.",
         );
         setStatus("error");
-        return;
       }
-
-      const userEmail =
-        data.session?.user?.email ?? data.user?.email ?? null;
-
-      setEmail(userEmail);
-      setStatus("ready");
     }
 
-    void prepareSession();
+    void initSession();
   }, [searchParams, supabase]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
