@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { getOperationalISODate, isJobVisibilityRestricted } from "@/lib/date";
+import { getOperationalISODate, getJobVisibilityRestrictions } from "@/lib/date";
 import { normalizeJobs, type Job } from "@/lib/jobs";
 import {
   clearRunSession,
@@ -218,6 +218,21 @@ export default function ProofPageContent() {
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const filterJobsForVisibility = useCallback((jobsList: Job[]) => {
+    const visibility = getJobVisibilityRestrictions();
+    return jobsList.filter((job) => {
+      if (job.job_type === "bring_in") {
+        return !visibility.bringIn;
+      }
+
+      if (job.job_type === "put_out") {
+        return !visibility.putOut;
+      }
+
+      return true;
+    });
+  }, []);
   const hasRedirectedRef = useRef(false);
   const operationalDayRef = useRef(getOperationalISODate(new Date()));
   const rolloverHandledRef = useRef(false);
@@ -311,18 +326,16 @@ export default function ProofPageContent() {
 
   // parse jobs + idx from params
   useEffect(() => {
-    if (isJobVisibilityRestricted()) {
-      setJobs([]);
-      return;
-    }
-
     try {
       const rawJobs = params.get("jobs");
       const rawIdx = params.get("idx");
       if (rawJobs) {
         const parsed = JSON.parse(rawJobs);
-        if (Array.isArray(parsed)) setJobs(normalizeJobs(parsed));
-        else console.warn("[ProofPageContent] jobs param was not an array", parsed);
+        if (Array.isArray(parsed)) {
+          setJobs(filterJobsForVisibility(normalizeJobs(parsed)));
+        } else {
+          console.warn("[ProofPageContent] jobs param was not an array", parsed);
+        }
       }
       if (rawIdx) {
         const parsedIdx = parseInt(rawIdx, 10);
@@ -332,7 +345,7 @@ export default function ProofPageContent() {
     } catch (err) {
       console.error("Parse failed:", err);
     }
-  }, [params]);
+  }, [filterJobsForVisibility, params]);
 
   const getActiveRunSession = useCallback(() => {
     const existing = readRunSession();

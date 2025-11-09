@@ -17,7 +17,7 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
   getOperationalDayIndex,
   getOperationalDayName,
-  isJobVisibilityRestricted,
+  getJobVisibilityRestrictions,
 } from "@/lib/date";
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -70,12 +70,16 @@ function RunPageContent() {
   const { mapStylePref } = useMapSettings();
   const mapRef = useRef<google.maps.Map | null>(null);
   const hasRedirectedToRoute = useRef(false);
-  const [jobVisibilityRestricted, setJobVisibilityRestricted] = useState(() =>
-    isJobVisibilityRestricted()
+  const [jobVisibility, setJobVisibility] = useState(() =>
+    getJobVisibilityRestrictions()
   );
   const [blackoutNoticeOpen, setBlackoutNoticeOpen] = useState(() =>
-    isJobVisibilityRestricted()
+    jobVisibility.bringIn
   );
+  const bringInRestricted = jobVisibility.bringIn;
+  const putOutRestricted = jobVisibility.putOut;
+  const allJobsRestricted = bringInRestricted && putOutRestricted;
+  const [hiddenJobsCount, setHiddenJobsCount] = useState(0);
   const [plannerNotice, setPlannerNotice] = useState<{
     title: string;
     description?: string;
@@ -85,19 +89,19 @@ function RunPageContent() {
     if (typeof window === "undefined") return;
 
     const interval = window.setInterval(() => {
-      setJobVisibilityRestricted(isJobVisibilityRestricted());
+      setJobVisibility(getJobVisibilityRestrictions());
     }, 60_000);
 
     return () => window.clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (jobVisibilityRestricted) {
+    if (bringInRestricted) {
       setBlackoutNoticeOpen(true);
     } else {
       setBlackoutNoticeOpen(false);
     }
-  }, [jobVisibilityRestricted]);
+  }, [bringInRestricted]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -172,6 +176,22 @@ function RunPageContent() {
 
   const MELBOURNE_BOUNDS = { north: -37.5, south: -38.3, east: 145.5, west: 144.4 };
 
+  const filterJobsForVisibility = useCallback(
+    (jobsList: Job[]) =>
+      jobsList.filter((job) => {
+        if (job.job_type === "bring_in") {
+          return !bringInRestricted;
+        }
+
+        if (job.job_type === "put_out") {
+          return !putOutRestricted;
+        }
+
+        return true;
+      }),
+    [bringInRestricted, putOutRestricted]
+  );
+
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: LIBRARIES,
@@ -180,7 +200,7 @@ function RunPageContent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (jobVisibilityRestricted) {
+    if (allJobsRestricted) {
       hasRedirectedToRoute.current = false;
       setPlannerLocked(false);
       setIsPlanned(false);
@@ -191,23 +211,32 @@ function RunPageContent() {
       setEnd(null);
       setStartAddress("");
       setEndAddress("");
+      setHiddenJobsCount(0);
       return;
     }
 
     const stored = readPlannedRun();
     if (stored) {
+      const filteredJobs = filterJobsForVisibility(stored.jobs);
+      const hiddenFromStored = stored.jobs.length - filteredJobs.length;
+
       setPlannerLocked(true);
       setIsPlanned(true);
-      setJobs(stored.jobs);
+      setJobs(filteredJobs);
       setStart({ lat: stored.start.lat, lng: stored.start.lng });
       setEnd({ lat: stored.end.lat, lng: stored.end.lng });
       setStartAddress(stored.startAddress ?? "");
       setEndAddress(stored.endAddress ?? "");
-      setOrdered(stored.jobs);
+      setOrdered(filteredJobs);
       setRoutePath([]);
-      if (stored.hasStarted && !hasRedirectedToRoute.current) {
+      setHiddenJobsCount(hiddenFromStored);
+      if (
+        stored.hasStarted &&
+        filteredJobs.length &&
+        !hasRedirectedToRoute.current
+      ) {
         hasRedirectedToRoute.current = true;
-        redirectToRoute(stored.jobs, stored.start, stored.end);
+        redirectToRoute(filteredJobs, stored.start, stored.end);
       } else if (!stored.hasStarted) {
         hasRedirectedToRoute.current = false;
       }
@@ -216,7 +245,8 @@ function RunPageContent() {
 
     hasRedirectedToRoute.current = false;
     setPlannerLocked(false);
-  }, [jobVisibilityRestricted, redirectToRoute]);
+    setHiddenJobsCount(0);
+  }, [allJobsRestricted, filterJobsForVisibility, redirectToRoute]);
 
   useEffect(() => {
     if (!startAuto) return;
@@ -234,9 +264,10 @@ function RunPageContent() {
       console.log("=== FETCH JOBS START ===");
 
       try {
-        if (jobVisibilityRestricted) {
-          console.log("Job visibility restricted. Skipping job fetch.");
+        if (allJobsRestricted) {
+          console.log("Job visibility restricted for all job types. Skipping job fetch.");
           setJobs([]);
+          setHiddenJobsCount(0);
           return;
         }
 
@@ -305,8 +336,11 @@ function RunPageContent() {
             (job) => job.last_completed_on === null
           );
 
-          console.log("Available jobs after filter:", availableJobs);
-          setJobs(availableJobs);
+          const visibleJobs = filterJobsForVisibility(availableJobs);
+
+          console.log("Available jobs after filter:", visibleJobs);
+          setHiddenJobsCount(availableJobs.length - visibleJobs.length);
+          setJobs(visibleJobs);
         } else {
           console.warn("No jobs found or error occurred");
         }
@@ -317,7 +351,7 @@ function RunPageContent() {
         setLoading(false);
       }
     })();
-  }, [jobVisibilityRestricted, supabase]);
+  }, [allJobsRestricted, filterJobsForVisibility, supabase]);
 
 
   // Fit bounds helper
@@ -896,12 +930,19 @@ function RunPageContent() {
               )}
             </div>
             <div className="mt-4">
-              {jobVisibilityRestricted ? (
+              {allJobsRestricted ? (
                 <button
                   className="w-full cursor-not-allowed rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white opacity-70"
                   disabled
                 >
                   Jobs available after 2&nbsp;pm
+                </button>
+              ) : jobs.length === 0 && hiddenJobsCount > 0 ? (
+                <button
+                  className="w-full cursor-not-allowed rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white opacity-70"
+                  disabled
+                >
+                  Bring-in jobs available after 2&nbsp;pm
                 </button>
               ) : jobs.length === 0 ? (
                 <button
@@ -938,8 +979,8 @@ function RunPageContent() {
       </div>
 
       <NoticeModal
-        open={blackoutNoticeOpen && jobVisibilityRestricted}
-        title="Jobs will appear after 2 pm."
+        open={blackoutNoticeOpen && bringInRestricted && hiddenJobsCount > 0}
+        title="Bring-in jobs will appear after 2 pm."
         onClose={() => setBlackoutNoticeOpen(false)}
       />
       <NoticeModal
