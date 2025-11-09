@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
@@ -12,7 +12,7 @@ import { normalizeJobs, type Job } from "@/lib/jobs";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { clearRunSession } from "@/lib/run-session";
-import { getOperationalISODate, isJobVisibilityRestricted } from "@/lib/date";
+import { getOperationalISODate, getJobVisibilityRestrictions } from "@/lib/date";
 
 function RoutePageContent() {
   const supabase = useSupabase();
@@ -56,6 +56,29 @@ function RoutePageContent() {
   const [hasStoredPlan, setHasStoredPlan] = useState(false);
   const operationalDayRef = useRef(getOperationalISODate(new Date()));
   const rolloverHandledRef = useRef(false);
+
+  const [jobVisibility, setJobVisibility] = useState(() =>
+    getJobVisibilityRestrictions()
+  );
+  const bringInRestricted = jobVisibility.bringIn;
+  const putOutRestricted = jobVisibility.putOut;
+  const allJobsRestricted = bringInRestricted && putOutRestricted;
+
+  const filterJobsForVisibility = useCallback(
+    (jobsList: Job[]) =>
+      jobsList.filter((job) => {
+        if (job.job_type === "bring_in") {
+          return !bringInRestricted;
+        }
+
+        if (job.job_type === "put_out") {
+          return !putOutRestricted;
+        }
+
+        return true;
+      }),
+    [bringInRestricted, putOutRestricted]
+  );
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -114,9 +137,19 @@ function RoutePageContent() {
     })();
   }, [setMapStylePref, setNavPref, supabase]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const interval = window.setInterval(() => {
+      setJobVisibility(getJobVisibilityRestrictions());
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
   // Parse jobs + start
   useEffect(() => {
-    if (isJobVisibilityRestricted()) {
+    if (allJobsRestricted) {
       setHasStoredPlan(false);
       setLockNavigation(false);
       setJobs([]);
@@ -127,15 +160,16 @@ function RoutePageContent() {
     if (typeof window !== "undefined") {
       const stored = readPlannedRun();
       if (stored) {
+        const filteredJobs = filterJobsForVisibility(stored.jobs);
         setHasStoredPlan(true);
         setLockNavigation(Boolean(stored.hasStarted));
-        setJobs(stored.jobs.map((job) => ({ ...job })));
+        setJobs(filteredJobs.map((job) => ({ ...job })));
         setStart({ lat: stored.start.lat, lng: stored.start.lng });
 
-        if (stored.jobs.length) {
+        if (filteredJobs.length) {
           const clampedIdx = Math.min(
             Math.max(stored.nextIdx ?? 0, 0),
-            Math.max(stored.jobs.length - 1, 0)
+            Math.max(filteredJobs.length - 1, 0)
           );
           setActiveIdx(clampedIdx);
         }
@@ -151,14 +185,14 @@ function RoutePageContent() {
       if (rawJobs) {
         const parsedJobs = JSON.parse(rawJobs);
         if (Array.isArray(parsedJobs)) {
-          setJobs(normalizeJobs(parsedJobs));
+          setJobs(filterJobsForVisibility(normalizeJobs(parsedJobs)));
         }
       }
       if (rawStart) setStart(JSON.parse(rawStart));
     } catch (err) {
       console.error("Parse failed:", err);
     }
-  }, [params]);
+  }, [allJobsRestricted, filterJobsForVisibility, params]);
 
   useEffect(() => {
     if (!lockNavigation || typeof window === "undefined") return;
