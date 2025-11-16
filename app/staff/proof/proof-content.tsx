@@ -507,21 +507,38 @@ export default function ProofPageContent() {
     const normalized = bin.toLowerCase();
     if (normalized.includes("red") || normalized.includes("waste"))
       return {
-        background:
-          "bg-[linear-gradient(90deg,theme(colors.red.600)_0%,theme(colors.red.600)_50%,theme(colors.emerald.800)_50%,theme(colors.emerald.800)_100%)]",
-        border: "border-red-500/70",
+        className: "border-transparent",
+        backgroundClass: "",
+        style: {
+          backgroundImage:
+            "linear-gradient(90deg,theme(colors.red.600)_0%,theme(colors.red.600)_50%,theme(colors.emerald.950)_50%,theme(colors.emerald.950)_100%)," +
+            "linear-gradient(90deg,theme(colors.red.400)_0%,theme(colors.red.400)_50%,theme(colors.emerald.900)_50%,theme(colors.emerald.900)_100%)",
+          backgroundOrigin: "padding-box, border-box",
+          backgroundClip: "padding-box, border-box",
+        },
         text: "text-white",
       };
     if (normalized.includes("yellow") || normalized.includes("recycling"))
       return {
-        background:
-          "bg-[linear-gradient(90deg,theme(colors.amber.300)_0%,theme(colors.amber.300)_50%,theme(colors.sky.200)_50%,theme(colors.sky.200)_100%)]",
-        border: "border-amber-300/70",
+        className: "border-transparent",
+        backgroundClass: "",
+        style: {
+          backgroundImage:
+            "linear-gradient(90deg,theme(colors.amber.300)_0%,theme(colors.amber.300)_50%,theme(colors.sky.200)_50%,theme(colors.sky.200)_100%)," +
+            "linear-gradient(90deg,theme(colors.amber.300)_0%,theme(colors.amber.300)_50%,theme(colors.sky.200)_50%,theme(colors.sky.200)_100%)",
+          backgroundOrigin: "padding-box, border-box",
+          backgroundClip: "padding-box, border-box",
+        },
         text: "text-slate-900",
       };
     if (normalized.includes("green") || normalized.includes("fogo"))
-      return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
-    return { background: "bg-neutral-800", border: "border-neutral-600/70", text: "text-white" };
+      return {
+        className: "border-emerald-500/70",
+        backgroundClass: "bg-emerald-600",
+        style: {},
+        text: "text-white",
+      };
+    return { className: "border-neutral-600/70", backgroundClass: "bg-neutral-800", style: {}, text: "text-white" };
   }
   function getBinLabel(bin: string) {
     const normalized = bin.toLowerCase();
@@ -540,7 +557,8 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin}-${idx}`}
-          className={`w-full rounded-xl border px-4 py-2 text-center text-base font-bold ${styles.border} ${styles.background}`}
+          className={`w-full rounded-xl border-2 px-4 py-2 text-center text-base font-bold ${styles.className} ${styles.backgroundClass ?? ""}`}
+          style={styles.style}
         >
           <span className={`block font-bold ${styles.text}`}>{getBinLabel(bin)}</span>
         </div>
