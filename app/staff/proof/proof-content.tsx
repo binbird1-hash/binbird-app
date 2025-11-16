@@ -511,8 +511,8 @@ export default function ProofPageContent() {
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,theme(colors.red.600)_0%,theme(colors.red.600)_50%,theme(colors.emerald.950)_50%,theme(colors.emerald.950)_100%)," +
-            "linear-gradient(90deg,theme(colors.red.400)_0%,theme(colors.red.400)_50%,theme(colors.emerald.900)_50%,theme(colors.emerald.900)_100%)",
+            "linear-gradient(90deg,#ef4444_0%,#ef4444_50%,#001400_50%,#001400_100%)," +
+            "linear-gradient(90deg,#ef4444_0%,#ef4444_50%,#001400_50%,#001400_100%)",
           backgroundOrigin: "padding-box, border-box",
           backgroundClip: "padding-box, border-box",
         },
@@ -524,8 +524,8 @@ export default function ProofPageContent() {
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,theme(colors.amber.300)_0%,theme(colors.amber.300)_50%,theme(colors.sky.200)_50%,theme(colors.sky.200)_100%)," +
-            "linear-gradient(90deg,theme(colors.amber.300)_0%,theme(colors.amber.300)_50%,theme(colors.sky.200)_50%,theme(colors.sky.200)_100%)",
+            "linear-gradient(90deg,#facc15_0%,#facc15_50%,#00BFFF_50%,#00BFFF_100%)," +
+            "linear-gradient(90deg,#facc15_0%,#facc15_50%,#00BFFF_50%,#00BFFF_100%)",
           backgroundOrigin: "padding-box, border-box",
           backgroundClip: "padding-box, border-box",
         },
