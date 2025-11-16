@@ -505,7 +505,7 @@ export default function ProofPageContent() {
 
   function getBinColorStyles(bin: string) {
     const normalized = bin.toLowerCase();
-    if (normalized.includes("red"))
+    if (normalized.includes("red") || normalized.includes("waste"))
       return {
         background:
           "bg-[linear-gradient(90deg,theme(colors.red.600)_0%,theme(colors.red.600)_50%,theme(colors.emerald.800)_50%,theme(colors.emerald.800)_100%)]",
@@ -519,14 +519,15 @@ export default function ProofPageContent() {
         border: "border-amber-300/70",
         text: "text-slate-900",
       };
-    if (normalized.includes("green")) return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
+    if (normalized.includes("green") || normalized.includes("fogo"))
+      return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
     return { background: "bg-neutral-800", border: "border-neutral-600/70", text: "text-white" };
   }
   function getBinLabel(bin: string) {
     const normalized = bin.toLowerCase();
-    if (normalized.includes("red")) return "All Red Bins";
-    if (normalized.includes("yellow")) return "All Yellow Bins";
-    if (normalized.includes("green")) return "All Green Bins";
+    if (normalized.includes("red") || normalized.includes("waste")) return "All Waste Bins";
+    if (normalized.includes("yellow") || normalized.includes("recycling")) return "All Recycling Bins";
+    if (normalized.includes("green") || normalized.includes("fogo")) return "All FOGO Bins";
     const cleaned = bin.replace(/bins?/gi, "").trim();
     if (!cleaned) return "All Bins";
     const titleCase = cleaned.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
