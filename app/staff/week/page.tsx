@@ -40,11 +40,26 @@ function getParsedBins(bins: Job["bins"]) {
 function getBinTextClass(bin: string) {
   const normalized = bin.toLowerCase();
 
-  if (normalized.includes("red")) return "text-red-400";
-  if (normalized.includes("yellow")) return "text-amber-300";
-  if (normalized.includes("green")) return "text-emerald-400";
+  if (normalized.includes("red") || normalized.includes("waste")) return "text-red-400";
+  if (normalized.includes("yellow") || normalized.includes("recycling")) return "text-amber-300";
+  if (normalized.includes("green") || normalized.includes("fogo")) return "text-emerald-400";
 
   return "text-white/70";
+}
+
+function getBinDisplayLabel(bin: string) {
+  const normalized = bin.toLowerCase();
+
+  if (normalized.includes("red") || normalized.includes("waste")) return "Waste";
+  if (normalized.includes("yellow") || normalized.includes("recycling")) return "Recycling";
+  if (normalized.includes("green") || normalized.includes("fogo")) return "FOGO";
+
+  const cleaned = bin.replace(/bins?/gi, "").trim();
+  if (!cleaned) return "Bins";
+  return cleaned
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function WeeklyJobsContent() {
@@ -228,12 +243,13 @@ function WeeklyJobsContent() {
                           <span className="text-xs uppercase tracking-wide text-white/70">
                             {parsedBins.map((bin, index) => {
                               const binClass = getBinTextClass(bin);
+                              const label = getBinDisplayLabel(bin);
                               return (
                                 <span key={`${job.id}-bin-${index}`} className={binClass}>
                                   {index > 0 && (
                                     <span className="text-white/40">, </span>
                                   )}
-                                  {bin}
+                                  {label}
                                 </span>
                               );
                             })}

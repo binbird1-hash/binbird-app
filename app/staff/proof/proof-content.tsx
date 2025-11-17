@@ -505,16 +505,42 @@ export default function ProofPageContent() {
 
   function getBinColorStyles(bin: string) {
     const normalized = bin.toLowerCase();
-    if (normalized.includes("red")) return { background: "bg-red-600", border: "border-red-500/70", text: "text-white" };
-    if (normalized.includes("yellow")) return { background: "bg-amber-300", border: "border-amber-300/70", text: "text-black" };
-    if (normalized.includes("green")) return { background: "bg-emerald-600", border: "border-emerald-500/70", text: "text-white" };
-    return { background: "bg-neutral-800", border: "border-neutral-600/70", text: "text-white" };
+    if (normalized.includes("red") || normalized.includes("waste"))
+      return {
+        className: "",
+        backgroundClass: "",
+        style: {
+          backgroundImage:
+            "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#003000 50%,#003000 100%)",
+          backgroundClip: "padding-box",
+        },
+        text: "text-white",
+      };
+    if (normalized.includes("yellow") || normalized.includes("recycling"))
+      return {
+        className: "",
+        backgroundClass: "",
+        style: {
+          backgroundImage:
+            "linear-gradient(90deg,#facc15 0%,#facc15 50%,#00BFFF 50%,#00BFFF 100%)",
+          backgroundClip: "padding-box",
+        },
+        text: "text-slate-900",
+      };
+    if (normalized.includes("green") || normalized.includes("fogo"))
+      return {
+        className: "",
+        backgroundClass: "bg-emerald-600",
+        style: {},
+        text: "text-white",
+      };
+    return { className: "", backgroundClass: "bg-neutral-800", style: {}, text: "text-white" };
   }
   function getBinLabel(bin: string) {
     const normalized = bin.toLowerCase();
-    if (normalized.includes("red")) return "All Red Bins";
-    if (normalized.includes("yellow")) return "All Yellow Bins";
-    if (normalized.includes("green")) return "All Green Bins";
+    if (normalized.includes("red") || normalized.includes("waste")) return "All Waste Bins";
+    if (normalized.includes("yellow") || normalized.includes("recycling")) return "All Recycling Bins";
+    if (normalized.includes("green") || normalized.includes("fogo")) return "All FOGO Bins";
     const cleaned = bin.replace(/bins?/gi, "").trim();
     if (!cleaned) return "All Bins";
     const titleCase = cleaned.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
@@ -527,7 +553,8 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin}-${idx}`}
-          className={`w-full rounded-xl border px-4 py-2 text-center text-base font-bold ${styles.border} ${styles.background}`}
+          className={`w-full rounded-xl px-4 py-2 text-center text-base font-bold ${styles.className} ${styles.backgroundClass ?? ""}`}
+          style={styles.style}
         >
           <span className={`block font-bold ${styles.text}`}>{getBinLabel(bin)}</span>
         </div>
