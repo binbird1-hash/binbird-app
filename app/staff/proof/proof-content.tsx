@@ -511,8 +511,8 @@ export default function ProofPageContent() {
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,#ef4444_0%,#ef4444_50%,#001400_50%,#001400_100%)," +
-            "linear-gradient(90deg,#ef4444_0%,#ef4444_50%,#001400_50%,#001400_100%)",
+            "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#001400 50%,#001400 100%)," +
+            "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#001400 50%,#001400 100%)",
           backgroundOrigin: "padding-box, border-box",
           backgroundClip: "padding-box, border-box",
         },
@@ -524,8 +524,8 @@ export default function ProofPageContent() {
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,#facc15_0%,#facc15_50%,#00BFFF_50%,#00BFFF_100%)," +
-            "linear-gradient(90deg,#facc15_0%,#facc15_50%,#00BFFF_50%,#00BFFF_100%)",
+            "linear-gradient(90deg,#facc15 0%,#facc15 50%,#00BFFF 50%,#00BFFF 100%)," +
+            "linear-gradient(90deg,#facc15 0%,#facc15 50%,#00BFFF 50%,#00BFFF 100%)",
           backgroundOrigin: "padding-box, border-box",
           backgroundClip: "padding-box, border-box",
         },
