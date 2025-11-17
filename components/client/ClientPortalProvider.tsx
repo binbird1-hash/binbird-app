@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 import { normaliseBinList } from '@/lib/binLabels'
+import { getRotationWeekKey } from '@/lib/rotation'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   addMinutes,
@@ -76,12 +77,14 @@ export type Job = {
   crewName?: string | null
   proofPhotoKeys?: string[] | null
   proofUploadedAt?: string | null
+  photoPathForWeek?: string | null
   routePolyline?: string | null
   lastLatitude?: number | null
   lastLongitude?: number | null
   notes?: string | null
   jobType?: string | null
   bins?: string[]
+  photo_path_for_week?: string | null
 }
 
 export type NotificationPreferences = {
@@ -205,6 +208,66 @@ const normaliseIdentifier = (value: string | number | null | undefined): string 
   }
   const trimmed = value.trim()
   return trimmed.length ? trimmed : null
+}
+
+type WeekPhotoPathEntry = { path: string; timestamp: number }
+type WeekPhotoPathIndex = Map<string, WeekPhotoPathEntry>
+
+const buildServiceContextCandidates = (
+  jobType: string | null | undefined,
+  bins: string[] | null | undefined,
+): string[] => {
+  const contexts: string[] = []
+  const normalisedBins = (bins ?? [])
+    .map((bin) => bin?.trim()?.toLowerCase())
+    .filter((bin): bin is string => Boolean(bin))
+
+  if (normalisedBins.length) {
+    contexts.push(normalisedBins.sort().join('+'))
+  }
+
+  const normalisedJobType = jobType?.trim().toLowerCase()
+  if (normalisedJobType) {
+    contexts.push(normalisedJobType)
+  }
+
+  contexts.push('default')
+  return contexts
+}
+
+const registerWeekPhotoPath = (
+  index: WeekPhotoPathIndex,
+  weekKey: string | null,
+  jobType: string | null | undefined,
+  bins: string[] | null | undefined,
+  path: string | null | undefined,
+  timestamp: number,
+) => {
+  if (!weekKey || !path) return
+  const contexts = buildServiceContextCandidates(jobType, bins)
+  contexts.forEach((context) => {
+    const key = `${weekKey}::${context}`
+    const existing = index.get(key)
+    if (!existing || timestamp >= existing.timestamp) {
+      index.set(key, { path, timestamp })
+    }
+  })
+}
+
+const resolveWeekPhotoPath = (
+  index: WeekPhotoPathIndex,
+  weekKey: string | null,
+  jobType: string | null | undefined,
+  bins: string[] | null | undefined,
+  fallback: string | null | undefined,
+): string | null => {
+  if (!weekKey) return fallback ?? null
+  const contexts = buildServiceContextCandidates(jobType, bins)
+  for (const context of contexts) {
+    const entry = index.get(`${weekKey}::${context}`)
+    if (entry) return entry.path
+  }
+  return fallback ?? null
 }
 
 const extractIdentifierArray = (
@@ -711,6 +774,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     type LogRow = NonNullable<typeof logRows>[number]
 
     const logsByJobId = new Map<string, LogRow>()
+    const weekPhotoPathIndex: WeekPhotoPathIndex = new Map()
     ;(logRows ?? []).forEach((log) => {
       if (log.job_id) {
         const existing = logsByJobId.get(log.job_id)
@@ -718,6 +782,19 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
           logsByJobId.set(log.job_id, log)
         }
       }
+
+      const logDateValue = log.done_on ?? log.created_at
+      const logDate = logDateValue ? new Date(logDateValue) : null
+      const weekKey = logDate ? getRotationWeekKey(logDate) : null
+      const bins = normaliseBinList(log.bins)
+      registerWeekPhotoPath(
+        weekPhotoPathIndex,
+        weekKey,
+        log.task_type,
+        bins,
+        log.photo_path,
+        logDate?.getTime() ?? Date.now(),
+      )
     })
 
     const combinedJobs: Job[] = []
@@ -755,6 +832,16 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         return
       }
 
+      const completedDate = completedAtIso ? new Date(completedAtIso) : null
+      const weekKey = completedDate ? getRotationWeekKey(completedDate) : null
+      const weekAwarePhotoPath = resolveWeekPhotoPath(
+        weekPhotoPathIndex,
+        weekKey,
+        log.task_type,
+        bins,
+        log.photo_path,
+      )
+
       const logJob: Job = {
         id: jobIdKey ? `${jobIdKey}-${log.id}` : `log-${log.id}`,
         accountId,
@@ -766,7 +853,9 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         startedAt: null,
         completedAt: completedAtIso,
         crewName: null,
-        proofPhotoKeys: log.photo_path ? [log.photo_path] : [],
+        proofPhotoKeys: weekAwarePhotoPath ? [weekAwarePhotoPath] : [],
+        photoPathForWeek: weekAwarePhotoPath,
+        photo_path_for_week: weekAwarePhotoPath ?? undefined,
         proofUploadedAt: uploadedAtIso,
         routePolyline: null,
         lastLatitude: log.gps_lat ?? undefined,
@@ -803,8 +892,19 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         : latestLog
           ? 'en_route'
           : 'scheduled'
-      const proofPhotoKeys = [job.photo_path, latestLog?.photo_path].filter(Boolean) as string[]
       const bins = normaliseBinList(job.bins)
+      const scheduledDate = scheduledAt ? new Date(scheduledAt) : null
+      const scheduledWeekKey = scheduledDate ? getRotationWeekKey(scheduledDate) : null
+      const weekAwarePhotoPath = resolveWeekPhotoPath(
+        weekPhotoPathIndex,
+        scheduledWeekKey,
+        job.job_type,
+        bins,
+        job.photo_path ?? latestLog?.photo_path,
+      )
+      const proofPhotoKeys = Array.from(
+        new Set([weekAwarePhotoPath, latestLog?.photo_path].filter(Boolean) as string[]),
+      )
       combinedJobs.push({
         id: job.id,
         accountId,
@@ -818,6 +918,8 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
         crewName: null,
         proofPhotoKeys,
         proofUploadedAt: proofUploadedAtIso,
+        photoPathForWeek: weekAwarePhotoPath,
+        photo_path_for_week: weekAwarePhotoPath ?? undefined,
         routePolyline: null,
         lastLatitude: job.lat ?? undefined,
         lastLongitude: job.lng ?? undefined,

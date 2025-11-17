@@ -12,6 +12,7 @@ export type Job = {
   notes: string | null;
   client_name: string | null;
   photo_path: string | null;
+  photo_path_for_week?: string | null;
   last_completed_on: string | null;
   assigned_to: string | null;
   day_of_week: string | null;
@@ -103,6 +104,7 @@ export function normalizeJob<T extends Partial<JobRecord>>(record: T): Job {
     notes: normalizeOptionalString(record.notes),
     client_name: normalizeOptionalString(record.client_name),
     photo_path: normalizeOptionalString(record.photo_path),
+    photo_path_for_week: normalizeOptionalString((record as any).photo_path_for_week),
     last_completed_on: normalizeDate(record.last_completed_on),
     assigned_to: normalizeOptionalString(record.assigned_to),
     day_of_week: record.day_of_week
