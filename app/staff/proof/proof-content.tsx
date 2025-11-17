@@ -507,33 +507,29 @@ export default function ProofPageContent() {
     const normalized = bin.toLowerCase();
     if (normalized.includes("red") || normalized.includes("waste"))
       return {
-        className: "border-transparent",
+        className: "border-white",
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#001400 50%,#001400 100%)," +
             "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#001400 50%,#001400 100%)",
-          backgroundOrigin: "padding-box, border-box",
-          backgroundClip: "padding-box, border-box",
+          backgroundClip: "padding-box",
         },
         text: "text-white",
       };
     if (normalized.includes("yellow") || normalized.includes("recycling"))
       return {
-        className: "border-transparent",
+        className: "border-white",
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,#facc15 0%,#facc15 50%,#00BFFF 50%,#00BFFF 100%)," +
             "linear-gradient(90deg,#facc15 0%,#facc15 50%,#00BFFF 50%,#00BFFF 100%)",
-          backgroundOrigin: "padding-box, border-box",
-          backgroundClip: "padding-box, border-box",
+          backgroundClip: "padding-box",
         },
         text: "text-slate-900",
       };
     if (normalized.includes("green") || normalized.includes("fogo"))
       return {
-        className: "border-emerald-500/70",
+        className: "border-white",
         backgroundClass: "bg-emerald-600",
         style: {},
         text: "text-white",
