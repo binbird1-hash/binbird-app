@@ -507,18 +507,18 @@ export default function ProofPageContent() {
     const normalized = bin.toLowerCase();
     if (normalized.includes("red") || normalized.includes("waste"))
       return {
-        className: "border-white",
+        className: "",
         backgroundClass: "",
         style: {
           backgroundImage:
-            "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#001400 50%,#001400 100%)",
+            "linear-gradient(90deg,#ef4444 0%,#ef4444 50%,#003000 50%,#003000 100%)",
           backgroundClip: "padding-box",
         },
         text: "text-white",
       };
     if (normalized.includes("yellow") || normalized.includes("recycling"))
       return {
-        className: "border-white",
+        className: "",
         backgroundClass: "",
         style: {
           backgroundImage:
@@ -529,12 +529,12 @@ export default function ProofPageContent() {
       };
     if (normalized.includes("green") || normalized.includes("fogo"))
       return {
-        className: "border-white",
+        className: "",
         backgroundClass: "bg-emerald-600",
         style: {},
         text: "text-white",
       };
-    return { className: "border-neutral-600/70", backgroundClass: "bg-neutral-800", style: {}, text: "text-white" };
+    return { className: "", backgroundClass: "bg-neutral-800", style: {}, text: "text-white" };
   }
   function getBinLabel(bin: string) {
     const normalized = bin.toLowerCase();
@@ -553,7 +553,7 @@ export default function ProofPageContent() {
       return (
         <div
           key={`${prefix}-${bin}-${idx}`}
-          className={`w-full rounded-xl border-2 px-4 py-2 text-center text-base font-bold ${styles.className} ${styles.backgroundClass ?? ""}`}
+          className={`w-full rounded-xl px-4 py-2 text-center text-base font-bold ${styles.className} ${styles.backgroundClass ?? ""}`}
           style={styles.style}
         >
           <span className={`block font-bold ${styles.text}`}>{getBinLabel(bin)}</span>
