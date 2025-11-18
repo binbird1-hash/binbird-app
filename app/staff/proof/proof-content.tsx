@@ -67,6 +67,37 @@ function preloadImage(url: string) {
   return trackedPromise;
 }
 
+function getAlternatingPhotoPath(basePath: string | null, currentDate: Date): string | null {
+  if (!basePath) return null;
+
+  const segments = basePath.split("/");
+  if (!segments.length) return null;
+
+  const baseWeekSegment = segments[segments.length - 1];
+  const baseWeekMatch = /^Week-(\d+)$/i.exec(baseWeekSegment ?? "");
+  const baseWeekNumber = baseWeekMatch ? Number.parseInt(baseWeekMatch[1], 10) : null;
+
+  if (!baseWeekNumber || Number.isNaN(baseWeekNumber)) {
+    return basePath;
+  }
+
+  const { week: currentWeekLabel } = getCustomWeek(currentDate);
+  const currentWeekMatch = /^Week-(\d+)$/i.exec(currentWeekLabel);
+  const currentWeekNumber = currentWeekMatch ? Number.parseInt(currentWeekMatch[1], 10) : null;
+
+  if (!currentWeekNumber || Number.isNaN(currentWeekNumber)) {
+    return basePath;
+  }
+
+  const shouldUseAlternateWeek = Math.abs(currentWeekNumber - baseWeekNumber) % 2 === 1;
+  const effectiveWeekNumber = baseWeekNumber + (shouldUseAlternateWeek ? 1 : 0);
+
+  const updatedSegments = [...segments];
+  updatedSegments[updatedSegments.length - 1] = `Week-${effectiveWeekNumber}`;
+
+  return updatedSegments.join("/");
+}
+
 // kebab-case helper
 function toKebab(value: string | null | undefined, fallback: string): string {
   if (!value || typeof value !== "string") return fallback;
@@ -361,11 +392,12 @@ export default function ProofPageContent() {
   const job = jobs[currentIdx];
   const jobId = job?.id ?? null;
   const photoPath = job?.photo_path ?? null;
+  const alternatingPhotoPath = getAlternatingPhotoPath(photoPath, new Date());
 
   useEffect(() => {
     let isCancelled = false;
 
-    if (!photoPath) {
+    if (!alternatingPhotoPath) {
       setReferenceUrls({ putOut: null, bringIn: null });
       setReferenceLookupComplete(false);
       return () => {
@@ -381,8 +413,8 @@ export default function ProofPageContent() {
 
       try {
         const [putOutRes, bringInRes] = await Promise.all([
-          bucket.createSignedUrl(`${photoPath}/Put Out.jpg`, 3600),
-          bucket.createSignedUrl(`${photoPath}/Bring In.jpg`, 3600),
+          bucket.createSignedUrl(`${alternatingPhotoPath}/Put Out.jpg`, 3600),
+          bucket.createSignedUrl(`${alternatingPhotoPath}/Bring In.jpg`, 3600),
         ]);
 
         if (isCancelled) return;
@@ -415,7 +447,7 @@ export default function ProofPageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [photoPath, supabase]);
+  }, [alternatingPhotoPath, supabase]);
 
   useEffect(() => {
     if (!jobs.length) return;
