@@ -378,7 +378,7 @@ function RoutePageContent() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
-        if (dist <= 40) {
+        if (dist <= 50) {
           router.push(
             `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
           );
