@@ -9,6 +9,18 @@ import { isEmailConfirmed } from "@/lib/auth/isEmailConfirmed";
 import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+function formatSupabaseError(message: string | null) {
+  if (!message) return "Something went wrong. Please try again.";
+
+  if (message.toLowerCase().includes("failed to fetch")) {
+    return "We couldn't reach the login service. Check your internet connection or Supabase credentials and try again.";
+  }
+
+  return message;
+}
 
 function resolveDestination(role: PortalRole) {
   if (role === "admin") {
@@ -49,6 +61,14 @@ export default function SignInClient() {
     setError(null);
     setLoading(true);
 
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      setError(
+        "Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.",
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: signInData, error: signInError } =
         await supabase.auth.signInWithPassword({
@@ -57,7 +77,7 @@ export default function SignInClient() {
         });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(formatSupabaseError(signInError.message));
         setLoading(false);
         return;
       }
@@ -142,7 +162,7 @@ export default function SignInClient() {
     } catch (unknownError) {
       const message =
         unknownError instanceof Error
-          ? unknownError.message
+          ? formatSupabaseError(unknownError.message)
           : "Something went wrong. Please try again.";
       setError(message);
       setLoading(false);
