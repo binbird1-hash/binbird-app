@@ -165,7 +165,6 @@ function RunPageContent() {
   const showLocationPopup = useCallback(
     (title: string, description?: string) => {
       setLocationWarning({ title, description });
-      setPlannerNotice({ title, description });
     },
     []
   );
