@@ -85,6 +85,7 @@ function RunPageContent() {
     title: string;
     description?: string;
   } | null>(null);
+  const [locationAllowed, setLocationAllowed] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -408,10 +409,10 @@ function RunPageContent() {
   const requestStartFromLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Unable to auto-fill start location.");
+      setLocationAllowed(false);
       setLocationWarning({
-        title: "Share your location to start a run",
-        description:
-          "Turn on location services (HTTPS + browser permission) so we can drop a pin where you are right now. Without it, we can't plan or complete jobs.",
+        title: "Turn on location to plan",
+        description: "Enable GPS + browser permission to drop your start pin.",
       });
       return;
     }
@@ -420,6 +421,7 @@ function RunPageContent() {
       async (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         console.log("Got browser geolocation:", coords);
+        setLocationAllowed(true);
         setLocationWarning(null);
         setStart(coords);
         setForceFit(true);
@@ -436,10 +438,10 @@ function RunPageContent() {
       },
       (err) => {
         console.warn("Unable to read current location for planner:", err);
+        setLocationAllowed(false);
         setLocationWarning({
-          title: "Location is required to plan your route",
-          description:
-            "Allow location access in your browser so we can auto-fill your starting point and unlock the arrival button at each stop.",
+          title: "Location is off",
+          description: "Allow location to plan and finish jobs.",
         });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -467,12 +469,13 @@ function RunPageContent() {
           if (!isActive) return;
           if (status.state === "granted") {
             setLocationWarning(null);
+            setLocationAllowed(true);
             requestStartFromLocation();
           } else {
+            setLocationAllowed(false);
             setLocationWarning({
-              title: "Share your location to keep planning runs",
-              description:
-                "We need ongoing location access to keep your start point accurate and to let you mark stops as arrived.",
+              title: "Location needed",
+              description: "Turn it on to plan and mark arrivals.",
             });
           }
         };
@@ -680,6 +683,20 @@ function RunPageContent() {
 
     setPlannerLocked(true);
     hasRedirectedToRoute.current = false;
+  };
+
+  const handlePlanRun = () => {
+    if (!locationAllowed) {
+      setPlannerNotice({
+        title: "Turn on location",
+        description: "Allow location to plan this run.",
+      });
+      requestStartFromLocation();
+      return;
+    }
+
+    console.log("Planning run…");
+    buildRoute();
   };
 
   useEffect(() => {
@@ -1001,10 +1018,7 @@ function RunPageContent() {
                 // Plan Run button (grey)
                 <button
                   className="w-full rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
-                  onClick={() => {
-                    console.log("Planning run…");
-                    buildRoute();
-                  }}
+                  onClick={handlePlanRun}
                   disabled={plannerLocked}
                 >
                   Plan Run

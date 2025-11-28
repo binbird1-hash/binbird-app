@@ -59,6 +59,7 @@ function RoutePageContent() {
       }
     | null
   >(null);
+  const [locationAllowed, setLocationAllowed] = useState(false);
   const [lockNavigation, setLockNavigation] = useState(false);
   const [hasStoredPlan, setHasStoredPlan] = useState(false);
   const operationalDayRef = useRef(getOperationalISODate(new Date()));
@@ -267,11 +268,11 @@ function RoutePageContent() {
   const requestLiveLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Falling back to stored coordinates.");
+      setLocationAllowed(false);
       setCurrentLocation(null);
       setLocationWarning({
-        title: "Location access is off",
-        description:
-          "Enable location sharing (HTTPS) so we can keep you on the map and let you mark jobs as arrived.",
+        title: "Turn on location",
+        description: "Share your location so you can finish jobs.",
       });
       return () => {};
     }
@@ -281,6 +282,7 @@ function RoutePageContent() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (isCancelled) return;
+        setLocationAllowed(true);
         setCurrentLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
@@ -290,11 +292,11 @@ function RoutePageContent() {
       (err) => {
         console.warn("Unable to read current location:", err);
         if (isCancelled) return;
+        setLocationAllowed(false);
         setCurrentLocation(null);
         setLocationWarning({
-          title: "Share location to keep navigating",
-          description:
-            "Your live position is required to follow directions and check in at each stop. Turn on location in your browser settings.",
+          title: "Location is off",
+          description: "Turn it on to navigate and tap Arrived.",
         });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -332,12 +334,13 @@ function RoutePageContent() {
           if (!isActive) return;
           if (status.state === "granted") {
             setLocationWarning(null);
+            setLocationAllowed(true);
             requestLiveLocation();
           } else {
+            setLocationAllowed(false);
             setLocationWarning({
-              title: "Location is required to finish jobs",
-              description:
-                "Allow location sharing so we can keep directions accurate and let you tap 'Arrived at location'.",
+              title: "Location needed",
+              description: "Enable it to keep directions and arrivals working.",
             });
           }
         };
@@ -431,19 +434,22 @@ function RoutePageContent() {
   }
 
   function handleArrivedAtLocation() {
-    if (!navigator.geolocation) {
+    if (!navigator.geolocation || !locationAllowed) {
+      setLocationAllowed(false);
       setLocationWarning({
-        title: "Turn on location services",
-        description: "Location access is required to confirm you've arrived at the job.",
+        title: "Turn on location",
+        description: "We need it to check you in.",
       });
       setPopupNotice({
-        title: "Location needed",
-        description: "Enable location sharing in your browser to continue.",
+        title: "Location required",
+        description: "Enable sharing, then tap Arrived again.",
       });
+      requestLiveLocation();
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        setLocationAllowed(true);
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
         if (dist <= 50) {
           router.push(
@@ -458,13 +464,14 @@ function RoutePageContent() {
       },
       (err) => {
         console.error("Geolocation error", err);
+        setLocationAllowed(false);
         setLocationWarning({
-          title: "Location access is blocked",
-          description: "Allow location sharing to mark arrivals and continue the route.",
+          title: "Location blocked",
+          description: "Allow sharing to mark arrivals.",
         });
         setPopupNotice({
-          title: "Unable to read your location",
-          description: "Turn location permissions back on, then tap Arrived again.",
+          title: "Location needed",
+          description: "Turn it back on, then tap Arrived again.",
         });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
