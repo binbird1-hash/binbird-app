@@ -96,8 +96,7 @@ function WeeklyJobsContent() {
           .select(
             "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week"
           )
-          .eq("assigned_to", user.id)
-          .is("last_completed_on", null);
+          .eq("assigned_to", user.id);
 
         if (error) throw error;
 
@@ -183,6 +182,7 @@ function WeeklyJobsContent() {
   }, [jobs]);
 
   const totalJobs = jobs.length;
+  const remainingJobs = jobs.filter((job) => !job.last_completed_on).length;
 
   const isLoading = state === "loading" || state === "idle";
 
@@ -195,8 +195,8 @@ function WeeklyJobsContent() {
             {isLoading
               ? "Loading your weekly assignments…"
               : totalJobs === 0
-              ? "No jobs left for the rest of this week."
-              : `You have ${totalJobs} job${totalJobs === 1 ? "" : "s"} remaining this week.`}
+              ? "No jobs assigned for the rest of this week."
+              : `You have ${remainingJobs} job${remainingJobs === 1 ? "" : "s"} left to complete this week.`}
           </p>
         </header>
 
@@ -230,11 +230,32 @@ function WeeklyJobsContent() {
               <ul className="divide-y divide-white/10">
                 {bucket.jobs.map((job) => {
                   const parsedBins = getParsedBins(job.bins);
+                  const isCompleted = Boolean(job.last_completed_on);
+
                   return (
                     <li key={job.id} className="px-4 py-5 sm:px-5">
-                      <p className="text-base font-semibold text-white">
-                        {job.address || "Address unavailable"}
-                      </p>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-base font-semibold text-white">
+                          {job.address || "Address unavailable"}
+                        </p>
+
+                        <div
+                          className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                            isCompleted
+                              ? "bg-emerald-500/10 text-emerald-200"
+                              : "bg-white/5 text-white"
+                          }`}
+                        >
+                          <span
+                            aria-hidden
+                            className={`${isCompleted ? "text-emerald-300" : "text-white/70"}`}
+                          >
+                            {isCompleted ? "✔" : "●"}
+                          </span>
+                          {isCompleted ? "Completed" : "Pending"}
+                        </div>
+                      </div>
+
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
                         <span className="text-xs font-semibold uppercase tracking-wide text-white">
                           {JOB_TYPE_LABELS[job.job_type]}
