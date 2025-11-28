@@ -162,6 +162,13 @@ function RunPageContent() {
       }
     | null
   >(null);
+  const showLocationPopup = useCallback(
+    (title: string, description?: string) => {
+      setLocationWarning({ title, description });
+      setPlannerNotice({ title, description });
+    },
+    []
+  );
 
   const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
   const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
@@ -387,7 +394,19 @@ function RunPageContent() {
       mapRef.current.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
       setForceFit(false);
     }
-  }, [start, end, jobs, ordered, routePath, userMoved, forceFit]);
+  }, [
+    start,
+    end,
+    jobs,
+    ordered,
+    routePath,
+    userMoved,
+    forceFit,
+    MELBOURNE_BOUNDS.east,
+    MELBOURNE_BOUNDS.north,
+    MELBOURNE_BOUNDS.south,
+    MELBOURNE_BOUNDS.west,
+  ]);
 
   // Track manual panning
   useEffect(() => {
@@ -410,10 +429,7 @@ function RunPageContent() {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Unable to auto-fill start location.");
       setLocationAllowed(false);
-      setLocationWarning({
-        title: "Turn on location to plan",
-        description: "Enable GPS + browser permission to drop your start pin.",
-      });
+      showLocationPopup("Location is off", "Turn it on to plan your run.");
       return;
     }
 
@@ -439,19 +455,16 @@ function RunPageContent() {
       (err) => {
         console.warn("Unable to read current location for planner:", err);
         setLocationAllowed(false);
-        setLocationWarning({
-          title: "Location is off",
-          description: "Allow location to plan and finish jobs.",
-        });
+        showLocationPopup("Location blocked", "Allow sharing to plan and finish jobs.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  }, []);
+  }, [showLocationPopup]);
 
   // Autofill current location
   useEffect(() => {
     requestStartFromLocation();
-  }, [requestStartFromLocation]);
+  }, [requestStartFromLocation, showLocationPopup]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
@@ -473,10 +486,7 @@ function RunPageContent() {
             requestStartFromLocation();
           } else {
             setLocationAllowed(false);
-            setLocationWarning({
-              title: "Location needed",
-              description: "Turn it on to plan and mark arrivals.",
-            });
+            showLocationPopup("Location needed", "Turn it on to plan and mark arrivals.");
           }
         };
 
@@ -489,7 +499,7 @@ function RunPageContent() {
       isActive = false;
       if (permissionStatus) permissionStatus.onchange = null;
     };
-  }, [requestStartFromLocation]);
+  }, [requestStartFromLocation, showLocationPopup]);
 
   // Handle "End same as Start"
   useEffect(() => {
@@ -687,10 +697,7 @@ function RunPageContent() {
 
   const handlePlanRun = () => {
     if (!locationAllowed) {
-      setPlannerNotice({
-        title: "Turn on location",
-        description: "Allow location to plan this run.",
-      });
+      showLocationPopup("Turn on location", "Allow location to plan this run.");
       requestStartFromLocation();
       return;
     }
@@ -956,8 +963,6 @@ function RunPageContent() {
               <LocationPermissionBanner
                 title={locationWarning.title}
                 description={locationWarning.description}
-                onRetry={requestStartFromLocation}
-                actionLabel="Turn on"
               />
             )}
 

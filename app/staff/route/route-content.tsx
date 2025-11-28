@@ -59,6 +59,13 @@ function RoutePageContent() {
       }
     | null
   >(null);
+  const showLocationPopup = useCallback(
+    (title: string, description?: string) => {
+      setLocationWarning({ title, description });
+      setPopupNotice({ title, description });
+    },
+    []
+  );
   const [locationAllowed, setLocationAllowed] = useState(false);
   const [lockNavigation, setLockNavigation] = useState(false);
   const [hasStoredPlan, setHasStoredPlan] = useState(false);
@@ -270,10 +277,7 @@ function RoutePageContent() {
       console.warn("Geolocation API unavailable. Falling back to stored coordinates.");
       setLocationAllowed(false);
       setCurrentLocation(null);
-      setLocationWarning({
-        title: "Turn on location",
-        description: "Share your location so you can finish jobs.",
-      });
+      showLocationPopup("Location is off", "Share it to finish jobs.");
       return () => {};
     }
 
@@ -294,10 +298,7 @@ function RoutePageContent() {
         if (isCancelled) return;
         setLocationAllowed(false);
         setCurrentLocation(null);
-        setLocationWarning({
-          title: "Location is off",
-          description: "Turn it on to navigate and tap Arrived.",
-        });
+        showLocationPopup("Location blocked", "Turn it on to navigate and tap Arrived.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -305,7 +306,7 @@ function RoutePageContent() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [showLocationPopup]);
 
   // Update current location
   useEffect(() => {
@@ -338,10 +339,7 @@ function RoutePageContent() {
             requestLiveLocation();
           } else {
             setLocationAllowed(false);
-            setLocationWarning({
-              title: "Location needed",
-              description: "Enable it to keep directions and arrivals working.",
-            });
+            showLocationPopup("Location needed", "Enable it to keep directions and arrivals working.");
           }
         };
 
@@ -354,7 +352,7 @@ function RoutePageContent() {
       isActive = false;
       if (permissionStatus) permissionStatus.onchange = null;
     };
-  }, [requestLiveLocation]);
+  }, [requestLiveLocation, showLocationPopup]);
 
   // Directions request
   useEffect(() => {
@@ -436,14 +434,7 @@ function RoutePageContent() {
   function handleArrivedAtLocation() {
     if (!navigator.geolocation || !locationAllowed) {
       setLocationAllowed(false);
-      setLocationWarning({
-        title: "Turn on location",
-        description: "We need it to check you in.",
-      });
-      setPopupNotice({
-        title: "Location required",
-        description: "Enable sharing, then tap Arrived again.",
-      });
+      showLocationPopup("Location required", "Enable sharing, then tap Arrived again.");
       requestLiveLocation();
       return;
     }
@@ -465,14 +456,7 @@ function RoutePageContent() {
       (err) => {
         console.error("Geolocation error", err);
         setLocationAllowed(false);
-        setLocationWarning({
-          title: "Location blocked",
-          description: "Allow sharing to mark arrivals.",
-        });
-        setPopupNotice({
-          title: "Location needed",
-          description: "Turn it back on, then tap Arrived again.",
-        });
+        showLocationPopup("Location needed", "Turn it back on, then tap Arrived again.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -537,8 +521,6 @@ function RoutePageContent() {
               <LocationPermissionBanner
                 title={locationWarning.title}
                 description={locationWarning.description}
-                onRetry={requestLiveLocation}
-                actionLabel="Enable location"
               />
             )}
               <button
