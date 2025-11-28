@@ -296,9 +296,16 @@ function RoutePageContent() {
       (err) => {
         console.warn("Unable to read current location:", err);
         if (isCancelled) return;
-        setLocationAllowed(false);
+        const permissionDenied =
+          typeof err === "object" && err !== null && "code" in err
+            ? (err as GeolocationPositionError).code === err.PERMISSION_DENIED
+            : false;
+
+        setLocationAllowed(!permissionDenied);
         setCurrentLocation(null);
-        showLocationPopup("Location blocked", "Turn it on to navigate and tap Arrived.");
+        if (permissionDenied) {
+          showLocationPopup("Location blocked", "Turn it on to navigate and tap Arrived.");
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -455,8 +462,15 @@ function RoutePageContent() {
       },
       (err) => {
         console.error("Geolocation error", err);
-        setLocationAllowed(false);
-        showLocationPopup("Location needed", "Turn it back on, then tap Arrived again.");
+        const permissionDenied =
+          typeof err === "object" && err !== null && "code" in err
+            ? (err as GeolocationPositionError).code === err.PERMISSION_DENIED
+            : false;
+
+        setLocationAllowed(!permissionDenied);
+        if (permissionDenied) {
+          showLocationPopup("Location needed", "Turn it back on, then tap Arrived again.");
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
