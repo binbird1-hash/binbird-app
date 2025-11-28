@@ -14,6 +14,7 @@ import type { JobRecord } from "@/lib/database.types";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { LocationPermissionBanner } from "@/components/UI/LocationPermissionBanner";
 import {
   getOperationalDayIndex,
   getOperationalDayName,
@@ -80,10 +81,7 @@ function RunPageContent() {
   const putOutRestricted = jobVisibility.putOut;
   const allJobsRestricted = bringInRestricted && putOutRestricted;
   const [hiddenJobsCount, setHiddenJobsCount] = useState(0);
-  const [plannerNotice, setPlannerNotice] = useState<{
-    title: string;
-    description?: string;
-  } | null>(null);
+  const [locationAllowed, setLocationAllowed] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -153,7 +151,19 @@ function RunPageContent() {
 
   const [startAddress, setStartAddress] = useState("");
   const [endAddress, setEndAddress] = useState("");
-  const [locationWarning, setLocationWarning] = useState<string | null>(null);
+  const [locationWarning, setLocationWarning] = useState<
+    | {
+        title: string;
+        description?: string;
+      }
+    | null
+  >(null);
+  const showLocationPopup = useCallback(
+    (title: string, description?: string) => {
+      setLocationWarning({ title, description });
+    },
+    []
+  );
 
   const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
   const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
@@ -379,7 +389,19 @@ function RunPageContent() {
       mapRef.current.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
       setForceFit(false);
     }
-  }, [start, end, jobs, ordered, routePath, userMoved, forceFit]);
+  }, [
+    start,
+    end,
+    jobs,
+    ordered,
+    routePath,
+    userMoved,
+    forceFit,
+    MELBOURNE_BOUNDS.east,
+    MELBOURNE_BOUNDS.north,
+    MELBOURNE_BOUNDS.south,
+    MELBOURNE_BOUNDS.west,
+  ]);
 
   // Track manual panning
   useEffect(() => {
@@ -398,11 +420,11 @@ function RunPageContent() {
     fitBoundsToMap();
   }, [start, end, jobs, ordered, routePath, resetCounter, fitBoundsToMap]);
 
-  // Autofill current location
-  useEffect(() => {
+  const requestStartFromLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Unable to auto-fill start location.");
-      setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
+      setLocationAllowed(false);
+      showLocationPopup("Location is off", "Turn it on to plan your run.");
       return;
     }
 
@@ -410,6 +432,7 @@ function RunPageContent() {
       async (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         console.log("Got browser geolocation:", coords);
+        setLocationAllowed(true);
         setLocationWarning(null);
         setStart(coords);
         setForceFit(true);
@@ -426,10 +449,52 @@ function RunPageContent() {
       },
       (err) => {
         console.warn("Unable to read current location for planner:", err);
-        setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
-      }
+        setLocationAllowed(false);
+        showLocationPopup("Location blocked", "Allow sharing to plan and finish jobs.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  }, []);
+  }, [showLocationPopup]);
+
+  // Autofill current location
+  useEffect(() => {
+    requestStartFromLocation();
+  }, [requestStartFromLocation, showLocationPopup]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+
+    let isActive = true;
+    let permissionStatus: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (!isActive) return;
+        permissionStatus = status;
+
+        const syncPermissionState = () => {
+          if (!isActive) return;
+          if (status.state === "granted") {
+            setLocationWarning(null);
+            setLocationAllowed(true);
+            requestStartFromLocation();
+          } else {
+            setLocationAllowed(false);
+            showLocationPopup("Location needed", "Turn it on to plan and mark arrivals.");
+          }
+        };
+
+        syncPermissionState();
+        status.onchange = syncPermissionState;
+      })
+      .catch((err) => console.warn("Unable to check geolocation permission", err));
+
+    return () => {
+      isActive = false;
+      if (permissionStatus) permissionStatus.onchange = null;
+    };
+  }, [requestStartFromLocation, showLocationPopup]);
 
   // Handle "End same as Start"
   useEffect(() => {
@@ -566,22 +631,8 @@ function RunPageContent() {
     setResetCounter((c) => c + 1);
     setUserMoved(false);
     setForceFit(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLocationWarning(null);
-        },
-        (err) => {
-          console.warn("Unable to refresh current location on reset:", err);
-          setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
-        }
-      );
-    } else {
-      console.warn("Geolocation API unavailable during reset.");
-      setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
-    }
-  }, []);
+    requestStartFromLocation();
+  }, [requestStartFromLocation]);
 
   // Build route
   const buildRoute = async () => {
@@ -637,6 +688,17 @@ function RunPageContent() {
 
     setPlannerLocked(true);
     hasRedirectedToRoute.current = false;
+  };
+
+  const handlePlanRun = () => {
+    if (!locationAllowed) {
+      showLocationPopup("Turn on location", "Allow location to plan this run.");
+      requestStartFromLocation();
+      return;
+    }
+
+    console.log("Planning run…");
+    buildRoute();
   };
 
   useEffect(() => {
@@ -893,9 +955,10 @@ function RunPageContent() {
               />
             </Autocomplete>
             {locationWarning && (
-              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2">
-                {locationWarning}
-              </p>
+              <LocationPermissionBanner
+                title={locationWarning.title}
+                description={locationWarning.description}
+              />
             )}
 
             <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>
@@ -955,10 +1018,7 @@ function RunPageContent() {
                 // Plan Run button (grey)
                 <button
                   className="w-full rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white transition hover:bg-neutral-800"
-                  onClick={() => {
-                    console.log("Planning run…");
-                    buildRoute();
-                  }}
+                  onClick={handlePlanRun}
                   disabled={plannerLocked}
                 >
                   Plan Run
@@ -982,12 +1042,6 @@ function RunPageContent() {
         open={blackoutNoticeOpen && bringInRestricted && hiddenJobsCount > 0}
         title="Bring-in jobs will appear after 2 pm."
         onClose={() => setBlackoutNoticeOpen(false)}
-      />
-      <NoticeModal
-        open={Boolean(plannerNotice)}
-        title={plannerNotice?.title ?? ""}
-        description={plannerNotice?.description}
-        onClose={() => setPlannerNotice(null)}
       />
     </>
   );
