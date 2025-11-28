@@ -14,6 +14,7 @@ import type { JobRecord } from "@/lib/database.types";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
 import { readRunSession, writeRunSession } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { LocationPermissionBanner } from "@/components/UI/LocationPermissionBanner";
 import {
   getOperationalDayIndex,
   getOperationalDayName,
@@ -153,7 +154,13 @@ function RunPageContent() {
 
   const [startAddress, setStartAddress] = useState("");
   const [endAddress, setEndAddress] = useState("");
-  const [locationWarning, setLocationWarning] = useState<string | null>(null);
+  const [locationWarning, setLocationWarning] = useState<
+    | {
+        title: string;
+        description?: string;
+      }
+    | null
+  >(null);
 
   const [startAuto, setStartAuto] = useState<google.maps.places.Autocomplete | null>(null);
   const [endAuto, setEndAuto] = useState<google.maps.places.Autocomplete | null>(null);
@@ -398,11 +405,14 @@ function RunPageContent() {
     fitBoundsToMap();
   }, [start, end, jobs, ordered, routePath, resetCounter, fitBoundsToMap]);
 
-  // Autofill current location
-  useEffect(() => {
+  const requestStartFromLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Unable to auto-fill start location.");
-      setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
+      setLocationWarning({
+        title: "Share your location to start a run",
+        description:
+          "Turn on location services (HTTPS + browser permission) so we can drop a pin where you are right now. Without it, we can't plan or complete jobs.",
+      });
       return;
     }
 
@@ -426,10 +436,57 @@ function RunPageContent() {
       },
       (err) => {
         console.warn("Unable to read current location for planner:", err);
-        setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
-      }
+        setLocationWarning({
+          title: "Location is required to plan your route",
+          description:
+            "Allow location access in your browser so we can auto-fill your starting point and unlock the arrival button at each stop.",
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
+
+  // Autofill current location
+  useEffect(() => {
+    requestStartFromLocation();
+  }, [requestStartFromLocation]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+
+    let isActive = true;
+    let permissionStatus: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (!isActive) return;
+        permissionStatus = status;
+
+        const syncPermissionState = () => {
+          if (!isActive) return;
+          if (status.state === "granted") {
+            setLocationWarning(null);
+            requestStartFromLocation();
+          } else {
+            setLocationWarning({
+              title: "Share your location to keep planning runs",
+              description:
+                "We need ongoing location access to keep your start point accurate and to let you mark stops as arrived.",
+            });
+          }
+        };
+
+        syncPermissionState();
+        status.onchange = syncPermissionState;
+      })
+      .catch((err) => console.warn("Unable to check geolocation permission", err));
+
+    return () => {
+      isActive = false;
+      if (permissionStatus) permissionStatus.onchange = null;
+    };
+  }, [requestStartFromLocation]);
 
   // Handle "End same as Start"
   useEffect(() => {
@@ -566,22 +623,8 @@ function RunPageContent() {
     setResetCounter((c) => c + 1);
     setUserMoved(false);
     setForceFit(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLocationWarning(null);
-        },
-        (err) => {
-          console.warn("Unable to refresh current location on reset:", err);
-          setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
-        }
-      );
-    } else {
-      console.warn("Geolocation API unavailable during reset.");
-      setLocationWarning("Enable location sharing/HTTPS to auto-fill your starting point.");
-    }
-  }, []);
+    requestStartFromLocation();
+  }, [requestStartFromLocation]);
 
   // Build route
   const buildRoute = async () => {
@@ -893,9 +936,12 @@ function RunPageContent() {
               />
             </Autocomplete>
             {locationWarning && (
-              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2">
-                {locationWarning}
-              </p>
+              <LocationPermissionBanner
+                title={locationWarning.title}
+                description={locationWarning.description}
+                onRetry={requestStartFromLocation}
+                actionLabel="Turn on"
+              />
             )}
 
             <Autocomplete onLoad={setEndAuto} onPlaceChanged={onEndChanged}>

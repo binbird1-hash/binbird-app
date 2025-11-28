@@ -6,6 +6,7 @@ import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from "@react-goo
 import SettingsDrawer from "@/components/UI/SettingsDrawer";
 import { PortalLoadingScreen } from "@/components/UI/PortalLoadingScreen";
 import { NoticeModal } from "@/components/UI/NoticeModal";
+import { LocationPermissionBanner } from "@/components/UI/LocationPermissionBanner";
 import { darkMapStyle, lightMapStyle, satelliteMapStyle } from "@/lib/mapStyle";
 import { MapSettingsProvider, useMapSettings } from "@/components/Context/MapSettingsContext";
 import { normalizeJobs, type Job } from "@/lib/jobs";
@@ -51,7 +52,13 @@ function RoutePageContent() {
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [popupNotice, setPopupNotice] = useState<{ title: string; description?: string } | null>(null);
-  const [locationWarning, setLocationWarning] = useState<string | null>(null);
+  const [locationWarning, setLocationWarning] = useState<
+    | {
+        title: string;
+        description?: string;
+      }
+    | null
+  >(null);
   const [lockNavigation, setLockNavigation] = useState(false);
   const [hasStoredPlan, setHasStoredPlan] = useState(false);
   const operationalDayRef = useRef(getOperationalISODate(new Date()));
@@ -257,15 +264,16 @@ function RoutePageContent() {
     : null;
   const isEndStop = normalizedAddress === "end";
 
-  // Update current location
-  useEffect(() => {
-    if (!activeJob) return;
-
+  const requestLiveLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Falling back to stored coordinates.");
       setCurrentLocation(null);
-      setLocationWarning("Enable location sharing/HTTPS to see live position.");
-      return;
+      setLocationWarning({
+        title: "Location access is off",
+        description:
+          "Enable location sharing (HTTPS) so we can keep you on the map and let you mark jobs as arrived.",
+      });
+      return () => {};
     }
 
     let isCancelled = false;
@@ -283,7 +291,11 @@ function RoutePageContent() {
         console.warn("Unable to read current location:", err);
         if (isCancelled) return;
         setCurrentLocation(null);
-        setLocationWarning("Enable location sharing/HTTPS to see live position.");
+        setLocationWarning({
+          title: "Share location to keep navigating",
+          description:
+            "Your live position is required to follow directions and check in at each stop. Turn on location in your browser settings.",
+        });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -291,7 +303,55 @@ function RoutePageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [activeJob]);
+  }, []);
+
+  // Update current location
+  useEffect(() => {
+    if (!activeJob) return;
+
+    const cleanup = requestLiveLocation();
+
+    return () => {
+      cleanup();
+    };
+  }, [activeJob, requestLiveLocation]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+
+    let isActive = true;
+    let permissionStatus: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (!isActive) return;
+        permissionStatus = status;
+
+        const syncPermissionState = () => {
+          if (!isActive) return;
+          if (status.state === "granted") {
+            setLocationWarning(null);
+            requestLiveLocation();
+          } else {
+            setLocationWarning({
+              title: "Location is required to finish jobs",
+              description:
+                "Allow location sharing so we can keep directions accurate and let you tap 'Arrived at location'.",
+            });
+          }
+        };
+
+        syncPermissionState();
+        status.onchange = syncPermissionState;
+      })
+      .catch((err) => console.warn("Unable to check geolocation permission", err));
+
+    return () => {
+      isActive = false;
+      if (permissionStatus) permissionStatus.onchange = null;
+    };
+  }, [requestLiveLocation]);
 
   // Directions request
   useEffect(() => {
@@ -372,7 +432,14 @@ function RoutePageContent() {
 
   function handleArrivedAtLocation() {
     if (!navigator.geolocation) {
-      setPopupNotice({ title: "Geolocation not supported" });
+      setLocationWarning({
+        title: "Turn on location services",
+        description: "Location access is required to confirm you've arrived at the job.",
+      });
+      setPopupNotice({
+        title: "Location needed",
+        description: "Enable location sharing in your browser to continue.",
+      });
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -391,7 +458,14 @@ function RoutePageContent() {
       },
       (err) => {
         console.error("Geolocation error", err);
-        setPopupNotice({ title: "Unable to get your current location." });
+        setLocationWarning({
+          title: "Location access is blocked",
+          description: "Allow location sharing to mark arrivals and continue the route.",
+        });
+        setPopupNotice({
+          title: "Unable to read your location",
+          description: "Turn location permissions back on, then tap Arrived again.",
+        });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -453,9 +527,12 @@ function RoutePageContent() {
             <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }}></div>
             <h2 className="text-lg font-bold relative z-10">{activeJob.address}</h2>
             {locationWarning && (
-              <p className="text-sm text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg px-3 py-2 relative z-10">
-                {locationWarning}
-              </p>
+              <LocationPermissionBanner
+                title={locationWarning.title}
+                description={locationWarning.description}
+                onRetry={requestLiveLocation}
+                actionLabel="Enable location"
+              />
             )}
               <button
                 onClick={() => window.open(navigateUrl, "_blank")}
