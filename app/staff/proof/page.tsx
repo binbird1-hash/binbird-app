@@ -7,7 +7,7 @@ import ProofPageContent from "./proof-content";
 export default function ProofPage() {
   return (
     <Suspense fallback={<PortalLoadingScreen />}>
-      <div className="h-dvh overflow-y-auto bg-black text-white">
+      <div className="min-h-dvh overflow-y-auto bg-black text-white">
         <ProofPageContent />
       </div>
     </Suspense>
