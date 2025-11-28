@@ -36,6 +36,11 @@ body {
   @apply text-white antialiased;
 }
 
+html {
+  min-height: 100%;
+  background-color: #000;
+}
+
 input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;
