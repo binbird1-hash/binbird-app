@@ -234,32 +234,35 @@ function WeeklyJobsContent() {
 
                   return (
                     <li key={job.id} className="px-4 py-5 sm:px-5">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-base font-semibold text-white">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                              isCompleted
+                                ? "border-emerald-300/50 bg-emerald-500/10 text-emerald-100"
+                                : "border-white/15 bg-white/5 text-white"
+                            }`}
+                          >
+                            <span
+                              aria-hidden
+                              className={`h-2.5 w-2.5 rounded-full ${
+                                isCompleted ? "bg-emerald-300" : "bg-white/70"
+                              }`}
+                            />
+                            {isCompleted ? "Completed" : "Pending"}
+                          </div>
+
+                          <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
+                            {JOB_TYPE_LABELS[job.job_type]}
+                          </p>
+                        </div>
+
+                        <p className="text-base font-semibold leading-tight text-white">
                           {job.address || "Address unavailable"}
                         </p>
-
-                        <div
-                          className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
-                            isCompleted
-                              ? "bg-emerald-500/10 text-emerald-200"
-                              : "bg-white/5 text-white"
-                          }`}
-                        >
-                          <span
-                            aria-hidden
-                            className={`${isCompleted ? "text-emerald-300" : "text-white/70"}`}
-                          >
-                            {isCompleted ? "✔" : "●"}
-                          </span>
-                          {isCompleted ? "Completed" : "Pending"}
-                        </div>
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-white">
-                          {JOB_TYPE_LABELS[job.job_type]}
-                        </span>
                         {parsedBins.length ? (
                           <span className="text-xs uppercase tracking-wide text-white/70">
                             {parsedBins.map((bin, index) => {
