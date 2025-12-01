@@ -344,9 +344,12 @@ function RoutePageContent() {
             setLocationWarning(null);
             setLocationAllowed(true);
             requestLiveLocation();
-          } else {
+          } else if (status.state === "denied") {
             setLocationAllowed(false);
             showLocationPopup("Location needed", "Enable it to keep directions and arrivals working.");
+          } else {
+            // "prompt" state: do not show a popup until the user explicitly denies access
+            setLocationAllowed(false);
           }
         };
 
