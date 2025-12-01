@@ -878,7 +878,7 @@ function RunPageContent() {
             );
           })}
           {end && <Marker position={end} icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" />}
-          {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#ff5757", strokeOpacity: 0.9, strokeWeight: 5 }} />}
+          {routePath.length > 0 && <Polyline path={routePath} options={{ strokeColor: "#E21C21", strokeOpacity: 0.9, strokeWeight: 5 }} />}
           {selectedJob && (
             <OverlayViewF
               position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
@@ -893,7 +893,7 @@ function RunPageContent() {
                 <div className="flex flex-col items-center">
                   <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-xs text-white shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur">
                     <p className="text-sm font-semibold text-white">{selectedJob.address}</p>
-                    <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#ff5757]">
+                    <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#E21C21]">
                       {JOB_TYPE_LABELS[selectedJob.job_type]}
                     </p>
                   </div>
@@ -937,7 +937,7 @@ function RunPageContent() {
         {/* Overlay controls */}
         <div className="fixed inset-x-0 bottom-0 z-10">
           <div className="bg-black w-full flex flex-col gap-3 p-6 relative">
-            <div className="absolute top-0 left-0 w-screen bg-[#ff5757]" style={{ height: "2px" }} />
+            <div className="absolute top-0 left-0 w-screen bg-[#E21C21]" style={{ height: "2px" }} />
             <h1 className="text-xl font-bold text-white relative z-10">Plan Run</h1>
 
             <Autocomplete onLoad={setStartAuto} onPlaceChanged={onStartChanged}>
@@ -1016,7 +1016,7 @@ function RunPageContent() {
                 </button>
               ) : jobs.length === 0 ? (
                 <button
-                  className="w-full cursor-not-allowed rounded-lg bg-[#ff5757] px-4 py-2 font-semibold opacity-60"
+                  className="w-full cursor-not-allowed rounded-lg bg-[#E21C21] px-4 py-2 font-semibold opacity-60"
                   disabled
                 >
                   All Jobs Completed
@@ -1033,7 +1033,7 @@ function RunPageContent() {
               ) : (
                 // Start Run button (accent red)
                 <button
-                  className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-90"
+                  className="w-full rounded-lg bg-[#E21C21] px-4 py-2 font-semibold text-white transition hover:opacity-90"
                   onClick={handleStartRun}
                 >
                   Start Run
@@ -1047,7 +1047,7 @@ function RunPageContent() {
 
       <NoticeModal
         open={blackoutNoticeOpen && bringInRestricted && hiddenJobsCount > 0}
-        title="Bring-in jobs will appear after 2 pm."
+        title="Bring-in jobs will appear after 12 pm."
         onClose={() => setBlackoutNoticeOpen(false)}
       />
       <NoticeModal

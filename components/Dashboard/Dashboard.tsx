@@ -46,7 +46,7 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen bg-black text-white">
       {/* Sticky header */}
       <header className="sticky top-0 z-10 bg-black border-b border-white/10 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#ff5757]">BinBird</h1>
+        <h1 className="text-lg font-bold text-[#E21C21]">BinBird</h1>
 
         {/* Show sign out only if logged in */}
         {(role === 'staff' || role === 'admin') && (
@@ -55,7 +55,7 @@ export default function Dashboard() {
               await supabase.auth.signOut()
               window.location.reload()
             }}
-            className="px-3 py-1.5 rounded-lg bg-[#ff5757] text-black text-sm font-semibold hover:opacity-90 active:scale-95 transition"
+            className="px-3 py-1.5 rounded-lg bg-[#E21C21] text-black text-sm font-semibold hover:opacity-90 active:scale-95 transition"
           >
             Sign Out
           </button>

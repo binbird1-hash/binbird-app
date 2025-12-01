@@ -8,7 +8,7 @@ module.exports = {
     extend: {
       colors: {
         binbird: {
-          red: "#ff5757",
+          red: "#E21C21",
           black: "#000000",
           white: "#ffffff",
         },

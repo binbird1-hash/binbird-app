@@ -147,7 +147,7 @@ export default function SmartJobCard({
         {/* Navigate */}
         <button
           onClick={openNavigation}
-          className="w-full bg-[#ff5757] px-4 py-2 rounded-lg font-semibold hover:opacity-90"
+          className="w-full bg-[#E21C21] px-4 py-2 rounded-lg font-semibold hover:opacity-90"
         >
           Navigate
         </button>

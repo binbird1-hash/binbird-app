@@ -135,7 +135,7 @@ function ResetPasswordConfirmContent() {
         </div>
         <Link
           href="/auth/reset"
-          className="inline-flex items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#ff6c6c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+          className="inline-flex items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#f4474c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
         >
           Request new reset link
         </Link>
@@ -155,7 +155,7 @@ function ResetPasswordConfirmContent() {
         </div>
         <Link
           href="/auth/login"
-          className="inline-flex items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#ff6c6c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+          className="inline-flex items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#f4474c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
         >
           Return to sign in
         </Link>
@@ -220,7 +220,7 @@ function ResetPasswordConfirmContent() {
       <button
         type="submit"
         disabled={status !== "ready"}
-        className="flex w-full items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-base font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#ff6c6c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-base font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#f4474c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:cursor-not-allowed disabled:opacity-60"
       >
         {status === "submitting" ? "Updating…" : "Save new password"}
       </button>

@@ -138,7 +138,7 @@ export default function SettingsPage() {
         <button
           onClick={() => savePreference("google")}
           className={`px-4 py-2 rounded-lg font-semibold ${
-            navPref === "google" ? "bg-[#ff5757]" : "bg-gray-700"
+            navPref === "google" ? "bg-[#E21C21]" : "bg-gray-700"
           } ${saving ? "opacity-70" : ""}`}
           disabled={saving}
         >
@@ -147,7 +147,7 @@ export default function SettingsPage() {
         <button
           onClick={() => savePreference("waze")}
           className={`px-4 py-2 rounded-lg font-semibold ${
-            navPref === "waze" ? "bg-[#ff5757]" : "bg-gray-700"
+            navPref === "waze" ? "bg-[#E21C21]" : "bg-gray-700"
           } ${saving ? "opacity-70" : ""}`}
           disabled={saving}
         >
@@ -156,7 +156,7 @@ export default function SettingsPage() {
         <button
           onClick={() => savePreference("apple")}
           className={`px-4 py-2 rounded-lg font-semibold ${
-            navPref === "apple" ? "bg-[#ff5757]" : "bg-gray-700"
+            navPref === "apple" ? "bg-[#E21C21]" : "bg-gray-700"
           } ${saving ? "opacity-70" : ""}`}
           disabled={saving}
         >

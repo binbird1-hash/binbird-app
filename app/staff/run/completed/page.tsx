@@ -337,7 +337,7 @@ function CompletedRunContent() {
     <div className="flex flex-1 flex-col bg-black text-white">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 pt-8 sm:pt-12">
         <header className="space-y-3 text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#E21C21]">
             Run Complete!
           </h1>
           <p className="text-base text-gray-200 sm:text-lg">
@@ -400,7 +400,7 @@ function CompletedRunContent() {
                   </p>
                   <div className="mt-3 h-2 rounded-full bg-white/10">
                     <div
-                      className="h-full rounded-full bg-[#ff5757] transition-all"
+                      className="h-full rounded-full bg-[#E21C21] transition-all"
                       style={{
                         width:
                           derivedStats.totalJobs && derivedStats.totalJobs > 0
@@ -474,7 +474,7 @@ function CompletedRunContent() {
         <button
           type="button"
           onClick={() => router.push("/staff/run")}
-          className="w-full rounded-lg bg-[#ff5757] px-4 py-2 font-bold text-white transition hover:opacity-90"
+          className="w-full rounded-lg bg-[#E21C21] px-4 py-2 font-bold text-white transition hover:opacity-90"
         >
           End Run
         </button>
