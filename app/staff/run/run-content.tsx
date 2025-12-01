@@ -483,9 +483,12 @@ function RunPageContent() {
             setLocationWarning(null);
             setLocationAllowed(true);
             requestStartFromLocation();
-          } else {
+          } else if (status.state === "denied") {
             setLocationAllowed(false);
             showLocationPopup("Location needed", "Turn it on to plan and mark arrivals.");
+          } else {
+            // "prompt" state: do not show a popup until the user explicitly denies access
+            setLocationAllowed(false);
           }
         };
 
