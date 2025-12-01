@@ -1047,7 +1047,7 @@ function RunPageContent() {
 
       <NoticeModal
         open={blackoutNoticeOpen && bringInRestricted && hiddenJobsCount > 0}
-        title="Bring-in jobs will appear after 2 pm."
+        title="Bring-in jobs will appear after 12 pm."
         onClose={() => setBlackoutNoticeOpen(false)}
       />
       <NoticeModal
