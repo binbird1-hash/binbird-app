@@ -127,7 +127,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
-    const accent = '#ff5757'
+    const accent = '#E21C21'
     const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
       <svg width="48" height="66" viewBox="0 0 48 66" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>

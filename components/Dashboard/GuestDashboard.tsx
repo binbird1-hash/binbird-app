@@ -15,7 +15,7 @@ export default function GuestDashboard() {
           Please sign in or create an account to access your dashboard.
         </p>
         <button
-          className="w-full max-w-xs py-4 rounded-xl bg-[#ff5757] text-white font-semibold text-lg hover:opacity-90 active:scale-95 transition"
+          className="w-full max-w-xs py-4 rounded-xl bg-[#E21C21] text-white font-semibold text-lg hover:opacity-90 active:scale-95 transition"
           onClick={handleSignIn}
         >
           Sign In / Sign Up

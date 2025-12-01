@@ -286,7 +286,7 @@ export default function SettingsDrawer() {
       {/* Header Bar */}
       <div
         className="fixed top-0 left-0 w-full h-14 bg-black z-50 flex items-center px-4 shadow-md"
-        style={{ borderBottom: "2px solid #ff5757" }}
+        style={{ borderBottom: "2px solid #E21C21" }}
       >
         <button
           onClick={() => {
@@ -337,9 +337,9 @@ export default function SettingsDrawer() {
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
                     pathname?.startsWith("/staff/run")
-                      ? "text-[#ff5757]"
+                      ? "text-[#E21C21]"
                       : "text-white",
-                    "hover:text-[#ff5757]"
+                    "hover:text-[#E21C21]"
                   )}
                 >
                   <Route className="h-4 w-4" />
@@ -350,9 +350,9 @@ export default function SettingsDrawer() {
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
                     pathname?.startsWith("/staff/week")
-                      ? "text-[#ff5757]"
+                      ? "text-[#E21C21]"
                       : "text-white",
-                    "hover:text-[#ff5757]"
+                    "hover:text-[#E21C21]"
                   )}
                 >
                   <CalendarDays className="h-4 w-4" />
@@ -362,8 +362,8 @@ export default function SettingsDrawer() {
                   onClick={() => handlePanelToggle("nav")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    navButtonIsActive ? "text-[#ff5757]" : "text-white",
-                    "hover:text-[#ff5757]"
+                    navButtonIsActive ? "text-[#E21C21]" : "text-white",
+                    "hover:text-[#E21C21]"
                   )}
                 >
                   <Navigation2 className="h-4 w-4" />
@@ -373,8 +373,8 @@ export default function SettingsDrawer() {
                   onClick={() => handlePanelToggle("style")}
                   className={clsx(
                     "flex w-full items-center gap-3 text-left font-semibold uppercase text-sm transition",
-                    mapButtonIsActive ? "text-[#ff5757]" : "text-white",
-                    "hover:text-[#ff5757]"
+                    mapButtonIsActive ? "text-[#E21C21]" : "text-white",
+                    "hover:text-[#E21C21]"
                   )}
                 >
                   <Palette className="h-4 w-4" />
@@ -385,7 +385,7 @@ export default function SettingsDrawer() {
                     <button
                       type="button"
                       onClick={handleEndRun}
-                      className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                      className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#E21C21]"
                     >
                       <Flag className="h-4 w-4" />
                       <span>End Run</span>
@@ -398,7 +398,7 @@ export default function SettingsDrawer() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#ff5757]"
+                  className="flex w-full items-center gap-3 text-left font-semibold uppercase text-sm text-white transition hover:text-[#E21C21]"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Log Out</span>
@@ -425,7 +425,7 @@ export default function SettingsDrawer() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 16 }}
                     transition={{ type: "tween", duration: 0.18 }}
-                    className="flex max-h-[55vh] flex-col gap-5 overflow-hidden border-t-2 border-[#ff5757] bg-black/95 px-6 pb-6 pt-5 shadow-[0_-18px_40px_rgba(0,0,0,0.55)] backdrop-blur"
+                    className="flex max-h-[55vh] flex-col gap-5 overflow-hidden border-t-2 border-[#E21C21] bg-black/95 px-6 pb-6 pt-5 shadow-[0_-18px_40px_rgba(0,0,0,0.55)] backdrop-blur"
                   >
                     <div className="flex flex-1 flex-col overflow-hidden">
                       <p className="text-xs uppercase tracking-[0.35em] text-white/60">
@@ -485,7 +485,7 @@ export default function SettingsDrawer() {
                     {/* Save Button */}
                     <button
                       onClick={saveSettings}
-                      className="mt-3 rounded-lg bg-[#ff5757] px-4 py-2 font-semibold transition hover:bg-[#ff6b6b]"
+                      className="mt-3 rounded-lg bg-[#E21C21] px-4 py-2 font-semibold transition hover:bg-[#f4474c]"
                     >
                       Save
                     </button>
