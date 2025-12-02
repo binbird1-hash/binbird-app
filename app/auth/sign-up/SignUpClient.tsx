@@ -312,7 +312,7 @@ export default function SignUpClient() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
+          className="w-full rounded-xl bg-binbird-red py-3 font-semibold text-white shadow-lg shadow-binbird-red/30 transition hover:bg-[#f4474c] focus:outline-none focus:ring-2 focus:ring-binbird-red/50 disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Sign Up"}
         </button>

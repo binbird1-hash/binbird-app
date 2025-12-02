@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="flex w-full items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-base font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#ff6c6c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center rounded-xl bg-binbird-red px-4 py-3 text-base font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-[#f4474c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === "loading" ? "Sending…" : "Send reset link"}
         </button>
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
         Remembered your password?{" "}
         <Link
           href="/auth/login"
-          className="font-semibold text-binbird-red hover:text-[#ff6c6c]"
+          className="font-semibold text-binbird-red hover:text-[#f4474c]"
         >
           Return to sign in
         </Link>

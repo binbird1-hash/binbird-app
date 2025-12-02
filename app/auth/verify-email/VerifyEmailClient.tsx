@@ -217,7 +217,7 @@ export default function VerifyEmailClient() {
         <button
           type="submit"
           disabled={!hasPendingData || loading || code.length !== 6}
-          className="w-full rounded-2xl bg-binbird-red py-3 text-base font-semibold text-white shadow-[0_18px_30px_-12px_rgba(255,87,87,0.55)] transition hover:bg-[#ff6c6c] focus:outline-none focus:ring-4 focus:ring-binbird-red/30 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-2xl bg-binbird-red py-3 text-base font-semibold text-white shadow-[0_18px_30px_-12px_rgba(226,28,33,0.55)] transition hover:bg-[#f4474c] focus:outline-none focus:ring-4 focus:ring-binbird-red/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Verifying…" : "Verify"}
         </button>
@@ -229,7 +229,7 @@ export default function VerifyEmailClient() {
           type="button"
           onClick={handleResend}
           disabled={!hasPendingData || resending}
-          className="font-semibold text-binbird-red hover:text-[#ff6c6c] disabled:opacity-60"
+          className="font-semibold text-binbird-red hover:text-[#f4474c] disabled:opacity-60"
         >
           {resending ? "Resending…" : "Resend code"}
         </button>
@@ -239,7 +239,7 @@ export default function VerifyEmailClient() {
         <button
           type="button"
           onClick={() => router.push("/auth/sign-up")}
-          className="font-medium text-binbird-red hover:text-[#ff6c6c]"
+          className="font-medium text-binbird-red hover:text-[#f4474c]"
         >
           Start over
         </button>

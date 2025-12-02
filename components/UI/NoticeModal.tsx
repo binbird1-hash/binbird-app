@@ -35,7 +35,7 @@ export function NoticeModal({ open, onClose, title, description, actionLabel = "
         )}
         <button
           onClick={onClose}
-          className="mt-6 w-full rounded-lg bg-[#ff5757] px-4 py-2 font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5757]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          className="mt-6 w-full rounded-lg bg-[#E21C21] px-4 py-2 font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E21C21]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           {actionLabel}
         </button>

@@ -784,8 +784,8 @@ export default function ProofPageContent() {
   };
 
   const checklistTickClass = isPutOutJob
-    ? "mt-0.5 text-[#ff5757]"
-    : "mt-0.5 text-[#ff5757] text-lg leading-none font-semibold";
+    ? "mt-0.5 text-[#E21C21]"
+    : "mt-0.5 text-[#E21C21] text-lg leading-none font-semibold";
 
   const checklistContainer = (
     <section className="space-y-5 rounded-2xl border border-neutral-800/70 bg-neutral-950/70 p-4 shadow-[0_25px_50px_rgba(0,0,0,0.45)] backdrop-blur">
@@ -799,7 +799,7 @@ export default function ProofPageContent() {
             </div>
             <input
               type="checkbox"
-              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#E21C21]"
               checked={checklist.propertyConfirmed}
               onChange={handleChecklistChange("propertyConfirmed")}
             />
@@ -836,7 +836,7 @@ export default function ProofPageContent() {
             </div>
             <input
               type="checkbox"
-              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#E21C21]"
               checked={checklist.binColoursConfirmed}
               onChange={handleChecklistChange("binColoursConfirmed")}
             />
@@ -861,7 +861,7 @@ export default function ProofPageContent() {
               </div>
               <input
                 type="checkbox"
-                className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+                className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#E21C21]"
                 checked={checklist.placementUnderstood}
                 onChange={handleChecklistChange("placementUnderstood")}
               />
@@ -896,7 +896,7 @@ export default function ProofPageContent() {
             </div>
             <input
               type="checkbox"
-              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#ff5757]"
+              className="h-5 w-5 rounded border border-neutral-600 bg-neutral-900 accent-[#E21C21]"
               checked={checklist.neatnessConfirmed}
               onChange={handleChecklistChange("neatnessConfirmed")}
             />
@@ -936,7 +936,7 @@ export default function ProofPageContent() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Add a quick note"
-            className="mt-4 w-full min-h-[110px] resize-y rounded-xl border border-neutral-800/70 bg-neutral-900 p-3 text-sm text-white placeholder-gray-500 focus:border-[#ff5757] focus:outline-none focus:ring-2 focus:ring-[#ff5757]/40"
+            className="mt-4 w-full min-h-[110px] resize-y rounded-xl border border-neutral-800/70 bg-neutral-900 p-3 text-sm text-white placeholder-gray-500 focus:border-[#E21C21] focus:outline-none focus:ring-2 focus:ring-[#E21C21]/40"
           />
         </div>
       </div>
@@ -946,7 +946,7 @@ export default function ProofPageContent() {
   return (
     <div className="relative flex min-h-full flex-col text-white">
       <div className="flex-1 space-y-6 p-6 pb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#ff5757] drop-shadow-[0_6px_18px_rgba(255,87,87,0.35)]">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#E21C21] drop-shadow-[0_6px_18px_rgba(226,28,33,0.35)]">
           {job.job_type === "put_out" ? "Put Bins Out" : "Bring Bins In"}
         </h1>
         <p className="text-lg font-semibold text-gray-200">{job.address}</p>
@@ -959,7 +959,7 @@ export default function ProofPageContent() {
             <div className="flex items-start gap-3">
               <div
                 aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-900/70 text-lg font-semibold text-[#ff5757]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-900/70 text-lg font-semibold text-[#E21C21]"
               >
                 !
               </div>
@@ -1032,7 +1032,7 @@ export default function ProofPageContent() {
             }}
             disabled={submitting || !allChecklistChecked}
             className={`relative z-10 w-full rounded-lg px-4 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60
-            ${readyToSubmit ? "bg-[#ff5757] text-white hover:bg-[#e04b4b]" : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
+            ${readyToSubmit ? "bg-[#E21C21] text-white hover:bg-[#f4474c]" : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
           >
             {submitting
               ? "Saving…"
