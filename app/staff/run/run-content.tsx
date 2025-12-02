@@ -1005,14 +1005,14 @@ function RunPageContent() {
                   className="w-full cursor-not-allowed rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white opacity-70"
                   disabled
                 >
-                  Jobs available after 2&nbsp;pm
+                  Jobs available after 12&nbsp;pm
                 </button>
               ) : jobs.length === 0 && hiddenJobsCount > 0 ? (
                 <button
                   className="w-full cursor-not-allowed rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white opacity-70"
                   disabled
                 >
-                  Bring-in jobs available after 2&nbsp;pm
+                  Bring-in jobs available after 12&nbsp;pm
                 </button>
               ) : jobs.length === 0 ? (
                 <button
