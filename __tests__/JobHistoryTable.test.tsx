@@ -8,6 +8,16 @@ vi.mock('@/components/client/ClientPortalProvider', () => ({
   useClientPortal: () => ({ selectedAccount: { name: 'Test account' } }),
 }))
 
+vi.mock('@/components/providers/SupabaseProvider', () => ({
+  useSupabase: () => ({
+    storage: {
+      from: () => ({
+        createSignedUrls: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    },
+  }),
+}))
+
 const jobs: Job[] = [
   {
     id: '1',
@@ -58,7 +68,7 @@ describe('JobHistoryTable', () => {
   it('renders job rows', () => {
     render(<JobHistoryTable jobs={jobs} properties={properties} />)
     const table = screen.getByRole('table')
-    expect(within(table).getByText('Alpha')).toBeInTheDocument()
-    expect(within(table).getByText(/Test account/)).toBeInTheDocument()
+    expect(within(table).getByText('1 Main, Richmond, Melbourne')).toBeInTheDocument()
+    expect(within(table).getByText(/Bring In/)).toBeInTheDocument()
   })
 })

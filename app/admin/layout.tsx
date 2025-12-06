@@ -7,7 +7,7 @@ import { normalizePortalRole } from "@/lib/portalRoles";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function resolveAdminContext() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
