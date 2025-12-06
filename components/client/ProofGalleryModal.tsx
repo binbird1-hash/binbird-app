@@ -29,7 +29,17 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
         setLoading(false)
         return
       }
-      const { data, error } = await supabase.storage.from('proofs').createSignedUrls(photoKeys, 60 * 60)
+      const { data, error } = await supabase.storage
+        .from('proofs')
+        .createSignedUrls(photoKeys, 60 * 60, {
+          transform: {
+            resize: 'contain',
+            width: 1600,
+            height: 1600,
+            quality: 80,
+            format: 'webp',
+          },
+        })
       if (error) {
         console.warn('Failed to fetch proof URLs', error)
         setUrls([])
@@ -53,6 +63,21 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
     if (index >= urls.length) {
       setIndex(0)
     }
+  }, [urls, index])
+
+  useEffect(() => {
+    if (!urls.length) return
+
+    const preloadTargets = [urls[index]]
+
+    if (urls.length > 1) {
+      preloadTargets.push(urls[(index + 1) % urls.length])
+    }
+
+    preloadTargets.forEach((url) => {
+      const img = new Image()
+      img.src = url
+    })
   }, [urls, index])
 
   const goPrevious = () => setIndex((current) => (current === 0 ? urls.length - 1 : current - 1))
