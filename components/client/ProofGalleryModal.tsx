@@ -29,7 +29,14 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
         setLoading(false)
         return
       }
-      const { data, error } = await supabase.storage.from('proofs').createSignedUrls(photoKeys, 60 * 60)
+      const { data, error } = await supabase.storage
+        .from('proofs')
+        .createSignedUrls(photoKeys, 60 * 60, {
+          transform: {
+            width: 1400,
+            quality: 75,
+          },
+        })
       if (error) {
         console.warn('Failed to fetch proof URLs', error)
         setUrls([])
@@ -99,6 +106,8 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                         src={urls[index]}
                         alt={`Proof photo ${index + 1}`}
                         className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain"
+                        loading="lazy"
+                        decoding="async"
                       />
                       {urls.length > 1 && (
                         <>
