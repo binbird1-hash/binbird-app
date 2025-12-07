@@ -29,16 +29,7 @@ const MAP_STYLE_LOOKUP = {
 } as const
 
 const PROPERTY_MARKER_ICON_URL =
-  'data:image/svg+xml,' +
-  encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <path
-        fill="#E21C21"
-        d="M16 2c-5.523 0-10 4.477-10 10 0 7.8 10 18 10 18s10-10.2 10-18c0-5.523-4.477-10-10-10Z"
-      />
-      <circle cx="16" cy="12" r="4" fill="white" />
-    </svg>
-  `)
+  'https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|E21C21|FFFFFF'
 const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
 const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
 
