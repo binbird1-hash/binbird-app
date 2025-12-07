@@ -28,11 +28,8 @@ const MAP_STYLE_LOOKUP = {
   Satellite: satelliteMapStyle,
 } as const
 
-const PROPERTY_MARKER_ICON_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="#E21C21" d="M16 1C9.925 1 5 5.925 5 12c0 7.25 11 19 11 19s11-11.75 11-19C27 5.925 22.075 1 16 1z"/><circle cx="16" cy="12" r="4" fill="white"/></svg>'
-const PROPERTY_MARKER_ICON_URL = `data:image/svg+xml;utf8,${encodeURIComponent(PROPERTY_MARKER_ICON_SVG)}`
-const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
-const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
+const PROPERTY_MARKER_ICON_SIZE = { width: 30, height: 40 }
+const PROPERTY_MARKER_POPUP_OFFSET_PX = 58
 
 function formatPropertyAddress(property: Property) {
   const addressLine = property.addressLine?.trim() || property.name?.trim() || 'Property'
@@ -138,12 +135,25 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
+    const accent = '#E21C21'
+    const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
+      <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="pinShadow" x="0" y="0" width="36" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(226, 28, 33, 0.28)"/>
+          </filter>
+        </defs>
+        <g filter="url(#pinShadow)">
+          <path d="M18 1C10.268 1 4 7.26801 4 15C4 24.24 18 43 18 43C18 43 32 24.24 32 15C32 7.26801 25.732 1 18 1Z" fill="white" stroke="${accent}" stroke-width="2"/>
+          <circle cx="18" cy="15" r="4.5" fill="${accent}"/>
+        </g>
+      </svg>`)
     const size = new window.google.maps.Size(
       PROPERTY_MARKER_ICON_SIZE.width,
       PROPERTY_MARKER_ICON_SIZE.height,
     )
     return {
-      url: PROPERTY_MARKER_ICON_URL,
+      url: `data:image/svg+xml;charset=UTF-8,${svg}`,
       scaledSize: size,
       anchor: new window.google.maps.Point(size.width / 2, size.height),
     } as google.maps.Icon
