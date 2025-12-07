@@ -28,14 +28,8 @@ const MAP_STYLE_LOOKUP = {
   Satellite: satelliteMapStyle,
 } as const
 
-const PROPERTY_MARKER_ICON_URL = `data:image/svg+xml;utf-8,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M16 1.33331C9.196 1.33331 3.66667 6.86264 3.66667 13.6666C3.66667 21.6173 13.704 30.9006 15.5793 32.5786C15.8253 32.8006 16.1747 32.8006 16.4207 32.5786C18.296 30.9006 28.3333 21.6173 28.3333 13.6666C28.3333 6.86264 22.804 1.33331 16 1.33331Z" fill="#E21C21"/>
-    <circle cx="16" cy="13.3333" r="5.33333" fill="white"/>
-  </svg>`,
-)}`
-const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
-const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
+const PROPERTY_MARKER_ICON_SIZE = { width: 30, height: 40 }
+const PROPERTY_MARKER_POPUP_OFFSET_PX = 58
 
 function formatPropertyAddress(property: Property) {
   const addressLine = property.addressLine?.trim() || property.name?.trim() || 'Property'
@@ -141,12 +135,25 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
+    const accent = '#E21C21'
+    const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
+      <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="pinShadow" x="0" y="0" width="36" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(226, 28, 33, 0.28)"/>
+          </filter>
+        </defs>
+        <g filter="url(#pinShadow)">
+          <path d="M18 1C10.268 1 4 7.26801 4 15C4 24.24 18 43 18 43C18 43 32 24.24 32 15C32 7.26801 25.732 1 18 1Z" fill="white" stroke="${accent}" stroke-width="2"/>
+          <circle cx="18" cy="15" r="4.5" fill="${accent}"/>
+        </g>
+      </svg>`)
     const size = new window.google.maps.Size(
       PROPERTY_MARKER_ICON_SIZE.width,
       PROPERTY_MARKER_ICON_SIZE.height,
     )
     return {
-      url: PROPERTY_MARKER_ICON_URL,
+      url: `data:image/svg+xml;charset=UTF-8,${svg}`,
       scaledSize: size,
       anchor: new window.google.maps.Point(size.width / 2, size.height),
     } as google.maps.Icon
