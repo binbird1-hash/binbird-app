@@ -15,7 +15,7 @@ interface MapSettingsContextType {
 const MapSettingsContext = createContext<MapSettingsContextType | undefined>(undefined);
 
 export function MapSettingsProvider({ children }: { children: ReactNode }) {
-  const [mapStylePref, setMapStylePref] = useState<MapStyleOption>("Dark");
+  const [mapStylePref, setMapStylePref] = useState<MapStyleOption>("Light");
   const [navPref, setNavPref] = useState<NavOption>("google");
 
   return (

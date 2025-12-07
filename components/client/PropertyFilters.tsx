@@ -103,10 +103,10 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
               setShowSuggestions(false)
             }
           }}
-          className="h-11 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+          className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
         />
         {showSuggestions && matchingSuggestions.length > 0 && (
-          <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
+          <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-2 backdrop-blur">
             {matchingSuggestions.map((suggestion) => (
               <li key={suggestion}>
                 <button
@@ -116,7 +116,7 @@ export function PropertyFilters({ filters, onChange, properties }: PropertyFilte
                     update({ search: suggestion })
                     setShowSuggestions(false)
                   }}
-                  className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
+                  className="w-full rounded-xl px-3 py-2 text-left text-sm text-slate-900 transition hover:bg-binbird-red/20"
                 >
                   {suggestion}
                 </button>

@@ -2,17 +2,17 @@ export type BinThemeKey = 'garbage' | 'recycling' | 'compost'
 
 export const BIN_THEME: Record<BinThemeKey, { panel: string; pill: string }> = {
   garbage: {
-    panel: 'border-red-500/30 bg-red-500/5',
-    pill: 'border-red-500/40 bg-red-500/15 text-white',
+    panel: 'border-red-400/40 bg-red-50',
+    pill: 'border-red-400/60 bg-red-50 text-red-900',
   },
   recycling: {
-    panel: 'border-yellow-400/40 bg-yellow-400/10',
-    pill: 'border-yellow-300/50 bg-yellow-300/20 text-white',
+    panel: 'border-amber-300/60 bg-amber-50',
+    pill: 'border-amber-300/60 bg-amber-50 text-amber-900',
   },
   compost: {
-    panel: 'border-green-500/30 bg-green-500/10',
-    pill: 'border-emerald-400/40 bg-emerald-400/15 text-white',
+    panel: 'border-emerald-400/50 bg-emerald-50',
+    pill: 'border-emerald-400/40 bg-emerald-50 text-emerald-900',
   },
 }
 
-export const DEFAULT_BIN_PILL = 'border-white/15 bg-white/10 text-white/80'
+export const DEFAULT_BIN_PILL = 'border-slate-200 bg-slate-100 text-slate-700'

@@ -136,12 +136,12 @@ export function LiveTracker() {
   }, [refreshJobs, refreshProperties])
 
   return (
-    <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
+    <div className="space-y-6 text-slate-900">
+      <section className="rounded-3xl border border-slate-200 bg-white p-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-white">Property map</h3>
-            <p className="text-sm text-white/60">Explore every location we service for your account.</p>
+            <h3 className="text-lg font-semibold text-slate-900">Property map</h3>
+            <p className="text-sm text-slate-500">Explore every location we service for your account.</p>
           </div>
         </header>
         <div className="mt-6">
@@ -149,9 +149,9 @@ export function LiveTracker() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
+      <section className="rounded-3xl border border-slate-200 bg-white p-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 text-sm text-white/60">
+          <div className="flex items-center gap-3 text-sm text-slate-500">
             <UserGroupIcon className="h-5 w-5" />
             {todaysJobs.length} active job{todaysJobs.length === 1 ? '' : 's'} today
           </div>
@@ -160,21 +160,21 @@ export function LiveTracker() {
             onClick={() => {
               void handleRefresh()
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-binbird-red bg-binbird-red px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red hover:bg-binbird-red/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
           >
             <BoltIcon className="h-5 w-5" /> Refresh data
           </button>
         </header>
         {jobsLoading ? (
-          <div className="flex min-h-[160px] items-center justify-center text-white/60">
+          <div className="flex min-h-[160px] items-center justify-center text-slate-500">
             <span className="flex items-center gap-3">
               <span className="h-2 w-2 animate-ping rounded-full bg-binbird-red" />
               Loading active jobs…
             </span>
           </div>
         ) : todaysJobs.length === 0 ? (
-          <div className="mt-6 rounded-3xl border border-dashed border-white/20 bg-black/40 px-6 py-12 text-center text-white/60">
-            <h4 className="text-lg font-semibold text-white">No active jobs today</h4>
+          <div className="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-500">
+            <h4 className="text-lg font-semibold text-slate-900">No active jobs today</h4>
             <p className="mt-2 text-sm">We’ll list your next service here once the crew is on the schedule.</p>
           </div>
         ) : (
@@ -189,18 +189,18 @@ export function LiveTracker() {
               return (
                 <article
                   key={job.id}
-                  className="rounded-3xl border border-white/10 bg-black/30 p-6"
+                  className="rounded-3xl border border-slate-200 bg-slate-100 p-6"
                 >
                   <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-5">
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Address</p>
-                        <h3 className="text-2xl font-semibold text-white">{fullAddress}</h3>
-                        <div className="flex flex-col gap-3 text-sm text-white/70 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Address</p>
+                        <h3 className="text-2xl font-semibold text-slate-900">{fullAddress}</h3>
+                        <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                           {jobTypeLabel ? (
-                            <span className="font-medium text-white/80">{jobTypeLabel}</span>
+                            <span className="font-medium text-slate-700">{jobTypeLabel}</span>
                           ) : (
-                            <span className="text-white/50">Service details coming soon</span>
+                            <span className="text-slate-500">Service details coming soon</span>
                           )}
                           {bins.length > 0 ? (
                             <div
@@ -215,7 +215,7 @@ export function LiveTracker() {
                                   <span
                                     key={`${job.id}-${bin}`}
                                     className={clsx(
-                                      'flex w-full items-center justify-center rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white sm:w-auto sm:min-w-[140px] sm:px-5 sm:py-3 sm:text-sm',
+                                      'flex w-full items-center justify-center rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-900 sm:w-auto sm:min-w-[140px] sm:px-5 sm:py-3 sm:text-sm',
                                       pill,
                                     )}
                                   >
@@ -228,13 +228,13 @@ export function LiveTracker() {
                         </div>
                       </div>
                       {job.crewName ? (
-                        <dl className="grid gap-3 text-sm text-white/70 sm:grid-cols-2">
+                        <dl className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                           <div className="flex items-center gap-2">
-                            <dt className="flex items-center gap-2 text-white/50">
+                            <dt className="flex items-center gap-2 text-slate-500">
                               <MapIcon className="h-5 w-5" />
                               <span>Crew</span>
                             </dt>
-                            <dd className="font-medium text-white">{job.crewName}</dd>
+                            <dd className="font-medium text-slate-900">{job.crewName}</dd>
                           </div>
                         </dl>
                       ) : null}
@@ -250,12 +250,12 @@ export function LiveTracker() {
                             <div
                               key={`${job.id}-${step.key}-compact`}
                               className={clsx(
-                                'flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition-colors',
+                                'flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-left transition-colors',
                                 completed
                                   ? 'border-binbird-red/70 bg-binbird-red/10'
                                   : reached
                                     ? 'border-binbird-red/40 bg-binbird-red/5'
-                                    : 'border-white/10 bg-black/20',
+                                    : 'border-slate-200 bg-white/20',
                               )}
                             >
                               <span
@@ -265,7 +265,7 @@ export function LiveTracker() {
                                     ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                     : reached
                                       ? 'border-binbird-red text-binbird-red'
-                                      : 'border-white/15 text-white/40',
+                                      : 'border-slate-200 text-slate-400',
                                 )}
                               >
                                 {completed ? <CheckIcon className="h-5 w-5" /> : index + 1}
@@ -273,7 +273,7 @@ export function LiveTracker() {
                               <span
                                 className={clsx(
                                   'text-xs font-semibold uppercase tracking-wide',
-                                  reached ? 'text-white' : 'text-white/50',
+                                  reached ? 'text-slate-900' : 'text-slate-500',
                                 )}
                               >
                                 {label}
@@ -298,7 +298,7 @@ export function LiveTracker() {
                                       ? 'border-binbird-red bg-binbird-red text-binbird-black'
                                       : reached
                                         ? 'border-binbird-red text-binbird-red'
-                                        : 'border-white/15 text-white/40',
+                                        : 'border-slate-200 text-slate-400',
                                   )}
                                 >
                                   {completed ? <CheckIcon className="h-6 w-6" /> : index + 1}
@@ -307,7 +307,7 @@ export function LiveTracker() {
                                   <span
                                     className={clsx(
                                       'text-xs font-semibold uppercase tracking-wide whitespace-nowrap',
-                                      reached ? 'text-white' : 'text-white/40',
+                                      reached ? 'text-slate-900' : 'text-slate-400',
                                     )}
                                   >
                                     {label}
@@ -322,7 +322,7 @@ export function LiveTracker() {
                                         'h-[2px] w-full rounded-full transition-all',
                                         progressIndex > index
                                           ? 'bg-gradient-to-r from-binbird-red/80 via-binbird-red/40 to-white/10'
-                                          : 'bg-white/10',
+                                          : 'bg-slate-100',
                                       )}
                                     />
                                   </div>

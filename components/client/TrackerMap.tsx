@@ -43,10 +43,10 @@ function formatPropertyAddress(property: Property) {
 function AddressPopoverContent({ property }: { property: Property }) {
   const { addressLine, locationLine } = formatPropertyAddress(property)
   return (
-    <div className="px-3 py-2 text-[11px] text-white">
+    <div className="px-3 py-2 text-[11px] text-slate-900">
       <div className="flex flex-col gap-1 text-left">
         <p className="font-semibold text-[var(--accent)]">{addressLine}</p>
-        {locationLine ? <p className="text-white/80">{locationLine}</p> : null}
+        {locationLine ? <p className="text-slate-700">{locationLine}</p> : null}
       </div>
     </div>
   )
@@ -92,13 +92,13 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const mapOptions = useMemo(
     () => ({
-      styles: MAP_STYLE_LOOKUP[mapStylePref] ?? darkMapStyle,
+      styles: MAP_STYLE_LOOKUP[mapStylePref] ?? lightMapStyle,
       disableDefaultUI: true,
       zoomControl: true,
       fullscreenControl: false,
       streetViewControl: false,
       gestureHandling: 'greedy',
-      backgroundColor: '#000000',
+      backgroundColor: '#ffffff',
     }),
     [mapStylePref],
   )
@@ -161,17 +161,17 @@ export function TrackerMap({ properties }: TrackerMapProps) {
   }, [])
 
   return (
-    <div className="relative h-80 overflow-hidden rounded-3xl border border-white/10 bg-black/60">
+    <div className="relative h-80 overflow-hidden rounded-3xl border border-slate-200 bg-white">
       {!apiKey ? (
-        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
           Add a Google Maps API key to view your properties on the map.
         </div>
       ) : loadError ? (
-        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
           We couldn’t load the map right now. Please refresh to try again.
         </div>
       ) : !isLoaded ? (
-        <div className="absolute inset-0 flex items-center justify-center text-white/60">Loading map…</div>
+        <div className="absolute inset-0 flex items-center justify-center text-slate-500">Loading map…</div>
       ) : (
         <>
           <GoogleMap
@@ -231,10 +231,10 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d12]/90 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-sm">
+                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0b0d12]/90 text-xs backdrop-blur-sm">
                         <AddressPopoverContent property={marker.property} />
                       </div>
-                      <div className="-mt-1 h-3 w-3 rotate-45 border border-white/10 bg-[#0b0d12]/90" />
+                      <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-[#0b0d12]/90" />
                     </div>
                   </div>
                 </OverlayViewF>
@@ -242,7 +242,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
             })}
           </GoogleMap>
           {propertyMarkers.length === 0 && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/60">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
               Add latitude and longitude to your properties to see them appear on the map.
             </div>
           )}

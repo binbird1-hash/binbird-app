@@ -103,7 +103,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur" />
+          <Dialog.Overlay className="fixed inset-0 bg-slate-50 backdrop-blur" />
         </Transition.Child>
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-6">
@@ -116,14 +116,14 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-90"
             >
-              <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/90 text-white shadow-2xl max-h-[90vh]">
-                <div className="w-full bg-black/60">
+              <Dialog.Panel className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl max-h-[90vh]">
+                <div className="w-full bg-slate-100">
                   {loading ? (
-                    <div className="flex min-h-[260px] items-center justify-center text-white/70 sm:min-h-[320px]">
+                    <div className="flex min-h-[260px] items-center justify-center text-slate-600 sm:min-h-[320px]">
                       Fetching proof of service…
                     </div>
                   ) : urls.length === 0 ? (
-                    <div className="flex min-h-[260px] items-center justify-center text-white/60 sm:min-h-[320px]">
+                    <div className="flex min-h-[260px] items-center justify-center text-slate-500 sm:min-h-[320px]">
                       No proof images available yet.
                     </div>
                   ) : (
@@ -138,7 +138,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                           <button
                             type="button"
                             onClick={goPrevious}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white sm:left-4"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-slate-100 p-2 text-slate-600 transition hover:border-binbird-red hover:text-slate-900 sm:left-4"
                             aria-label="Previous photo"
                           >
                             <ArrowLeftIcon className="h-6 w-6" />
@@ -146,7 +146,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                           <button
                             type="button"
                             onClick={goNext}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-2 text-white/70 transition hover:border-binbird-red hover:text-white sm:right-4"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-slate-100 p-2 text-slate-600 transition hover:border-binbird-red hover:text-slate-900 sm:right-4"
                             aria-label="Next photo"
                           >
                             <ArrowRightIcon className="h-6 w-6" />
@@ -157,7 +157,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                   )}
                 </div>
                 {urls.length > 1 && (
-                  <div className="flex items-center justify-center gap-2 bg-black/80 px-6 py-4">
+                  <div className="flex items-center justify-center gap-2 bg-slate-50 px-6 py-4">
                     {urls.map((url, dotIndex) => (
                       <button
                         key={url}
@@ -165,7 +165,7 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
                         onClick={() => setIndex(dotIndex)}
                         className={
                           'h-2.5 w-2.5 rounded-full transition ' +
-                          (dotIndex === index ? 'bg-binbird-red' : 'bg-white/30 hover:bg-white/50')
+                          (dotIndex === index ? 'bg-binbird-red' : 'bg-white/30 hover:bg-slate-1000')
                         }
                         aria-label={`View photo ${dotIndex + 1}`}
                       />
