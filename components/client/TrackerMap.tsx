@@ -92,13 +92,13 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const mapOptions = useMemo(
     () => ({
-      styles: MAP_STYLE_LOOKUP[mapStylePref] ?? darkMapStyle,
+      styles: MAP_STYLE_LOOKUP[mapStylePref] ?? lightMapStyle,
       disableDefaultUI: true,
       zoomControl: true,
       fullscreenControl: false,
       streetViewControl: false,
       gestureHandling: 'greedy',
-      backgroundColor: '#000000',
+      backgroundColor: '#ffffff',
     }),
     [mapStylePref],
   )
@@ -161,7 +161,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
   }, [])
 
   return (
-    <div className="relative h-80 overflow-hidden rounded-3xl border border-slate-200 bg-slate-100">
+    <div className="relative h-80 overflow-hidden rounded-3xl border border-slate-200 bg-white">
       {!apiKey ? (
         <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
           Add a Google Maps API key to view your properties on the map.

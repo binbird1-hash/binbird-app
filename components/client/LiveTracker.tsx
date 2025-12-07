@@ -137,7 +137,7 @@ export function LiveTracker() {
 
   return (
     <div className="space-y-6 text-slate-900">
-      <section className="rounded-3xl border border-slate-200 bg-slate-100 p-5">
+      <section className="rounded-3xl border border-slate-200 bg-white p-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">Property map</h3>
@@ -149,7 +149,7 @@ export function LiveTracker() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-slate-100 p-5">
+      <section className="rounded-3xl border border-slate-200 bg-white p-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm text-slate-500">
             <UserGroupIcon className="h-5 w-5" />
@@ -160,7 +160,7 @@ export function LiveTracker() {
             onClick={() => {
               void handleRefresh()
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-binbird-red hover:text-slate-900"
+            className="inline-flex items-center gap-2 rounded-full border border-binbird-red bg-binbird-red px-4 py-2 text-sm font-medium text-white transition hover:border-binbird-red hover:bg-binbird-red/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
           >
             <BoltIcon className="h-5 w-5" /> Refresh data
           </button>
