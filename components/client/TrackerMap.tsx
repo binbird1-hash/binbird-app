@@ -28,6 +28,15 @@ const MAP_STYLE_LOOKUP = {
   Satellite: satelliteMapStyle,
 } as const
 
+const PROPERTY_MARKER_ICON_URL = `data:image/svg+xml;utf-8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M16 1.33331C9.196 1.33331 3.66667 6.86264 3.66667 13.6666C3.66667 21.6173 13.704 30.9006 15.5793 32.5786C15.8253 32.8006 16.1747 32.8006 16.4207 32.5786C18.296 30.9006 28.3333 21.6173 28.3333 13.6666C28.3333 6.86264 22.804 1.33331 16 1.33331Z" fill="#E21C21"/>
+    <circle cx="16" cy="13.3333" r="5.33333" fill="white"/>
+  </svg>`,
+)}`
+const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
+const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
+
 function formatPropertyAddress(property: Property) {
   const addressLine = property.addressLine?.trim() || property.name?.trim() || 'Property'
   const locationParts = [property.suburb, property.city]
@@ -45,8 +54,8 @@ function AddressPopoverContent({ property }: { property: Property }) {
   return (
     <div className="px-3 py-2 text-[11px] text-slate-900">
       <div className="flex flex-col gap-1 text-left">
-        <p className="font-semibold text-[var(--accent)]">{addressLine}</p>
-        {locationLine ? <p className="text-slate-700">{locationLine}</p> : null}
+        <p className="font-semibold text-[#E21C21]">{addressLine}</p>
+        {locationLine ? <p className="text-slate-900">{locationLine}</p> : null}
       </div>
     </div>
   )
@@ -77,6 +86,11 @@ export function TrackerMap({ properties }: TrackerMapProps) {
       })
       .filter((marker): marker is PropertyMarkerDescriptor => Boolean(marker))
   }, [properties])
+
+  const selectedMarker = useMemo(
+    () => propertyMarkers.find((marker) => marker.property.id === selectedPropertyId) ?? null,
+    [propertyMarkers, selectedPropertyId],
+  )
 
   const mapCenter = useMemo(() => {
     if (propertyMarkers.length === 0) return FALLBACK_CENTER
@@ -127,23 +141,14 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
-    const accent = '#E21C21'
-    const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-      <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="pinShadow" x="0" y="0" width="36" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(226, 28, 33, 0.28)"/>
-          </filter>
-        </defs>
-        <g filter="url(#pinShadow)">
-          <path d="M18 1C10.268 1 4 7.26801 4 15C4 24.24 18 43 18 43C18 43 32 24.24 32 15C32 7.26801 25.732 1 18 1Z" fill="white" stroke="${accent}" stroke-width="2"/>
-          <circle cx="18" cy="15" r="4.5" fill="${accent}"/>
-        </g>
-      </svg>`)
+    const size = new window.google.maps.Size(
+      PROPERTY_MARKER_ICON_SIZE.width,
+      PROPERTY_MARKER_ICON_SIZE.height,
+    )
     return {
-      url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-      scaledSize: new window.google.maps.Size(30, 40),
-      anchor: new window.google.maps.Point(15, 40),
+      url: PROPERTY_MARKER_ICON_URL,
+      scaledSize: size,
+      anchor: new window.google.maps.Point(size.width / 2, size.height),
     } as google.maps.Icon
   }, [isLoaded])
 
@@ -196,49 +201,26 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                 zIndex={1}
               />
             ))}
-            {propertyMarkers.map((marker) => {
-              const isSelected = marker.property.id === selectedPropertyId
-              if (!isSelected) {
-                return (
-                  <OverlayViewF
-                    key={`halo-${marker.property.id}`}
-                    position={marker.position}
-                    mapPaneName="overlayMouseTarget"
-                  >
-                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[58px]">
-                      <span className="relative block h-12 w-12">
-                        <span
-                          className="absolute inset-0 animate-pulse rounded-full"
-                          style={{ backgroundColor: 'rgba(255, 87, 87, 0.18)' }}
-                        />
-                      </span>
-                    </div>
-                  </OverlayViewF>
-                )
-              }
-
-              return (
-                <OverlayViewF
-                  key={`overlay-${marker.property.id}`}
-                  position={marker.position}
-                  mapPaneName="overlayMouseTarget"
-                  zIndex={2}
+            {selectedMarker && (
+              <OverlayViewF
+                position={selectedMarker.position}
+                mapPaneName="overlayMouseTarget"
+                zIndex={2}
+              >
+                <div
+                  className="pointer-events-auto"
+                  style={{ transform: `translate(-50%, calc(-100% - ${PROPERTY_MARKER_POPUP_OFFSET_PX}px))` }}
+                  onClick={(event) => event.stopPropagation()}
                 >
-                  <div
-                    className="pointer-events-auto"
-                    style={{ transform: 'translate(-50%, calc(-100% - 58px))' }}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0b0d12]/90 text-xs backdrop-blur-sm">
-                        <AddressPopoverContent property={marker.property} />
-                      </div>
-                      <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-[#0b0d12]/90" />
+                  <div className="flex flex-col items-center">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-xs shadow-lg">
+                      <AddressPopoverContent property={selectedMarker.property} />
                     </div>
+                    <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-white shadow-lg" />
                   </div>
-                </OverlayViewF>
-              )
-            })}
+                </div>
+              </OverlayViewF>
+            )}
           </GoogleMap>
           {propertyMarkers.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
