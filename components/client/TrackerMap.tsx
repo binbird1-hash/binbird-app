@@ -28,12 +28,7 @@ const MAP_STYLE_LOOKUP = {
   Satellite: satelliteMapStyle,
 } as const
 
-const PROPERTY_MARKER_ICON_URL = `data:image/svg+xml;utf-8,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M16 1.33331C9.196 1.33331 3.66667 6.86264 3.66667 13.6666C3.66667 21.6173 13.704 30.9006 15.5793 32.5786C15.8253 32.8006 16.1747 32.8006 16.4207 32.5786C18.296 30.9006 28.3333 21.6173 28.3333 13.6666C28.3333 6.86264 22.804 1.33331 16 1.33331Z" fill="#E21C21"/>
-    <circle cx="16" cy="13.3333" r="5.33333" fill="white"/>
-  </svg>`,
-)}`
+const PROPERTY_MARKER_ICON_URL = 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
 const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
 const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
 
