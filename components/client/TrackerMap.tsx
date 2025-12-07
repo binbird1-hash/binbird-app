@@ -129,22 +129,21 @@ export function TrackerMap({ properties }: TrackerMapProps) {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
     const accent = '#E21C21'
     const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-      <svg width="48" height="66" viewBox="0 0 48 66" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <filter id="pinShadow" x="0" y="0" width="48" height="66" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="rgba(255, 87, 87, 0.32)"/>
+          <filter id="pinShadow" x="0" y="0" width="36" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(226, 28, 33, 0.28)"/>
           </filter>
         </defs>
         <g filter="url(#pinShadow)">
-          <path d="M24 0C13.5066 0 5 8.50659 5 19C5 31.98 24 58 24 58C24 58 43 31.98 43 19C43 8.50659 34.4934 0 24 0Z" fill="${accent}"/>
-          <circle cx="24" cy="18" r="8.5" fill="#0b0d12" fill-opacity="0.92"/>
-          <circle cx="24" cy="18" r="4.5" fill="white" fill-opacity="0.92"/>
+          <path d="M18 1C10.268 1 4 7.26801 4 15C4 24.24 18 43 18 43C18 43 32 24.24 32 15C32 7.26801 25.732 1 18 1Z" fill="white" stroke="${accent}" stroke-width="2"/>
+          <circle cx="18" cy="15" r="4.5" fill="${accent}"/>
         </g>
       </svg>`)
     return {
       url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-      scaledSize: new window.google.maps.Size(36, 52),
-      anchor: new window.google.maps.Point(18, 52),
+      scaledSize: new window.google.maps.Size(30, 40),
+      anchor: new window.google.maps.Point(15, 40),
     } as google.maps.Icon
   }, [isLoaded])
 
