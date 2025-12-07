@@ -28,6 +28,10 @@ const MAP_STYLE_LOOKUP = {
   Satellite: satelliteMapStyle,
 } as const
 
+const PROPERTY_MARKER_ICON_URL = 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
+const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
+
 function formatPropertyAddress(property: Property) {
   const addressLine = property.addressLine?.trim() || property.name?.trim() || 'Property'
   const locationParts = [property.suburb, property.city]
@@ -78,6 +82,11 @@ export function TrackerMap({ properties }: TrackerMapProps) {
       .filter((marker): marker is PropertyMarkerDescriptor => Boolean(marker))
   }, [properties])
 
+  const selectedMarker = useMemo(
+    () => propertyMarkers.find((marker) => marker.property.id === selectedPropertyId) ?? null,
+    [propertyMarkers, selectedPropertyId],
+  )
+
   const mapCenter = useMemo(() => {
     if (propertyMarkers.length === 0) return FALLBACK_CENTER
     const aggregate = propertyMarkers.reduce(
@@ -127,24 +136,14 @@ export function TrackerMap({ properties }: TrackerMapProps) {
 
   const propertyIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
-    const accent = '#E21C21'
-    const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-      <svg width="30" height="40" viewBox="0 0 30 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="pinShadow" x="0" y="0" width="30" height="40" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(226, 28, 33, 0.2)"/>
-          </filter>
-        </defs>
-        <g filter="url(#pinShadow)">
-          <path d="M15 2.5C9.61522 2.5 5.25 6.86522 5.25 12.25C5.25 19.9 15 33.25 15 33.25C15 33.25 24.75 19.9 24.75 12.25C24.75 6.86522 20.3848 2.5 15 2.5Z" fill="#FFFFFF" stroke="#0B0D12" stroke-width="1.25"/>
-          <path d="M15 7.75C11.5482 7.75 8.75 10.5482 8.75 14C8.75 17.4518 11.5482 20.25 15 20.25C18.4518 20.25 21.25 17.4518 21.25 14C21.25 10.5482 18.4518 7.75 15 7.75Z" fill="#FFFFFF" stroke="#0B0D12" stroke-width="1.15"/>
-          <circle cx="15" cy="14" r="3.35" fill="${accent}" stroke="#0B0D12" stroke-width="0.9"/>
-        </g>
-      </svg>`)
+    const size = new window.google.maps.Size(
+      PROPERTY_MARKER_ICON_SIZE.width,
+      PROPERTY_MARKER_ICON_SIZE.height,
+    )
     return {
-      url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-      scaledSize: new window.google.maps.Size(26, 34),
-      anchor: new window.google.maps.Point(13, 34),
+      url: PROPERTY_MARKER_ICON_URL,
+      scaledSize: size,
+      anchor: new window.google.maps.Point(size.width / 2, size.height),
     } as google.maps.Icon
   }, [isLoaded])
 
@@ -197,49 +196,26 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                 zIndex={1}
               />
             ))}
-            {propertyMarkers.map((marker) => {
-              const isSelected = marker.property.id === selectedPropertyId
-              if (!isSelected) {
-                return (
-                  <OverlayViewF
-                    key={`halo-${marker.property.id}`}
-                    position={marker.position}
-                    mapPaneName="overlayMouseTarget"
-                  >
-                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[48px]">
-                      <span className="relative block h-6 w-6">
-                        <span
-                          className="absolute inset-0 animate-pulse rounded-full"
-                          style={{ backgroundColor: 'rgba(226, 28, 33, 0.16)' }}
-                        />
-                      </span>
-                    </div>
-                  </OverlayViewF>
-                )
-              }
-
-              return (
-                <OverlayViewF
-                  key={`overlay-${marker.property.id}`}
-                  position={marker.position}
-                  mapPaneName="overlayMouseTarget"
-                  zIndex={2}
+            {selectedMarker && (
+              <OverlayViewF
+                position={selectedMarker.position}
+                mapPaneName="overlayMouseTarget"
+                zIndex={2}
+              >
+                <div
+                  className="pointer-events-auto"
+                  style={{ transform: `translate(-50%, calc(-100% - ${PROPERTY_MARKER_POPUP_OFFSET_PX}px))` }}
+                  onClick={(event) => event.stopPropagation()}
                 >
-                  <div
-                    className="pointer-events-auto"
-                    style={{ transform: 'translate(-50%, calc(-100% - 52px))' }}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-xs shadow-lg">
-                        <AddressPopoverContent property={marker.property} />
-                      </div>
-                      <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-white shadow-lg" />
+                  <div className="flex flex-col items-center">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-xs shadow-lg">
+                      <AddressPopoverContent property={selectedMarker.property} />
                     </div>
+                    <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-white shadow-lg" />
                   </div>
-                </OverlayViewF>
-              )
-            })}
+                </div>
+              </OverlayViewF>
+            )}
           </GoogleMap>
           {propertyMarkers.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
