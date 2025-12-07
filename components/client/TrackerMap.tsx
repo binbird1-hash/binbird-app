@@ -28,7 +28,9 @@ const MAP_STYLE_LOOKUP = {
   Satellite: satelliteMapStyle,
 } as const
 
-const PROPERTY_MARKER_ICON_URL = 'http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png'
+const PROPERTY_MARKER_ICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="#E21C21" d="M16 1C9.925 1 5 5.925 5 12c0 7.25 11 19 11 19s11-11.75 11-19C27 5.925 22.075 1 16 1z"/><circle cx="16" cy="12" r="4" fill="white"/></svg>'
+const PROPERTY_MARKER_ICON_URL = `data:image/svg+xml;utf8,${encodeURIComponent(PROPERTY_MARKER_ICON_SVG)}`
 const PROPERTY_MARKER_ICON_SIZE = { width: 32, height: 32 }
 const PROPERTY_MARKER_POPUP_OFFSET_PX = PROPERTY_MARKER_ICON_SIZE.height
 
