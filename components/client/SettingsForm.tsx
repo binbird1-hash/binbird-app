@@ -198,20 +198,20 @@ export function SettingsForm() {
             />
           </label>
           <label className="flex flex-col gap-2 text-sm">
-            <span className="text-slate-500">Company</span>
-            <input
-              type="text"
-              {...register('companyName')}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-sm md:col-span-2">
             <span className="text-slate-500">Email</span>
             <input
               type="email"
               value={profile?.email ?? user?.email ?? ''}
               readOnly
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus-visible:outline-none disabled:opacity-80"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="text-slate-500">Company</span>
+            <input
+              type="text"
+              {...register('companyName')}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             />
           </label>
         </div>
