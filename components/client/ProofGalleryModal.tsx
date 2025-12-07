@@ -29,13 +29,31 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
         setLoading(false)
         return
       }
-      const { data, error } = await supabase.storage.from('proofs').createSignedUrls(photoKeys, 60 * 60)
-      if (error) {
-        console.warn('Failed to fetch proof URLs', error)
-        setUrls([])
-      } else {
-        setUrls(data?.map((entry) => entry.signedUrl).filter(Boolean) as string[])
+      const results = await Promise.all(
+        photoKeys.map((key) =>
+          supabase.storage
+            .from('proofs')
+            .createSignedUrl(key, 60 * 60, {
+              transform: {
+                resize: 'contain',
+                width: 1600,
+                height: 1600,
+                quality: 80,
+              },
+            })
+        )
+      )
+
+      const errors = results.filter((result) => result.error)
+      if (errors.length) {
+        console.warn('Failed to fetch proof URLs', errors)
       }
+
+      setUrls(
+        results
+          .map((result) => result.data?.signedUrl)
+          .filter((url): url is string => Boolean(url))
+      )
       if (!cancelled) {
         setIndex(0)
         setLoading(false)
@@ -53,6 +71,21 @@ export function ProofGalleryModal({ isOpen, photoKeys, onClose }: ProofGalleryMo
     if (index >= urls.length) {
       setIndex(0)
     }
+  }, [urls, index])
+
+  useEffect(() => {
+    if (!urls.length) return
+
+    const preloadTargets = [urls[index]]
+
+    if (urls.length > 1) {
+      preloadTargets.push(urls[(index + 1) % urls.length])
+    }
+
+    preloadTargets.forEach((url) => {
+      const img = new Image()
+      img.src = url
+    })
   }, [urls, index])
 
   const goPrevious = () => setIndex((current) => (current === 0 ? urls.length - 1 : current - 1))
