@@ -379,7 +379,7 @@ function RunPageContent() {
 
     const adjustViewAfterFit = () => {
       const currentZoom = map.getZoom() ?? 0;
-      const zoomBoost = isMobileView ? Math.max(1.2, currentZoom * 0.2) : 0.75;
+      const zoomBoost = isMobileView ? Math.max(1.8, currentZoom * 0.3) : 0.75;
       map.setZoom(Math.min(21, currentZoom + zoomBoost));
 
       if (isMobileView) {
