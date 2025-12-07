@@ -314,7 +314,7 @@ export function AddPropertyDialog({
                         </button>
                         <button
                           type="submit"
-                          className="inline-flex items-center justify-center rounded-full border border-binbird-red bg-binbird-red px-5 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-200 hover:bg-transparent hover:text-binbird-red disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500"
+                          className="inline-flex items-center justify-center rounded-full border border-binbird-red bg-binbird-red px-5 py-2 text-sm font-semibold text-white transition hover:border-binbird-red hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500"
                           disabled={isSubmitDisabled}
                         >
                           {status === 'submitting'

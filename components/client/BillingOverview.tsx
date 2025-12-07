@@ -174,7 +174,7 @@ export function BillingOverview() {
   return (
     <>
       <div className="space-y-6 text-slate-900">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <span className="text-xs uppercase tracking-wide text-slate-400">Plan snapshot</span>
@@ -200,7 +200,7 @@ export function BillingOverview() {
           </dl>
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-slate-100 p-6 shadow-inner shadow-slate-200/70">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
           <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="inline-flex items-center gap-3 text-sm text-slate-500">
               <CreditCardIcon className="h-5 w-5" /> Property plan summary
@@ -210,14 +210,14 @@ export function BillingOverview() {
                 href={BILLING_PORTAL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-red-900/40 transition hover:bg-red-500"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
               >
                 Manage plan
               </Link>
               <button
                 type="button"
                 onClick={handleAddProperty}
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-red-900/40 transition hover:bg-red-500"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500"
               >
                 Add property
               </button>

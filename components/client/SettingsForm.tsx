@@ -202,7 +202,10 @@ export function SettingsForm() {
   const togglesDisabled = isSubmitting || !selectedAccount
 
   return (
-    <form onSubmit={onSubmit} className="space-y-10 text-slate-900">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-10 rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl shadow-slate-200/80"
+    >
       <section className="space-y-6">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-slate-900">Account settings</h2>
@@ -289,7 +292,7 @@ export function SettingsForm() {
               return (
                 <section
                   key={field.key}
-                  className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-slate-100 p-5 shadow-inner shadow-slate-200/70"
+                  className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/70"
                 >
                   <div className="flex items-start gap-3">
                     <span className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-slate-500">
@@ -368,7 +371,7 @@ export function SettingsForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="inline-flex items-center gap-2 rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-red-900/40 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? 'Saving…' : isSubmitSuccessful ? 'Saved' : 'Save settings'}
       </button>
