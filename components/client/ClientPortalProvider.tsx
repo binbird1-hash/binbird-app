@@ -100,6 +100,7 @@ export type ClientProfile = {
   fullName: string
   phone: string | null
   companyName: string | null
+  email: string | null
 }
 
 type ClientListRow = {
@@ -442,12 +443,14 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
     }
 
     const companyFromClientList = clientRows?.find((row) => row.company?.trim())?.company ?? null
+    const emailFromClientList = clientRows?.find((row) => row.email?.trim())?.email ?? null
 
     setProfile({
       id: currentUser.id,
       fullName: data?.full_name ?? currentUser.user_metadata?.full_name ?? currentUser.email ?? 'Client User',
       phone: data?.phone ?? currentUser.user_metadata?.phone ?? null,
       companyName: companyFromClientList ?? currentUser.user_metadata?.company ?? null,
+      email: emailFromClientList ?? currentUser.email ?? null,
     })
   }, [supabase])
 

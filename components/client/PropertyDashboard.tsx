@@ -230,16 +230,16 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 text-sm text-slate-500">
-                            <p className="text-xs text-slate-500">
-                              Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
-                            </p>
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                              <p>
-                                Next service:
+                              <p className="text-sm text-slate-600">
+                                Put out:
                                 <span className="ml-2 font-medium text-slate-900">
-                                  {property.nextServiceAt
-                                    ? format(new Date(property.nextServiceAt), 'EEE, MMM d')
-                                    : 'Awaiting schedule'}
+                                  {property.putOutDay ?? '—'}
+                                </span>
+                                <span className="mx-2 text-slate-400">·</span>
+                                Collection:
+                                <span className="ml-2 font-medium text-slate-900">
+                                  {property.collectionDay ?? '—'}
                                 </span>
                               </p>
                               <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition group-hover:text-slate-900">
