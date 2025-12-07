@@ -129,21 +129,22 @@ export function TrackerMap({ properties }: TrackerMapProps) {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
     const accent = '#E21C21'
     const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-      <svg width="32" height="44" viewBox="0 0 32 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="30" height="40" viewBox="0 0 30 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <filter id="pinShadow" x="0" y="0" width="32" height="44" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(226, 28, 33, 0.24)"/>
+          <filter id="pinShadow" x="0" y="0" width="30" height="40" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(226, 28, 33, 0.2)"/>
           </filter>
         </defs>
         <g filter="url(#pinShadow)">
-          <path d="M16 1C9.92487 1 5 5.92487 5 12C5 20.76 16 37 16 37C16 37 27 20.76 27 12C27 5.92487 22.0751 1 16 1Z" fill="#0B0D12" stroke="#0B0D12" stroke-width="1.5"/>
-          <circle cx="16" cy="13" r="4.25" fill="${accent}" stroke="#0B0D12" stroke-width="1.25"/>
+          <path d="M15 2.5C9.61522 2.5 5.25 6.86522 5.25 12.25C5.25 19.9 15 33.25 15 33.25C15 33.25 24.75 19.9 24.75 12.25C24.75 6.86522 20.3848 2.5 15 2.5Z" fill="#FFFFFF" stroke="#0B0D12" stroke-width="1.25"/>
+          <path d="M15 7.75C11.5482 7.75 8.75 10.5482 8.75 14C8.75 17.4518 11.5482 20.25 15 20.25C18.4518 20.25 21.25 17.4518 21.25 14C21.25 10.5482 18.4518 7.75 15 7.75Z" fill="#FFFFFF" stroke="#0B0D12" stroke-width="1.15"/>
+          <circle cx="15" cy="14" r="3.35" fill="${accent}" stroke="#0B0D12" stroke-width="0.9"/>
         </g>
       </svg>`)
     return {
       url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-      scaledSize: new window.google.maps.Size(28, 38),
-      anchor: new window.google.maps.Point(14, 38),
+      scaledSize: new window.google.maps.Size(26, 34),
+      anchor: new window.google.maps.Point(13, 34),
     } as google.maps.Icon
   }, [isLoaded])
 
@@ -205,11 +206,11 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                     position={marker.position}
                     mapPaneName="overlayMouseTarget"
                   >
-                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[52px]">
-                      <span className="relative block h-9 w-9">
+                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[48px]">
+                      <span className="relative block h-6 w-6">
                         <span
                           className="absolute inset-0 animate-pulse rounded-full"
-                          style={{ backgroundColor: 'rgba(226, 28, 33, 0.18)' }}
+                          style={{ backgroundColor: 'rgba(226, 28, 33, 0.16)' }}
                         />
                       </span>
                     </div>
