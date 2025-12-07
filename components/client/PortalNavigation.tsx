@@ -153,7 +153,7 @@ export function PortalNavigation() {
           onClick={handleSignOut}
           disabled={signingOut}
           className={clsx(
-            'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:px-4',
+            'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:flex-1 sm:px-4',
             signingOut
               ? 'cursor-wait bg-slate-100 text-slate-500'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',

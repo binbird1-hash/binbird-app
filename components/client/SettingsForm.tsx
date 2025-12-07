@@ -13,7 +13,6 @@ export type SettingsFormValues = {
   fullName: string
   phone: string
   companyName: string
-  emergencyContact: string
 }
 
 type MutablePreferences = {
@@ -57,7 +56,6 @@ export function SettingsForm() {
       fullName: profile?.fullName ?? '',
       phone: profile?.phone ?? '',
       companyName: profile?.companyName ?? '',
-      emergencyContact: '',
     },
   })
 
@@ -67,7 +65,6 @@ export function SettingsForm() {
         fullName: profile.fullName,
         phone: profile.phone ?? '',
         companyName: profile.companyName ?? '',
-        emergencyContact: '',
       })
     }
   }, [profile, reset])
@@ -131,7 +128,6 @@ export function SettingsForm() {
       full_name: values.fullName,
       phone: values.phone,
       company: values.companyName,
-      emergency_contact: values.emergencyContact,
     }
 
     if (preferencesState && selectedAccount) {
@@ -180,7 +176,7 @@ export function SettingsForm() {
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-slate-900">Account settings</h2>
           <p className="text-sm text-slate-500">
-            Update contact details, emergency information, and portal preferences for your team.
+            Update contact details and portal preferences for your team.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -210,12 +206,12 @@ export function SettingsForm() {
             />
           </label>
           <label className="flex flex-col gap-2 text-sm md:col-span-2">
-            <span className="text-slate-500">Emergency contact</span>
+            <span className="text-slate-500">Email</span>
             <input
-              type="text"
-              {...register('emergencyContact')}
-              placeholder="Name & phone of on-site contact"
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              type="email"
+              value={profile?.email ?? user?.email ?? ''}
+              readOnly
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus-visible:outline-none disabled:opacity-80"
             />
           </label>
         </div>
@@ -240,7 +236,7 @@ export function SettingsForm() {
             <p className="text-sm text-slate-500">Notification preferences are unavailable for this account.</p>
           )
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4">
             {PREFERENCE_FIELDS.map((field) => {
               const Icon = field.icon
               const emailKey = field.key as PreferenceKey
@@ -267,7 +263,7 @@ export function SettingsForm() {
                         disabled={togglesDisabled}
                         className={clsx(
                           'relative inline-flex h-7 w-12 items-center rounded-full transition',
-                          preferencesState[emailKey] ? 'bg-binbird-red' : 'bg-white/20',
+                          preferencesState[emailKey] ? 'bg-binbird-red' : 'bg-slate-200',
                           togglesDisabled && 'cursor-not-allowed opacity-60',
                         )}
                       >
@@ -288,7 +284,7 @@ export function SettingsForm() {
                         disabled={togglesDisabled}
                         className={clsx(
                           'relative inline-flex h-7 w-12 items-center rounded-full transition',
-                          preferencesState[pushKey] ? 'bg-binbird-red' : 'bg-white/20',
+                          preferencesState[pushKey] ? 'bg-binbird-red' : 'bg-slate-200',
                           togglesDisabled && 'cursor-not-allowed opacity-60',
                         )}
                       >
