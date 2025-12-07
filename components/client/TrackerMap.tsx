@@ -45,8 +45,8 @@ function AddressPopoverContent({ property }: { property: Property }) {
   return (
     <div className="px-3 py-2 text-[11px] text-slate-900">
       <div className="flex flex-col gap-1 text-left">
-        <p className="font-semibold text-[var(--accent)]">{addressLine}</p>
-        {locationLine ? <p className="text-slate-700">{locationLine}</p> : null}
+        <p className="font-semibold text-[#E21C21]">{addressLine}</p>
+        {locationLine ? <p className="text-slate-900">{locationLine}</p> : null}
       </div>
     </div>
   )
@@ -129,21 +129,21 @@ export function TrackerMap({ properties }: TrackerMapProps) {
     if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return undefined
     const accent = '#E21C21'
     const svg = encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?>
-      <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="32" height="44" viewBox="0 0 32 44" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <filter id="pinShadow" x="0" y="0" width="36" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(226, 28, 33, 0.28)"/>
+          <filter id="pinShadow" x="0" y="0" width="32" height="44" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(226, 28, 33, 0.24)"/>
           </filter>
         </defs>
         <g filter="url(#pinShadow)">
-          <path d="M18 1C10.268 1 4 7.26801 4 15C4 24.24 18 43 18 43C18 43 32 24.24 32 15C32 7.26801 25.732 1 18 1Z" fill="white" stroke="${accent}" stroke-width="2"/>
-          <circle cx="18" cy="15" r="4.5" fill="${accent}"/>
+          <path d="M16 1C9.92487 1 5 5.92487 5 12C5 20.76 16 37 16 37C16 37 27 20.76 27 12C27 5.92487 22.0751 1 16 1Z" fill="#0B0D12" stroke="#0B0D12" stroke-width="1.5"/>
+          <circle cx="16" cy="13" r="4.25" fill="${accent}" stroke="#0B0D12" stroke-width="1.25"/>
         </g>
       </svg>`)
     return {
       url: `data:image/svg+xml;charset=UTF-8,${svg}`,
-      scaledSize: new window.google.maps.Size(30, 40),
-      anchor: new window.google.maps.Point(15, 40),
+      scaledSize: new window.google.maps.Size(28, 38),
+      anchor: new window.google.maps.Point(14, 38),
     } as google.maps.Icon
   }, [isLoaded])
 
@@ -205,11 +205,11 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                     position={marker.position}
                     mapPaneName="overlayMouseTarget"
                   >
-                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[58px]">
-                      <span className="relative block h-12 w-12">
+                    <div className="pointer-events-none -translate-x-1/2 -translate-y-[52px]">
+                      <span className="relative block h-9 w-9">
                         <span
                           className="absolute inset-0 animate-pulse rounded-full"
-                          style={{ backgroundColor: 'rgba(255, 87, 87, 0.18)' }}
+                          style={{ backgroundColor: 'rgba(226, 28, 33, 0.18)' }}
                         />
                       </span>
                     </div>
@@ -226,14 +226,14 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                 >
                   <div
                     className="pointer-events-auto"
-                    style={{ transform: 'translate(-50%, calc(-100% - 58px))' }}
+                    style={{ transform: 'translate(-50%, calc(-100% - 52px))' }}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0b0d12]/90 text-xs backdrop-blur-sm">
+                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-xs shadow-lg">
                         <AddressPopoverContent property={marker.property} />
                       </div>
-                      <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-[#0b0d12]/90" />
+                      <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-white shadow-lg" />
                     </div>
                   </div>
                 </OverlayViewF>
