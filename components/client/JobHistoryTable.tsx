@@ -187,7 +187,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
   }, [filters.propertyId, filters.search, jobs, propertyMap])
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-900">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-3 md:flex-1 md:flex-row md:items-end md:gap-4">
           <HistorySelect
@@ -207,7 +207,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                   setShowSuggestions(value.trim().length > 0)
                 }}
                 placeholder="Search for property address"
-                className="h-11 w-full rounded-2xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-white/40 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
                 id={searchInputId}
                 autoComplete="off"
                 onFocus={() => {
@@ -225,7 +225,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                 }}
               />
               {showSuggestions && matchingSuggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-2 backdrop-blur">
+                <ul className="absolute left-0 right-0 z-10 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-2 backdrop-blur">
                   {matchingSuggestions.map((suggestion) => (
                     <li key={suggestion}>
                       <button
@@ -235,7 +235,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                           setFilters((current) => ({ ...current, search: suggestion }))
                           setShowSuggestions(false)
                         }}
-                        className="w-full rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-binbird-red/20"
+                        className="w-full rounded-xl px-3 py-2 text-left text-sm text-slate-900 transition hover:bg-binbird-red/20"
                       >
                         {suggestion}
                       </button>
@@ -248,9 +248,9 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
         </div>
       </div>
 
-      <div className="relative overflow-x-auto rounded-3xl border border-white/10 bg-black/20">
+      <div className="relative overflow-x-auto rounded-3xl border border-slate-200 bg-white/20">
         <table className="min-w-[760px] w-full table-auto divide-y divide-white/10 text-left text-sm">
-          <thead className="text-xs uppercase tracking-wide text-white/40">
+          <thead className="text-xs uppercase tracking-wide text-slate-400">
             <tr>
               <th scope="col" className="px-4 py-3">
                 Address
@@ -272,14 +272,14 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
           <tbody className="divide-y divide-white/5">
             {filteredJobs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-white/60">
+                <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                   No jobs found for the selected filters.
                 </td>
               </tr>
             ) : (
               filteredJobs.map((job) => (
-                <tr key={job.id} className="hover:bg-white/5">
-                  <td className="min-w-[220px] px-4 py-4 align-middle text-white">
+                <tr key={job.id} className="hover:bg-slate-100">
+                  <td className="min-w-[220px] px-4 py-4 align-middle text-slate-900">
                     {(() => {
                       const property = job.propertyId ? propertyMap.get(job.propertyId) : undefined
                       const fullAddress = formatAddress(property)
@@ -292,13 +292,13 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                       )
                     })()}
                   </td>
-                  <td className="px-4 py-4 align-middle text-white">
+                  <td className="px-4 py-4 align-middle text-slate-900">
                     <div className="font-semibold">{formatJobTypeLabel(job.jobType)}</div>
-                    <p className="mt-1 text-xs text-white/60">
+                    <p className="mt-1 text-xs text-slate-500">
                       {job.bins && job.bins.length > 0 ? job.bins.join(', ') : 'No bins recorded'}
                     </p>
                   </td>
-                  <td className="px-4 py-4 align-middle text-white/70">
+                  <td className="px-4 py-4 align-middle text-slate-600">
                     {(() => {
                       const proofUploadedAt = job.proofUploadedAt
                         ? new Date(job.proofUploadedAt)
@@ -308,13 +308,13 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
                       return proofUploadedAt ? format(proofUploadedAt, 'PP p') : '—'
                     })()}
                   </td>
-                  <td className="px-4 py-4 align-middle text-white/60">{job.notes ?? '—'}</td>
+                  <td className="px-4 py-4 align-middle text-slate-500">{job.notes ?? '—'}</td>
                   <td className="px-4 py-4 align-middle text-center">
                     <button
                       type="button"
                       onClick={() => setProofJob(job)}
                       disabled={!job.proofPhotoKeys || job.proofPhotoKeys.length === 0}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white transition hover:border-binbird-red disabled:cursor-not-allowed disabled:border-white/5 disabled:text-white/30"
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium uppercase tracking-wide text-slate-900 transition hover:border-binbird-red disabled:cursor-not-allowed disabled:border-slate-100 disabled:text-slate-400"
                     >
                       <PhotoIcon className="h-4 w-4" /> View
                     </button>
@@ -326,7 +326,7 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
         </table>
       </div>
 
-      <p className="text-xs text-white/40 sm:hidden">Swipe horizontally to view more job details.</p>
+      <p className="text-xs text-slate-400 sm:hidden">Swipe horizontally to view more job details.</p>
 
       <ProofGalleryModal
         isOpen={Boolean(proofJob)}
@@ -334,8 +334,8 @@ export function JobHistoryTable({ jobs, properties, initialPropertyId }: JobHist
         photoKeys={proofJob?.proofPhotoKeys ?? []}
       />
 
-      <p className="text-xs text-white/40">
-        Showing jobs for account <strong className="text-white">{selectedAccount?.name}</strong> from the last 60 days.
+      <p className="text-xs text-slate-400">
+        Showing jobs for account <strong className="text-slate-900">{selectedAccount?.name}</strong> from the last 60 days.
       </p>
     </div>
   )
@@ -354,16 +354,16 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
 
   return (
     <div className={clsx('flex flex-col gap-1 text-sm', className)}>
-      {label ? <span className="text-white/60">{label}</span> : null}
+      {label ? <span className="text-slate-500">{label}</span> : null}
       <Listbox value={value} onChange={onChange}>
         {({ open }) => (
           <div className="relative">
             <Listbox.Button
-              className="flex h-11 w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 text-left text-sm text-white shadow-lg shadow-black/20 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              className="flex h-11 w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-100 px-4 text-left text-sm text-slate-900 shadow-lg shadow-slate-200/60 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
               aria-label={label ?? 'Filter jobs'}
             >
-              <span className="block truncate text-white/90">{selectedOption?.label}</span>
-              <ChevronUpDownIcon className="h-4 w-4 text-white/60" aria-hidden="true" />
+              <span className="block truncate text-slate-900">{selectedOption?.label}</span>
+              <ChevronUpDownIcon className="h-4 w-4 text-slate-500" aria-hidden="true" />
             </Listbox.Button>
             <Transition
               as={Fragment}
@@ -372,15 +372,15 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-black/90 p-1 text-sm text-white shadow-xl backdrop-blur">
+              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 text-sm text-slate-900 shadow-xl backdrop-blur">
                 {options.map((option) => (
                   <Listbox.Option
                     key={option.value}
                     value={option.value}
                     className={({ active }) =>
                       clsx(
-                        'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/70 transition',
-                        active && 'bg-binbird-red/20 text-white',
+                        'flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-slate-600 transition',
+                        active && 'bg-binbird-red/20 text-slate-900',
                       )
                     }
                   >

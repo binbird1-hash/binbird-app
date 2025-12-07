@@ -97,19 +97,19 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
   )
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-900">
       <PropertyFilters filters={filters} onChange={setFilters} properties={properties} />
 
       {isLoading ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-white/10 bg-black/30">
-          <span className="flex items-center gap-3 text-white/60">
+        <div className="flex min-h-[200px] items-center justify-center rounded-3xl border border-slate-200 bg-slate-100">
+          <span className="flex items-center gap-3 text-slate-500">
             <span className="h-2 w-2 animate-ping rounded-full bg-binbird-red" />
             Loading properties…
           </span>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/20 bg-black/40 px-6 py-12 text-center text-white/60">
-          <h3 className="text-lg font-semibold text-white">No properties found</h3>
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-500">
+          <h3 className="text-lg font-semibold text-slate-900">No properties found</h3>
           <p className="mt-2 text-sm">
             Adjust your filters or contact the BinBird team to connect additional properties to this account.
           </p>
@@ -123,20 +123,20 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
               <section
                 key={groupName}
                 className={clsx(
-                  'relative overflow-hidden rounded-3xl border border-white/10 bg-black/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
+                  'relative overflow-hidden rounded-3xl border border-slate-200 bg-white/25 px-6 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm',
                   {
                     'mt-2': groupIndex > 0,
                   },
                 )}
               >
                 <div className="space-y-4">
-                  <header className="flex items-center justify-between text-sm text-white/60">
+                  <header className="flex items-center justify-between text-sm text-slate-500">
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{groupName}</h3>
+                      <h3 className="text-lg font-semibold text-slate-900">{groupName}</h3>
                       <p>{propertyCountLabel}</p>
                     </div>
                   </header>
-                  <div className="h-px bg-white/10" />
+                  <div className="h-px bg-slate-100" />
                 </div>
                 <div className="grid auto-rows-fr grid-cols-1 gap-4 pt-4 sm:pt-6">
                   {groupProperties.map((property) => {
@@ -194,17 +194,17 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                         key={property.id}
                         type="button"
                         onClick={() => handlePropertyClick(property.id)}
-                        className="group flex h-full w-full flex-col rounded-3xl border border-white/10 bg-black/30 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
+                        className="group flex h-full w-full flex-col rounded-3xl border border-slate-200 bg-slate-100 px-5 py-6 text-left transition hover:border-binbird-red hover:bg-binbird-red/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:px-6"
                         aria-label={`View job history for ${property.name}`}
                       >
                         <div className="flex flex-col gap-4">
                           <div className="space-y-4">
                             <div className="space-y-2">
-                              <h4 className="text-xl font-semibold text-white">
+                              <h4 className="text-xl font-semibold text-slate-900">
                                 {address || property.name}
                               </h4>
                               {property.name && address && isNameDistinct && (
-                                <p className="text-sm text-white/60">{property.name}</p>
+                                <p className="text-sm text-slate-500">{property.name}</p>
                               )}
                             </div>
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -216,12 +216,12 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                                     BIN_THEME[bin.key].panel,
                                   )}
                                 >
-                                  <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white sm:text-base">
+                                  <p className="whitespace-nowrap text-sm font-semibold leading-tight text-slate-900 sm:text-base">
                                     {bin.count} {bin.label} {bin.count === 1 ? 'Bin' : 'Bins'}
                                   </p>
-                                  <p className="flex items-center gap-1 text-xs text-white/70 sm:text-sm">
+                                  <p className="flex items-center gap-1 text-xs text-slate-600 sm:text-sm">
                                     {bin.frequency.showCalendarIcon && (
-                                      <CalendarDaysIcon className="h-4 w-4 text-white/70" aria-hidden />
+                                      <CalendarDaysIcon className="h-4 w-4 text-slate-600" aria-hidden />
                                     )}
                                     <span>{bin.frequency.label}</span>
                                   </p>
@@ -229,20 +229,20 @@ export function PropertyDashboard({ properties, isLoading }: PropertyDashboardPr
                               ))}
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2 text-sm text-white/60">
-                            <p className="text-xs text-white/50">
+                          <div className="flex flex-col gap-2 text-sm text-slate-500">
+                            <p className="text-xs text-slate-500">
                               Put out: {property.putOutDay ?? '—'} · Collection: {property.collectionDay ?? '—'}
                             </p>
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <p>
                                 Next service:
-                                <span className="ml-2 font-medium text-white">
+                                <span className="ml-2 font-medium text-slate-900">
                                   {property.nextServiceAt
                                     ? format(new Date(property.nextServiceAt), 'EEE, MMM d')
                                     : 'Awaiting schedule'}
                                 </span>
                               </p>
-                              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition group-hover:text-white">
+                              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition group-hover:text-slate-900">
                                 View job history <span aria-hidden>→</span>
                               </span>
                             </div>

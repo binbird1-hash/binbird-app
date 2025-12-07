@@ -50,7 +50,7 @@ export function PortalNavigation() {
         <button
           type="button"
           onClick={() => setMobileOpen((open) => !open)}
-          className="relative z-50 inline-flex items-center justify-center rounded-md p-2 text-white transition hover:text-binbird-red focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
+          className="relative z-50 inline-flex items-center justify-center rounded-md p-2 text-slate-800 transition hover:text-binbird-red focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red"
           aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={mobileOpen}
           aria-controls="client-portal-mobile-nav"
@@ -64,7 +64,7 @@ export function PortalNavigation() {
 
         <div
           className={clsx(
-            'fixed inset-0 z-40 bg-black/60 transition-opacity duration-300',
+            'fixed inset-0 z-40 bg-slate-900/20 transition-opacity duration-300',
             mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
           aria-hidden="true"
@@ -74,12 +74,12 @@ export function PortalNavigation() {
         <aside
           id="client-portal-mobile-nav"
           className={clsx(
-            'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80%] flex-col gap-6 border-r border-white/10 bg-black/95 px-6 py-8 text-white shadow-2xl shadow-black/50 transition-transform duration-300',
+            'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80%] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-slate-900 shadow-2xl shadow-slate-200/70 transition-transform duration-300',
             mobileOpen ? 'translate-x-0' : '-translate-x-full',
           )}
           aria-label="Client portal navigation"
         >
-          <nav className="flex flex-1 flex-col gap-2 text-sm font-medium text-white/80">
+          <nav className="flex flex-1 flex-col gap-2 text-sm font-medium text-slate-700">
             {NAV_ITEMS.map((item) => {
               const active = pathname.startsWith(item.href)
               return (
@@ -89,7 +89,7 @@ export function PortalNavigation() {
                   onClick={() => setMobileOpen(false)}
                   className={clsx(
                     'flex items-center gap-3 rounded-2xl px-4 py-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
-                    active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-white/70 hover:bg-white/5 hover:text-white',
+                    active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
                   )}
                   aria-current={active ? 'page' : undefined}
                 >
@@ -107,8 +107,8 @@ export function PortalNavigation() {
                 className={clsx(
                   'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
                   signingOut
-                    ? 'cursor-wait bg-white/5 text-white/70'
-                    : 'text-white/70 hover:bg-white/5 hover:text-white',
+                    ? 'cursor-wait bg-slate-100 text-slate-500'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
                 )}
               >
                 <ArrowRightOnRectangleIcon className="h-5 w-5" />
@@ -118,7 +118,7 @@ export function PortalNavigation() {
           </nav>
         </aside>
       </div>
-      <nav className="hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-white/10 bg-black/60 p-2 text-sm text-white shadow-2xl shadow-black/20 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
+      <nav className="hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-slate-200 bg-white p-2 text-sm text-slate-900 shadow-xl shadow-slate-200/70 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href)
           return (
@@ -127,7 +127,7 @@ export function PortalNavigation() {
               href={item.href}
               className={clsx(
                 'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:flex-1 sm:px-4',
-                active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-white/60 hover:text-white hover:bg-white/5',
+                active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
               )}
               aria-current={active ? 'page' : undefined}
             >
@@ -143,8 +143,8 @@ export function PortalNavigation() {
           className={clsx(
             'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:px-4',
             signingOut
-              ? 'cursor-wait bg-white/5 text-white/60'
-              : 'text-white/60 hover:bg-white/5 hover:text-white',
+              ? 'cursor-wait bg-slate-100 text-slate-500'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
           )}
         >
           <ArrowRightOnRectangleIcon className="h-5 w-5" />

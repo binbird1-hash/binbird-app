@@ -9,7 +9,7 @@ export default function ClientDashboardPage() {
   return (
     <section className="space-y-8">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-white">Property overview</h2>
+        <h2 className="text-2xl font-semibold text-slate-900">Property overview</h2>
       </div>
       <PropertyDashboard properties={properties} isLoading={propertiesLoading} />
     </section>
