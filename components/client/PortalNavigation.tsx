@@ -44,6 +44,8 @@ export function PortalNavigation() {
     }
   }
 
+  const isDashboard = pathname.startsWith('/client/dashboard')
+
   return (
     <div className="w-full">
       <div className="sm:hidden">
@@ -74,7 +76,8 @@ export function PortalNavigation() {
         <aside
           id="client-portal-mobile-nav"
           className={clsx(
-            'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80%] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-slate-900 shadow-2xl shadow-slate-200/70 transition-transform duration-300',
+            'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80%] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-slate-900 transition-transform duration-300',
+            isDashboard && 'shadow-2xl shadow-slate-200/70',
             mobileOpen ? 'translate-x-0' : '-translate-x-full',
           )}
           aria-label="Client portal navigation"
@@ -89,7 +92,9 @@ export function PortalNavigation() {
                   onClick={() => setMobileOpen(false)}
                   className={clsx(
                     'flex items-center gap-3 rounded-2xl px-4 py-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red',
-                    active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                    active
+                      ? clsx('bg-binbird-red text-white', isDashboard && 'shadow-lg shadow-red-900/40')
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
                   )}
                   aria-current={active ? 'page' : undefined}
                 >
@@ -118,7 +123,12 @@ export function PortalNavigation() {
           </nav>
         </aside>
       </div>
-      <nav className="hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-slate-200 bg-white p-2 text-sm text-slate-900 shadow-xl shadow-slate-200/70 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory">
+      <nav
+        className={clsx(
+          'hidden w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-3xl border border-slate-200 bg-white p-2 text-sm text-slate-900 backdrop-blur [-webkit-overflow-scrolling:touch] sm:flex sm:flex-wrap sm:overflow-visible sm:snap-none snap-x snap-mandatory',
+          isDashboard && 'shadow-xl shadow-slate-200/70',
+        )}
+      >
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href)
           return (
@@ -127,7 +137,9 @@ export function PortalNavigation() {
               href={item.href}
               className={clsx(
                 'flex min-w-[140px] flex-none snap-start items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-binbird-red sm:min-w-0 sm:flex-1 sm:px-4',
-                active ? 'bg-binbird-red text-white shadow-lg shadow-red-900/40' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+                active
+                  ? clsx('bg-binbird-red text-white', isDashboard && 'shadow-lg shadow-red-900/40')
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
               )}
               aria-current={active ? 'page' : undefined}
             >

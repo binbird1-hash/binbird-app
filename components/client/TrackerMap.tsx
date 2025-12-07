@@ -231,7 +231,7 @@ export function TrackerMap({ properties }: TrackerMapProps) {
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="flex flex-col items-center">
-                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0b0d12]/90 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-sm">
+                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0b0d12]/90 text-xs backdrop-blur-sm">
                         <AddressPopoverContent property={marker.property} />
                       </div>
                       <div className="-mt-1 h-3 w-3 rotate-45 border border-slate-200 bg-[#0b0d12]/90" />

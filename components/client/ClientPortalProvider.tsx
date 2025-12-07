@@ -100,7 +100,6 @@ export type ClientProfile = {
   fullName: string
   phone: string | null
   companyName: string | null
-  timezone: string | null
 }
 
 type ClientListRow = {
@@ -170,10 +169,10 @@ const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
   userId: 'unknown',
   emailRouteUpdates: true,
   pushRouteUpdates: true,
-  emailBilling: true,
+  emailBilling: false,
   pushBilling: false,
-  emailPropertyAlerts: true,
-  pushPropertyAlerts: true,
+  emailPropertyAlerts: false,
+  pushPropertyAlerts: false,
 }
 
 const WEEKDAY_LOOKUP: Record<string, Day> = {
@@ -431,7 +430,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
   const [error, setError] = useState<string | null>(null)
   const allClientRowsRef = useRef<ClientListRow[]>([])
 
-  const loadProfile = useCallback(async (currentUser: User) => {
+  const loadProfile = useCallback(async (currentUser: User, clientRows?: ClientListRow[]) => {
     const { data, error: profileError } = await supabase
       .from('user_profile')
       .select('full_name, phone, role, map_style_pref, nav_pref')
@@ -442,12 +441,13 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       console.warn('Failed to load client profile', profileError)
     }
 
+    const companyFromClientList = clientRows?.find((row) => row.company?.trim())?.company ?? null
+
     setProfile({
       id: currentUser.id,
       fullName: data?.full_name ?? currentUser.user_metadata?.full_name ?? currentUser.email ?? 'Client User',
       phone: data?.phone ?? currentUser.user_metadata?.phone ?? null,
-      companyName: currentUser.user_metadata?.company ?? null,
-      timezone: currentUser.user_metadata?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+      companyName: companyFromClientList ?? currentUser.user_metadata?.company ?? null,
     })
   }, [supabase])
 
@@ -917,7 +917,7 @@ export function ClientPortalProvider({ children }: { children: React.ReactNode }
       setSelectedAccountId(firstAccountId)
 
       await Promise.all([
-        loadProfile(currentUser),
+        loadProfile(currentUser, rows),
         loadPreferences(currentUser, firstAccountId ?? derivedAccounts[0]?.id ?? 'primary'),
       ])
 

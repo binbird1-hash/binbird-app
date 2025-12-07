@@ -359,7 +359,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
         {({ open }) => (
           <div className="relative">
             <Listbox.Button
-              className="flex h-11 w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-100 px-4 text-left text-sm text-slate-900 shadow-lg shadow-slate-200/60 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
+              className="flex h-11 w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-100 px-4 text-left text-sm text-slate-900 transition focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
               aria-label={label ?? 'Filter jobs'}
             >
               <span className="block truncate text-slate-900">{selectedOption?.label}</span>
@@ -372,7 +372,7 @@ function HistorySelect({ label, value, onChange, options, className }: HistorySe
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 text-sm text-slate-900 shadow-xl backdrop-blur">
+              <Listbox.Options className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 text-sm text-slate-900 backdrop-blur">
                 {options.map((option) => (
                   <Listbox.Option
                     key={option.value}

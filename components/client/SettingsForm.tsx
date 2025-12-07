@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Switch } from '@headlessui/react'
-import { BellIcon, InboxIcon, PhoneIcon } from '@heroicons/react/24/outline'
+import { BellIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { useForm } from 'react-hook-form'
 import { useClientPortal } from './ClientPortalProvider'
@@ -13,17 +13,12 @@ export type SettingsFormValues = {
   fullName: string
   phone: string
   companyName: string
-  timezone: string
   emergencyContact: string
 }
 
 type MutablePreferences = {
   emailRouteUpdates: boolean
   pushRouteUpdates: boolean
-  emailBilling: boolean
-  pushBilling: boolean
-  emailPropertyAlerts: boolean
-  pushPropertyAlerts: boolean
 }
 
 type PreferenceKey = keyof MutablePreferences
@@ -35,21 +30,7 @@ const PREFERENCE_FIELDS = [
     description: 'Receive notifications when the crew is on their way or arriving on site.',
     icon: BellIcon,
   },
-  {
-    key: 'emailPropertyAlerts',
-    label: 'Property alerts',
-    description: 'Get notified when we discover contamination or access issues.',
-    icon: InboxIcon,
-  },
-  {
-    key: 'emailBilling',
-    label: 'Billing & invoicing',
-    description: 'Keep track of billing reminders, invoices, and payment receipts.',
-    icon: PhoneIcon,
-  },
 ] as const
-
-const TIMEZONES = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : ['Australia/Sydney', 'Australia/Melbourne']
 
 export function SettingsForm() {
   const {
@@ -76,7 +57,6 @@ export function SettingsForm() {
       fullName: profile?.fullName ?? '',
       phone: profile?.phone ?? '',
       companyName: profile?.companyName ?? '',
-      timezone: profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
       emergencyContact: '',
     },
   })
@@ -87,7 +67,6 @@ export function SettingsForm() {
         fullName: profile.fullName,
         phone: profile.phone ?? '',
         companyName: profile.companyName ?? '',
-        timezone: profile.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
         emergencyContact: '',
       })
     }
@@ -98,10 +77,6 @@ export function SettingsForm() {
       setPreferencesState({
         emailRouteUpdates: notificationPreferences.emailRouteUpdates,
         pushRouteUpdates: notificationPreferences.pushRouteUpdates,
-        emailBilling: notificationPreferences.emailBilling,
-        pushBilling: notificationPreferences.pushBilling,
-        emailPropertyAlerts: notificationPreferences.emailPropertyAlerts,
-        pushPropertyAlerts: notificationPreferences.pushPropertyAlerts,
       })
     }
   }, [notificationPreferences])
@@ -141,7 +116,7 @@ export function SettingsForm() {
       phone: values.phone,
       email: user.email,
       role: 'client',
-      map_style_pref: profile?.timezone ?? null,
+      map_style_pref: null,
       nav_pref: profile?.companyName ?? null,
       created_at: new Date().toISOString(),
       abn: null,
@@ -156,7 +131,6 @@ export function SettingsForm() {
       full_name: values.fullName,
       phone: values.phone,
       company: values.companyName,
-      timezone: values.timezone,
       emergency_contact: values.emergencyContact,
     }
 
@@ -168,10 +142,6 @@ export function SettingsForm() {
         [selectedAccount.id]: {
           emailRouteUpdates: preferencesState.emailRouteUpdates,
           pushRouteUpdates: preferencesState.pushRouteUpdates,
-          emailBilling: preferencesState.emailBilling,
-          pushBilling: preferencesState.pushBilling,
-          emailPropertyAlerts: preferencesState.emailPropertyAlerts,
-          pushPropertyAlerts: preferencesState.pushPropertyAlerts,
         },
       }
     }
@@ -204,7 +174,7 @@ export function SettingsForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-10 rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl shadow-slate-200/80"
+      className="space-y-10 rounded-3xl border border-slate-200 bg-white p-6 text-slate-900"
     >
       <section className="space-y-6">
         <div className="space-y-2">
@@ -239,19 +209,6 @@ export function SettingsForm() {
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
             />
           </label>
-          <label className="flex flex-col gap-2 text-sm">
-            <span className="text-slate-500">Timezone</span>
-            <select
-              {...register('timezone')}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 focus:border-binbird-red focus:outline-none focus:ring-2 focus:ring-binbird-red/30"
-            >
-              {TIMEZONES.map((zone) => (
-                <option key={zone} value={zone}>
-                  {zone}
-                </option>
-              ))}
-            </select>
-          </label>
           <label className="flex flex-col gap-2 text-sm md:col-span-2">
             <span className="text-slate-500">Emergency contact</span>
             <input
@@ -268,7 +225,7 @@ export function SettingsForm() {
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-slate-900">Notification preferences</h2>
           <p className="text-sm text-slate-500">
-            Choose how BinBird keeps you informed about service progress, exceptions, and billing reminders.
+            Choose how BinBird keeps you informed about service progress.
           </p>
         </div>
 
@@ -290,10 +247,7 @@ export function SettingsForm() {
               const pushKey = field.key.replace('email', 'push') as PreferenceKey
 
               return (
-                <section
-                  key={field.key}
-                  className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/70"
-                >
+                <section key={field.key} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5">
                   <div className="flex items-start gap-3">
                     <span className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-slate-500">
                       <Icon className="h-6 w-6" />
@@ -371,7 +325,7 @@ export function SettingsForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="inline-flex items-center gap-2 rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-binbird-red px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? 'Saving…' : isSubmitSuccessful ? 'Saved' : 'Save settings'}
       </button>

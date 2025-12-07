@@ -2,11 +2,15 @@
 
 import '@/app/globals.css'
 import type { ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
+import clsx from 'clsx'
 import { ClientPortalProvider, useClientPortal } from '@/components/client/ClientPortalProvider'
 import { PortalNavigation } from '@/components/client/PortalNavigation'
 
 function PortalScaffold({ children }: { children: ReactNode }) {
   const { loading, error } = useClientPortal()
+  const pathname = usePathname()
+  const isDashboard = pathname?.startsWith('/client/dashboard')
 
   if (error) {
     return (
@@ -36,7 +40,12 @@ function PortalScaffold({ children }: { children: ReactNode }) {
         <PortalNavigation />
       </div>
       <div className="mx-auto mt-6 w-full max-w-6xl sm:mt-8">
-        <div className="rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl shadow-slate-200/60 sm:p-6">
+        <div
+          className={clsx(
+            'rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 sm:p-6',
+            isDashboard && 'shadow-xl shadow-slate-200/60',
+          )}
+        >
           {children}
         </div>
       </div>
