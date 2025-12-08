@@ -373,14 +373,35 @@ function RunPageContent() {
     if (!mapRef.current) return;
     const bounds = new google.maps.LatLngBounds();
 
-      if (jobs.length === 0) {
-    // ✅ No jobs → zoom out to Melbourne
-    bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
-    bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
-    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
-    mapRef.current?.setZoom(9);
-    return;
-  }
+    const map = mapRef.current;
+    const isMobileView =
+      typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
+
+    const adjustViewAfterFit = () => {
+      const currentZoom = map.getZoom() ?? 0;
+      const zoomBoost = isMobileView ? Math.max(1.8, currentZoom * 0.3) : 0.75;
+      map.setZoom(Math.min(21, currentZoom + zoomBoost));
+
+      if (isMobileView) {
+        const span = bounds.toSpan();
+        const center = bounds.getCenter();
+        map.setCenter({
+          lat: center.lat() + span.lat() * 0.3,
+          lng: center.lng(),
+        });
+      }
+    };
+
+    if (jobs.length === 0) {
+      // ✅ No jobs → zoom out to Melbourne
+      bounds.extend({ lat: MELBOURNE_BOUNDS.north, lng: MELBOURNE_BOUNDS.east });
+      bounds.extend({ lat: MELBOURNE_BOUNDS.south, lng: MELBOURNE_BOUNDS.west });
+      map.fitBounds(bounds, { top: 50, right: 50, bottom: 200, left: 50 });
+      map.setZoom(10);
+      adjustViewAfterFit();
+      return;
+    }
+
     if (start) bounds.extend(start);
     if (end) bounds.extend(end);
     (routePath.length ? ordered : jobs).forEach((j) => {
@@ -390,7 +411,8 @@ function RunPageContent() {
 
     if (!bounds.isEmpty() && (!userMoved || forceFit)) {
       console.log("Fitting map bounds");
-      mapRef.current.fitBounds(bounds, { top: 0, right: 50, bottom: 350, left: 50 });
+      map.fitBounds(bounds, { top: 20, right: 40, bottom: isMobileView ? 280 : 300, left: 40 });
+      adjustViewAfterFit();
       setForceFit(false);
     }
   }, [
