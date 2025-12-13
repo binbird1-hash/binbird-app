@@ -273,46 +273,6 @@ function RoutePageContent() {
     : null;
   const isEndStop = normalizedAddress === "end";
 
-  useEffect(() => {
-    if (!activeJob) return;
-
-    if (activeJob.status === "completed" || activeJob.status === "on_site") {
-      enRouteJobsRef.current.add(activeJob.id);
-      return;
-    }
-
-    if (enRouteJobsRef.current.has(activeJob.id) && activeJob.status === "en_route") {
-      return;
-    }
-
-    const startedAt = new Date().toISOString();
-    enRouteJobsRef.current.add(activeJob.id);
-
-    supabase
-      .from("jobs")
-      .update({
-        status: "en_route",
-        started_at: activeJob.started_at ?? startedAt,
-      })
-      .eq("id", activeJob.id)
-      .then(({ error }) => {
-        if (error) {
-          console.warn("Unable to mark job en route", error);
-          enRouteJobsRef.current.delete(activeJob.id);
-          return;
-        }
-
-        updateJobProgress(
-          activeJob.id,
-          {
-            status: "en_route",
-            started_at: activeJob.started_at ?? startedAt,
-          },
-          true
-        );
-      });
-  }, [activeJob, supabase, updateJobProgress]);
-
   const persistJobsToPlan = useCallback(
     (nextJobs: Job[], hasStartedOverride = false) => {
       if (!hasStoredPlan) return;
@@ -352,6 +312,46 @@ function RoutePageContent() {
     },
     [persistJobsToPlan]
   );
+
+  useEffect(() => {
+    if (!activeJob) return;
+
+    if (activeJob.status === "completed" || activeJob.status === "on_site") {
+      enRouteJobsRef.current.add(activeJob.id);
+      return;
+    }
+
+    if (enRouteJobsRef.current.has(activeJob.id) && activeJob.status === "en_route") {
+      return;
+    }
+
+    const startedAt = new Date().toISOString();
+    enRouteJobsRef.current.add(activeJob.id);
+
+    supabase
+      .from("jobs")
+      .update({
+        status: "en_route",
+        started_at: activeJob.started_at ?? startedAt,
+      })
+      .eq("id", activeJob.id)
+      .then(({ error }) => {
+        if (error) {
+          console.warn("Unable to mark job en route", error);
+          enRouteJobsRef.current.delete(activeJob.id);
+          return;
+        }
+
+        updateJobProgress(
+          activeJob.id,
+          {
+            status: "en_route",
+            started_at: activeJob.started_at ?? startedAt,
+          },
+          true
+        );
+      });
+  }, [activeJob, supabase, updateJobProgress]);
 
   const requestLiveLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -565,8 +565,6 @@ function RoutePageContent() {
                 },
                 true
               );
-            })
-            .finally(() => {
               router.push(
                 `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
               );
