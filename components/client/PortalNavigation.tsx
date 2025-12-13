@@ -10,6 +10,7 @@ import {
   CreditCardIcon,
   Cog6ToothIcon,
   ClockIcon,
+  BellIcon,
   Bars3Icon,
   XMarkIcon,
   ArrowRightOnRectangleIcon,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: '/client/dashboard', label: 'Dashboard', icon: BuildingOffice2Icon },
   { href: '/client/tracker', label: 'Live tracker', icon: CursorArrowRaysIcon },
   { href: '/client/history', label: 'Job history', icon: ClockIcon },
+  { href: '/client/notifications', label: 'Notifications', icon: BellIcon },
   { href: '/client/plan', label: 'Plan', icon: CreditCardIcon },
   { href: '/client/settings', label: 'Settings', icon: Cog6ToothIcon },
 ] as const

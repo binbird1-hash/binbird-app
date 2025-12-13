@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Switch } from '@headlessui/react'
-import { BellIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { useForm } from 'react-hook-form'
 import { useClientPortal } from './ClientPortalProvider'
+import { PreferenceKey, PREFERENCE_FIELDS, MutablePreferences } from './notificationPreferencesFields'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { isEmailConfirmed } from '@/lib/auth/isEmailConfirmed'
 
@@ -14,22 +14,6 @@ export type SettingsFormValues = {
   phone: string
   companyName: string
 }
-
-type MutablePreferences = {
-  emailRouteUpdates: boolean
-  pushRouteUpdates: boolean
-}
-
-type PreferenceKey = keyof MutablePreferences
-
-const PREFERENCE_FIELDS = [
-  {
-    key: 'emailRouteUpdates',
-    label: 'Route updates',
-    description: 'Receive notifications when the crew is on their way or arriving on site.',
-    icon: BellIcon,
-  },
-] as const
 
 export function SettingsForm() {
   const {
