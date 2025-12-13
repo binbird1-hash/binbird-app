@@ -687,10 +687,24 @@ export default function ProofPageContent() {
         user_id: user.id,
       });
       if (logErr) throw logErr;
-      await supabase.from("jobs").update({ last_completed_on: dateStr }).eq("id", job.id);
+      const completionIso = new Date().toISOString();
+      await supabase
+        .from("jobs")
+        .update({ last_completed_on: dateStr, status: "completed", completed_at: completionIso })
+        .eq("id", job.id);
+      const updatedJobs = jobs.map((plannedJob, jobIndex) =>
+        jobIndex === idx
+          ? {
+              ...plannedJob,
+              last_completed_on: dateStr,
+              status: "completed",
+              completed_at: completionIso,
+            }
+          : plannedJob
+      );
       const nextIdx = idx + 1;
       const existingSession = getActiveRunSession();
-      const nowIso = new Date().toISOString();
+      const nowIso = completionIso;
       const totalJobs = Math.max(existingSession?.totalJobs ?? 0, jobs.length, nextIdx);
       const completedAfterThisJob = Math.min(nextIdx, totalJobs);
       const startedAt =
@@ -715,13 +729,13 @@ export default function ProofPageContent() {
         if (existingPlan) {
           writePlannedRun({
             ...existingPlan,
-            jobs: jobs.map((plannedJob) => ({ ...plannedJob })),
+            jobs: updatedJobs.map((plannedJob) => ({ ...plannedJob })),
             nextIdx,
             hasStarted: true,
           });
         }
         const paramsObj = new URLSearchParams({
-          jobs: JSON.stringify(jobs),
+          jobs: JSON.stringify(updatedJobs),
           nextIdx: String(nextIdx),
           total: String(jobs.length),
         });

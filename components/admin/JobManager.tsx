@@ -132,7 +132,7 @@ export default function JobManager() {
       supabase
         .from("jobs")
         .select(
-          "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week",
+          "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, status, started_at, arrived_at, completed_at, last_completed_on, assigned_to, day_of_week",
         )
         .order("day_of_week", { ascending: true })
         .order("address", { ascending: true }),

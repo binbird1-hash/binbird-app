@@ -86,6 +86,22 @@ function normalizeJob(value: Job): Job {
       typeof value.photo_path === "string" && value.photo_path.trim().length
         ? value.photo_path
         : null,
+    status:
+      typeof value.status === "string" && value.status.trim().length
+        ? value.status
+        : null,
+    started_at:
+      typeof value.started_at === "string" && value.started_at.trim().length
+        ? value.started_at
+        : null,
+    arrived_at:
+      typeof value.arrived_at === "string" && value.arrived_at.trim().length
+        ? value.arrived_at
+        : null,
+    completed_at:
+      typeof value.completed_at === "string" && value.completed_at.trim().length
+        ? value.completed_at
+        : null,
     last_completed_on:
       typeof value.last_completed_on === "string" &&
       value.last_completed_on.trim().length

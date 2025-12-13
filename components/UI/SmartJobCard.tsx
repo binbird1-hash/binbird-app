@@ -37,6 +37,7 @@ export default function SmartJobCard({
 
       const now = new Date();
       const dateStr = getOperationalISODate(now);
+      const completionIso = now.toISOString();
       const safeTimestamp = now.toISOString().replace(/[:.]/g, "-");
 
       const ext = file.name.split(".").pop() || "jpg";
@@ -84,7 +85,7 @@ export default function SmartJobCard({
 
       const { error: updateErr } = await supabase
         .from("jobs")
-        .update({ last_completed_on: dateStr })
+        .update({ last_completed_on: dateStr, status: "completed", completed_at: completionIso })
         .eq("id", job.id);
       if (updateErr) throw updateErr;
 
