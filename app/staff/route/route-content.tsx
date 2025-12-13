@@ -78,6 +78,7 @@ function RoutePageContent() {
   const bringInRestricted = jobVisibility.bringIn;
   const putOutRestricted = jobVisibility.putOut;
   const allJobsRestricted = bringInRestricted && putOutRestricted;
+  const enRouteJobsRef = useRef<Set<string>>(new Set());
 
   const filterJobsForVisibility = useCallback(
     (jobsList: Job[]) =>
@@ -272,6 +273,86 @@ function RoutePageContent() {
     : null;
   const isEndStop = normalizedAddress === "end";
 
+  useEffect(() => {
+    if (!activeJob) return;
+
+    if (activeJob.status === "completed" || activeJob.status === "on_site") {
+      enRouteJobsRef.current.add(activeJob.id);
+      return;
+    }
+
+    if (enRouteJobsRef.current.has(activeJob.id) && activeJob.status === "en_route") {
+      return;
+    }
+
+    const startedAt = new Date().toISOString();
+    enRouteJobsRef.current.add(activeJob.id);
+
+    supabase
+      .from("jobs")
+      .update({
+        status: "en_route",
+        started_at: activeJob.started_at ?? startedAt,
+      })
+      .eq("id", activeJob.id)
+      .then(({ error }) => {
+        if (error) {
+          console.warn("Unable to mark job en route", error);
+          enRouteJobsRef.current.delete(activeJob.id);
+          return;
+        }
+
+        updateJobProgress(
+          activeJob.id,
+          {
+            status: "en_route",
+            started_at: activeJob.started_at ?? startedAt,
+          },
+          true
+        );
+      });
+  }, [activeJob, supabase, updateJobProgress]);
+
+  const persistJobsToPlan = useCallback(
+    (nextJobs: Job[], hasStartedOverride = false) => {
+      if (!hasStoredPlan) return;
+      const stored = readPlannedRun();
+      if (!stored) return;
+
+      const clampedIdx = Math.min(
+        Math.max(activeIdx, 0),
+        Math.max(nextJobs.length - 1, 0)
+      );
+
+      writePlannedRun({
+        ...stored,
+        jobs: nextJobs.map((job) => ({ ...job })),
+        nextIdx: clampedIdx,
+        hasStarted: stored.hasStarted || hasStartedOverride,
+      });
+    },
+    [activeIdx, hasStoredPlan]
+  );
+
+  const updateJobProgress = useCallback(
+    (jobId: string, patch: Partial<Job>, markStarted = false) => {
+      setJobs((prev) => {
+        const nextJobs = prev.map((job) =>
+          job.id === jobId
+            ? {
+                ...job,
+                ...patch,
+              }
+            : job
+        );
+
+        persistJobsToPlan(nextJobs, markStarted);
+        return nextJobs;
+      });
+    },
+    [persistJobsToPlan]
+  );
+
   const requestLiveLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       console.warn("Geolocation API unavailable. Falling back to stored coordinates.");
@@ -442,6 +523,8 @@ function RoutePageContent() {
   }
 
   function handleArrivedAtLocation() {
+    if (!activeJob) return;
+
     if (!navigator.geolocation || !locationAllowed) {
       setLocationAllowed(false);
       showLocationPopup("Location required", "Enable sharing, then tap Arrived again.");
@@ -453,9 +536,41 @@ function RoutePageContent() {
         setLocationAllowed(true);
         const dist = haversine(pos.coords.latitude, pos.coords.longitude, activeJob.lat, activeJob.lng);
         if (dist <= 50) {
-          router.push(
-            `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
-          );
+          const arrivalTime = new Date().toISOString();
+          const arrivalUpdate: Record<string, string> = {
+            status: "on_site",
+            arrived_at: arrivalTime,
+          };
+
+          if (!activeJob.started_at) {
+            arrivalUpdate.started_at = arrivalTime;
+          }
+
+          supabase
+            .from("jobs")
+            .update(arrivalUpdate)
+            .eq("id", activeJob.id)
+            .then(({ error }) => {
+              if (error) {
+                console.warn("Unable to mark job arrived", error);
+                return;
+              }
+
+              updateJobProgress(
+                activeJob.id,
+                {
+                  status: "on_site",
+                  arrived_at: arrivalTime,
+                  started_at: activeJob.started_at ?? arrivalTime,
+                },
+                true
+              );
+            })
+            .finally(() => {
+              router.push(
+                `/staff/proof?jobs=${encodeURIComponent(JSON.stringify(jobs))}&idx=${activeIdx}&total=${jobs.length}`
+              );
+            });
         } else {
           setPopupNotice({
             title: "You are too far from the job location.",
