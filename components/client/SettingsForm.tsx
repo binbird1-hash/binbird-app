@@ -56,8 +56,12 @@ export function SettingsForm() {
   useEffect(() => {
     if (notificationPreferences) {
       setPreferencesState({
-        emailRouteUpdates: notificationPreferences.emailRouteUpdates,
-        pushRouteUpdates: notificationPreferences.pushRouteUpdates,
+        emailEnRoute: notificationPreferences.emailEnRoute,
+        pushEnRoute: notificationPreferences.pushEnRoute,
+        emailOnSite: notificationPreferences.emailOnSite,
+        pushOnSite: notificationPreferences.pushOnSite,
+        emailJobComplete: notificationPreferences.emailJobComplete,
+        pushJobComplete: notificationPreferences.pushJobComplete,
       })
     }
   }, [notificationPreferences])
@@ -117,11 +121,17 @@ export function SettingsForm() {
     if (preferencesState && selectedAccount) {
       const existing =
         (user.user_metadata?.notification_preferences as Record<string, Partial<MutablePreferences>> | undefined) ?? {}
+      const existingAccountPrefs = existing[selectedAccount.id] ?? {}
       metadataUpdate.notification_preferences = {
         ...existing,
         [selectedAccount.id]: {
-          emailRouteUpdates: preferencesState.emailRouteUpdates,
-          pushRouteUpdates: preferencesState.pushRouteUpdates,
+          ...existingAccountPrefs,
+          emailEnRoute: preferencesState.emailEnRoute,
+          pushEnRoute: preferencesState.pushEnRoute,
+          emailOnSite: preferencesState.emailOnSite,
+          pushOnSite: preferencesState.pushOnSite,
+          emailJobComplete: preferencesState.emailJobComplete,
+          pushJobComplete: preferencesState.pushJobComplete,
         },
       }
     }

@@ -87,8 +87,12 @@ export type Job = {
 export type NotificationPreferences = {
   accountId: string
   userId: string
-  emailRouteUpdates: boolean
-  pushRouteUpdates: boolean
+  emailEnRoute: boolean
+  pushEnRoute: boolean
+  emailOnSite: boolean
+  pushOnSite: boolean
+  emailJobComplete: boolean
+  pushJobComplete: boolean
   emailBilling: boolean
   pushBilling: boolean
   emailPropertyAlerts: boolean
@@ -132,6 +136,12 @@ type ClientListRow = {
 
 type NotificationMetadata = {
   [accountId: string]: {
+    emailEnRoute?: boolean
+    pushEnRoute?: boolean
+    emailOnSite?: boolean
+    pushOnSite?: boolean
+    emailJobComplete?: boolean
+    pushJobComplete?: boolean
     emailRouteUpdates?: boolean
     pushRouteUpdates?: boolean
     emailBilling?: boolean
@@ -168,8 +178,12 @@ const ClientPortalContext = createContext<ClientPortalContextValue | undefined>(
 const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
   accountId: 'primary',
   userId: 'unknown',
-  emailRouteUpdates: true,
-  pushRouteUpdates: true,
+  emailEnRoute: true,
+  pushEnRoute: true,
+  emailOnSite: true,
+  pushOnSite: true,
+  emailJobComplete: true,
+  pushJobComplete: true,
   emailBilling: false,
   pushBilling: false,
   emailPropertyAlerts: false,
@@ -400,11 +414,18 @@ const mergeNotificationPrefs = (
   metadata: NotificationMetadata | undefined,
 ): NotificationPreferences => {
   const stored = metadata?.[accountId] ?? {}
+  const legacyEmailRouteUpdates = stored.emailRouteUpdates
+  const legacyPushRouteUpdates = stored.pushRouteUpdates
+
   return {
     accountId,
     userId,
-    emailRouteUpdates: stored.emailRouteUpdates ?? DEFAULT_NOTIFICATION_PREFS.emailRouteUpdates,
-    pushRouteUpdates: stored.pushRouteUpdates ?? DEFAULT_NOTIFICATION_PREFS.pushRouteUpdates,
+    emailEnRoute: stored.emailEnRoute ?? legacyEmailRouteUpdates ?? DEFAULT_NOTIFICATION_PREFS.emailEnRoute,
+    pushEnRoute: stored.pushEnRoute ?? legacyPushRouteUpdates ?? DEFAULT_NOTIFICATION_PREFS.pushEnRoute,
+    emailOnSite: stored.emailOnSite ?? legacyEmailRouteUpdates ?? DEFAULT_NOTIFICATION_PREFS.emailOnSite,
+    pushOnSite: stored.pushOnSite ?? legacyPushRouteUpdates ?? DEFAULT_NOTIFICATION_PREFS.pushOnSite,
+    emailJobComplete: stored.emailJobComplete ?? DEFAULT_NOTIFICATION_PREFS.emailJobComplete,
+    pushJobComplete: stored.pushJobComplete ?? DEFAULT_NOTIFICATION_PREFS.pushJobComplete,
     emailBilling: stored.emailBilling ?? DEFAULT_NOTIFICATION_PREFS.emailBilling,
     pushBilling: stored.pushBilling ?? DEFAULT_NOTIFICATION_PREFS.pushBilling,
     emailPropertyAlerts: stored.emailPropertyAlerts ?? DEFAULT_NOTIFICATION_PREFS.emailPropertyAlerts,
