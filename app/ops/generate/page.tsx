@@ -124,7 +124,7 @@ const buildBinsSummary = (row: ClientListRow): string | null => {
 
 async function generateJobs() {
   'use server'
-  const sb = supabaseServer()
+  const sb = await supabaseServer()
   const override = process.env.NEXT_PUBLIC_DEV_DAY_OVERRIDE ?? null
   const overrideIndex = parseDayIndex(override)
 
