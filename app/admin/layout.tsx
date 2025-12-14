@@ -3,11 +3,10 @@ import { redirect } from "next/navigation";
 import AdminSidebar, { type AdminNavItem } from "@/components/admin/AdminSidebar";
 import AdminMobileNav from "@/components/admin/AdminMobileNav";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
-import { normalizePortalRole } from "@/lib/portalRoles";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function resolveAdminContext() {
-  const supabase = await supabaseServer();
+  const supabase = supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -16,17 +15,17 @@ async function resolveAdminContext() {
     redirect("/auth/login");
   }
 
-  const { data: profile } = await supabase
-    .from("user_profile")
-    .select("role, full_name")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: role, error: roleError } = await supabase.rpc("get_my_role");
 
-  const profileRole = normalizePortalRole(profile?.role);
-
-  if (profileRole !== "admin") {
+  if (roleError || role !== "admin") {
     redirect("/");
   }
+
+  const { data: profile } = await supabase
+    .from("user_profile")
+    .select("full_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   const displayName = profile?.full_name?.trim().length
     ? profile.full_name
