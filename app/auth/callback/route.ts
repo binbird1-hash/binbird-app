@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
 
-import { normalizePortalRole } from '@/lib/portalRoles'
+import { normalizePortalRole, resolvePortalRoleFromUser } from '@/lib/portalRoles'
 import { isEmailConfirmed } from '@/lib/auth/isEmailConfirmed'
 
 export async function GET(req: Request) {
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     if (!error) {
       const sessionUser = data.session?.user ?? data.user ?? null
-      const metadataRole = normalizePortalRole(sessionUser?.user_metadata?.role)
+      const metadataRole = resolvePortalRoleFromUser(sessionUser)
       const userId = sessionUser?.id ?? null
 
       if (metadataRole && userId && isEmailConfirmed(sessionUser ?? null)) {
