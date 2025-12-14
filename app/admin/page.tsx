@@ -2,7 +2,7 @@ import Link from "next/link";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function loadDashboardData() {
-  const supabase = await supabaseServer();
+  const supabase = supabaseServer();
 
   const [
     clientsResult,

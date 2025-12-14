@@ -15,7 +15,7 @@ export default async function ClientPortal({
 }: {
   params: { token: string }
 }) {
-  const sb = await supabaseServer()
+  const sb = supabaseServer()
 
   let accountToken = token
   try {
