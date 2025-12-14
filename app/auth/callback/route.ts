@@ -14,7 +14,10 @@ export async function GET(req: Request) {
 
   if (code) {
     try {
-      const supabase = createRouteHandlerClient({ cookies })
+      const cookieStore = cookies()
+      const supabase = createRouteHandlerClient({
+        cookies: () => cookieStore,
+      })
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (!error) {
@@ -53,7 +56,10 @@ export async function POST(req: Request) {
   const { event, session } = payload
 
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({
+      cookies: () => cookieStore,
+    })
 
     if (event === 'SIGNED_OUT') {
       const { error } = await supabase.auth.signOut()
