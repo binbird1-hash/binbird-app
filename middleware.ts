@@ -4,7 +4,6 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 import { resolvePortalScope } from '@/lib/clientPortalAccess'
-import { normalizePortalRole, resolvePortalRoleFromUser } from '@/lib/portalRoles'
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -59,79 +58,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // =====================================================
-  // 🧩 ROLE DETECTION SECTION
-  // =====================================================
-  let role: ReturnType<typeof normalizePortalRole> = resolvePortalRoleFromUser(
-    session?.user ?? null,
-  )
-
-  if (session) {
-    // 🧠 Try to get role from RPC if not in metadata
-    if (!role) {
-      const { data, error } = await supabase.rpc('get_my_role')
-      console.log('🧩 RPC get_my_role result:', { data, error })
-
-      if (error) {
-        console.error('Error fetching role from RPC:', error.message)
-      } else if (data) {
-        role = normalizePortalRole(data)
-      }
-    }
-
-    // 🧱 Fallback: direct query from user_profile
-    if (!role) {
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profile')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-
-      if (profileError) console.error('Profile fallback error:', profileError.message)
-      role = normalizePortalRole(profile?.role)
-    }
-
-    console.log('🧠 Final resolved role:', role)
-
-    // ✅ Fix: redirect admin correctly after login
-    if (role === 'admin' && normalizedPathname === '/auth/login') {
-      return NextResponse.redirect(new URL('/admin', req.url))
-    }
-
-    // 🏃 Active run cookie logic
-    if (hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
-      if (role === 'staff' || role === 'admin') {
-        return NextResponse.redirect(new URL('/staff/route', req.url))
-      }
-
-      const redirect = NextResponse.redirect(new URL('/client/dashboard', req.url))
-      redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
-      return redirect
-    }
-
-    // 🚪 Redirect signed-in users away from login/signup
-    if (!hasActiveRunCookie && signedInRestrictedPaths.has(normalizedPathname)) {
-      const destination =
-        role === 'admin'
-          ? '/admin'
-          : role === 'staff'
-            ? '/staff/run'
-            : '/client/dashboard'
-      return NextResponse.redirect(new URL(destination, req.url))
-    }
-
-    // 🧱 Role-based route access
-    if (role) {
-      if (pathname.startsWith('/staff') && role !== 'staff' && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-      if (pathname.startsWith('/ops') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-      if (pathname.startsWith('/admin') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-    }
+  if (session && hasActiveRunCookie && activeRunBlockedPaths.has(normalizedPathname)) {
+    const redirect = NextResponse.redirect(new URL('/client/dashboard', req.url))
+    redirect.cookies.delete(ACTIVE_RUN_COOKIE_NAME)
+    return redirect
   }
 
   if (!session && hasActiveRunCookie) {
