@@ -13,19 +13,23 @@ export async function GET(req: Request) {
   const next = url.searchParams.get('next') ?? '/staff/today'
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    try {
+      const supabase = createRouteHandlerClient({ cookies })
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
-      const sessionUser = data.session?.user ?? data.user ?? null
-      const metadataRole = resolvePortalRoleFromUser(sessionUser)
-      const userId = sessionUser?.id ?? null
+      if (!error) {
+        const sessionUser = data.session?.user ?? data.user ?? null
+        const metadataRole = resolvePortalRoleFromUser(sessionUser)
+        const userId = sessionUser?.id ?? null
 
-      if (metadataRole && userId && isEmailConfirmed(sessionUser ?? null)) {
-        await supabase
-          .from('user_profile')
-          .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })
+        if (metadataRole && userId && isEmailConfirmed(sessionUser ?? null)) {
+          await supabase
+            .from('user_profile')
+            .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })
+        }
       }
+    } catch (error) {
+      console.error('Auth callback GET failed:', error)
     }
   }
 
@@ -47,12 +51,31 @@ export async function POST(req: Request) {
   }
 
   const { event, session } = payload
-  const supabase = createRouteHandlerClient({ cookies })
 
-  if (event === 'SIGNED_OUT') {
-    await supabase.auth.signOut()
-  } else if (session) {
-    await supabase.auth.setSession(session)
+  try {
+    const supabase = createRouteHandlerClient({ cookies })
+
+    if (event === 'SIGNED_OUT') {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        throw error
+      }
+    } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      if (!session) {
+        return NextResponse.json(
+          { received: false, error: 'Missing session for auth callback event' },
+          { status: 400 }
+        )
+      }
+
+      const { error } = await supabase.auth.setSession(session)
+      if (error) {
+        throw error
+      }
+    }
+  } catch (error) {
+    console.error('Auth callback POST failed:', error)
+    return NextResponse.json({ received: false, error: 'Auth callback failed' }, { status: 500 })
   }
 
   const response = NextResponse.json({ received: true })
