@@ -14,9 +14,8 @@ export async function GET(req: Request) {
 
   if (code) {
     try {
-      const cookieStore = cookies()
       const supabase = createRouteHandlerClient({
-        cookies: () => cookieStore,
+        cookies,
       })
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
@@ -56,9 +55,8 @@ export async function POST(req: Request) {
   const { event, session } = payload
 
   try {
-    const cookieStore = cookies()
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies,
     })
 
     if (event === 'SIGNED_OUT') {
