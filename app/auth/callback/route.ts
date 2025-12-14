@@ -1,10 +1,11 @@
 // app/auth/callback/route.ts
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
 
 import { normalizePortalRole, resolvePortalRoleFromUser } from '@/lib/portalRoles'
 import { isEmailConfirmed } from '@/lib/auth/isEmailConfirmed'
-import { supabaseServer } from '@/lib/supabaseServer'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
 
   if (code) {
     try {
-      const supabase = await supabaseServer()
+      const supabase = createRouteHandlerClient({ cookies })
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (!error) {
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
   const { event, session } = payload
 
   try {
-    const supabase = await supabaseServer()
+    const supabase = createRouteHandlerClient({ cookies })
 
     if (event === 'SIGNED_OUT') {
       const { error } = await supabase.auth.signOut()
