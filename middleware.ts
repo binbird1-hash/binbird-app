@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { ACTIVE_RUN_COOKIE_NAME } from '@/lib/active-run-cookie'
 import { resolvePortalScope } from '@/lib/clientPortalAccess'
-import { normalizePortalRole } from '@/lib/portalRoles'
+import { normalizePortalRole, resolvePortalRoleFromUser } from '@/lib/portalRoles'
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -62,8 +62,8 @@ export async function middleware(req: NextRequest) {
   // =====================================================
   // 🧩 ROLE DETECTION SECTION
   // =====================================================
-  let role: ReturnType<typeof normalizePortalRole> = normalizePortalRole(
-    session?.user?.user_metadata?.role,
+  let role: ReturnType<typeof normalizePortalRole> = resolvePortalRoleFromUser(
+    session?.user ?? null,
   )
 
   if (session) {
