@@ -1,10 +1,19 @@
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
-export function supabaseServer() {
-  // Provide the request-scoped cookie reader expected by App Router helpers so
-  // server components can resolve auth state without attempting to write.
+export async function supabaseServer() {
+  const cookieStore = await cookies();
+
+  // Provide a defensive cookie adapter so the auth helper always receives a
+  // `get` function, even though Next.js now exposes cookies asynchronously.
   return createServerComponentClient({
-    cookies,
+    cookies: () =>
+      ({
+        get: (name: string) => {
+          const cookie = cookieStore?.get?.(name);
+          if (!cookie) return void 0;
+          return typeof cookie === "string" ? { name, value: cookie } : cookie;
+        },
+      } as unknown as ReturnType<typeof cookies>),
   });
 }
