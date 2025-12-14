@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { isEmailConfirmed } from "@/lib/auth/isEmailConfirmed";
-import { normalizePortalRole, type PortalRole } from "@/lib/portalRoles";
+import {
+  normalizePortalRole,
+  resolvePortalRoleFromUser,
+  type PortalRole,
+} from "@/lib/portalRoles";
 
 const STAY_SIGNED_IN_KEY = "binbird-stay-logged-in";
 
@@ -70,9 +74,7 @@ export default function SignInClient() {
       }
 
       const userId = signInData.user?.id ?? null;
-      const metadataRole = normalizePortalRole(
-        signInData.user?.user_metadata?.role,
-      );
+      const metadataRole = resolvePortalRoleFromUser(signInData.user);
 
       if (!userId) {
         setError("We couldn't verify your account. Please try again.");
@@ -145,6 +147,7 @@ export default function SignInClient() {
           ? unknownError.message
           : "Something went wrong. Please try again.";
       setError(message);
+    } finally {
       setLoading(false);
     }
   }

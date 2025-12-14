@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
 
-import { normalizePortalRole } from '@/lib/portalRoles'
+import { normalizePortalRole, resolvePortalRoleFromUser } from '@/lib/portalRoles'
 import { isEmailConfirmed } from '@/lib/auth/isEmailConfirmed'
 
 export async function GET(req: Request) {
@@ -13,19 +13,23 @@ export async function GET(req: Request) {
   const next = url.searchParams.get('next') ?? '/staff/today'
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    try {
+      const supabase = createRouteHandlerClient({ cookies })
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
-      const sessionUser = data.session?.user ?? data.user ?? null
-      const metadataRole = normalizePortalRole(sessionUser?.user_metadata?.role)
-      const userId = sessionUser?.id ?? null
+      if (!error) {
+        const sessionUser = data.session?.user ?? data.user ?? null
+        const metadataRole = resolvePortalRoleFromUser(sessionUser)
+        const userId = sessionUser?.id ?? null
 
-      if (metadataRole && userId && isEmailConfirmed(sessionUser ?? null)) {
-        await supabase
-          .from('user_profile')
-          .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })
+        if (metadataRole && userId && isEmailConfirmed(sessionUser ?? null)) {
+          await supabase
+            .from('user_profile')
+            .upsert({ user_id: userId, role: metadataRole }, { onConflict: 'user_id' })
+        }
       }
+    } catch (error) {
+      console.error('Auth callback GET failed:', error)
     }
   }
 
@@ -50,9 +54,24 @@ export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies })
 
   if (event === 'SIGNED_OUT') {
-    await supabase.auth.signOut()
-  } else if (session) {
-    await supabase.auth.setSession(session)
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Auth callback SIGNED_OUT failed', error)
+      return NextResponse.json({ received: false, error: error.message ?? 'Sign out failed' }, { status: 400 })
+    }
+  } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+    if (!session) {
+      return NextResponse.json(
+        { received: false, error: 'Missing session for auth callback event' },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await supabase.auth.setSession(session)
+    if (error) {
+      console.error('Auth callback session set failed', error)
+      return NextResponse.json({ received: false, error: error.message ?? 'Session update failed' }, { status: 400 })
+    }
   }
 
   const response = NextResponse.json({ received: true })
