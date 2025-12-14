@@ -46,3 +46,8 @@ If an account with the `admin` role stays stuck on the login screen, walk throug
    $$;
    ```
    After saving the function, sign out and back in. The middleware relies on this RPC to resolve your admin session before redirecting you to `/admin`.
+4. **Use the in-app debug page** – Sign in, then visit `/auth/debug` in the deployed app. It shows:
+   - Which cookies are present (to verify Vercel domain + Supabase keys are working).
+   - The role values from user metadata, the `get_my_role` RPC, and the `user_profile` table.
+   - The normalized role the middleware will enforce. If this is empty, the cookie or role lookup is failing.
+   Share or screenshot this page (redacting anything sensitive) to pinpoint whether the issue is Supabase data, middleware resolution, or missing environment variables.
