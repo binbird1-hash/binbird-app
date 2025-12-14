@@ -1,8 +1,9 @@
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import type { Database } from "./database.types";
 
 export function supabaseServer() {
-  // Pass a fresh cookie snapshot per request; this ensures Supabase reads auth
-  // cookies without attempting to mutate the server component response.
-  return createServerComponentClient({ cookies: () => cookies() });
+  // Provide the request-scoped cookie reader expected by App Router helpers so
+  // server components can resolve auth state without attempting to write.
+  return createServerComponentClient<Database>({ cookies });
 }
