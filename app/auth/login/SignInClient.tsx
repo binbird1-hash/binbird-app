@@ -147,6 +147,7 @@ export default function SignInClient() {
           ? unknownError.message
           : "Something went wrong. Please try again.";
       setError(message);
+    } finally {
       setLoading(false);
     }
   }

@@ -16,11 +16,23 @@ export function normalizePortalRole(role: unknown): PortalRole {
   return null;
 }
 
+function extractPortalRole(metadata: Record<string, unknown> | undefined): PortalRole {
+  if (!metadata) return null;
+
+  const possibleRoleKeys = ["role", "portal_role", "portalRole"] as const;
+
+  for (const key of possibleRoleKeys) {
+    const normalized = normalizePortalRole(metadata[key]);
+    if (normalized) return normalized;
+  }
+
+  return null;
+}
+
 export function resolvePortalRoleFromUser(user: Pick<User, "app_metadata" | "user_metadata"> | null): PortalRole {
   if (!user) return null;
 
-  const userMetadataRole = normalizePortalRole(user.user_metadata?.role);
-  if (userMetadataRole) return userMetadataRole;
+  const metadataRole = extractPortalRole(user.user_metadata) || extractPortalRole(user.app_metadata);
 
-  return normalizePortalRole(user.app_metadata?.role);
+  return metadataRole;
 }
