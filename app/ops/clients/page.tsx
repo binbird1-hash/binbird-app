@@ -59,7 +59,7 @@ const deriveName = (row: ClientListRow): string =>
 const deriveAddress = (row: ClientListRow): string => row.address?.trim() || '—'
 
 async function fetchClientRows(): Promise<TableRow[]> {
-  const sb = await supabaseServer()
+  const sb = supabaseServer()
   const { data, error } = await sb
     .from('client_list')
     .select(
