@@ -51,7 +51,7 @@ export default function LogsViewer({ logs, signedUrls }: LogsViewerProps) {
   };
 
   const taskLabel = (taskType: string | null) => {
-    if (taskType === "bring_in") return "Ring in";
+    if (taskType === "bring_in") return "Bring in";
     if (taskType === "put_out") return "Put out";
     return "Task";
   };
@@ -101,7 +101,7 @@ export default function LogsViewer({ logs, signedUrls }: LogsViewerProps) {
                     : "border border-gray-300 bg-white text-gray-800 hover:border-gray-400"
                 }`}
               >
-                {type === "put_out" ? "Put out" : "Ring in"}
+                {type === "put_out" ? "Put out" : "Bring in"}
               </button>
             );
           })}
