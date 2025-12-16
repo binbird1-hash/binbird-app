@@ -110,7 +110,10 @@ async function loadDashboardData() {
 }
 
 const cardClass =
-  "rounded-2xl border border-gray-200 bg-gray-100 p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md";
+  "flex flex-col gap-1 rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md";
+const sectionClass =
+  "flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm";
+const listCardClass = "min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm";
 
 export default async function AdminDashboardPage() {
   const { stats, recentClients, recentLogs, unassignedJobs, dueToday, completedToday, propertyRequests } =
@@ -131,17 +134,17 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <Link key={card.label} href={card.href} className={cardClass}>
             <p className="text-xs uppercase tracking-wide text-gray-600">{card.label}</p>
-            <p className="mt-2 text-3xl font-semibold text-gray-900">{card.value}</p>
+            <p className="text-3xl font-semibold text-gray-900">{card.value}</p>
           </Link>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
+      <div className="grid gap-6 xl:grid-cols-12">
+        <section className={`${sectionClass} xl:col-span-6`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Jobs due today</h2>
@@ -159,13 +162,15 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="space-y-3">
               {dueToday.map((job) => (
-                <li key={job.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
+                <li key={job.id} className={listCardClass}>
+                  <p className="truncate text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">
-                      {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                    </span>
-                    {job.assigned_name ? <span>Assigned to {job.assigned_name}</span> : <span>Unassigned</span>}
+                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{job.job_type === "bring_in" ? "Bring in" : "Put out"}</span>
+                    {job.assigned_name ? (
+                      <span className="truncate">Assigned to {job.assigned_name}</span>
+                    ) : (
+                      <span className="truncate">Unassigned</span>
+                    )}
                   </div>
                 </li>
               ))}
@@ -173,7 +178,7 @@ export default async function AdminDashboardPage() {
           )}
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
+        <section className={`${sectionClass} xl:col-span-6`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Completed today</h2>
@@ -191,13 +196,15 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="space-y-3">
               {completedToday.map((job) => (
-                <li key={job.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
+                <li key={job.id} className={listCardClass}>
+                  <p className="truncate text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">
-                      {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                    </span>
-                    {job.assigned_name ? <span>Assigned to {job.assigned_name}</span> : <span>Unassigned</span>}
+                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{job.job_type === "bring_in" ? "Bring in" : "Put out"}</span>
+                    {job.assigned_name ? (
+                      <span className="truncate">Assigned to {job.assigned_name}</span>
+                    ) : (
+                      <span className="truncate">Unassigned</span>
+                    )}
                     <span className="text-gray-500">Logged today</span>
                   </div>
                 </li>
@@ -207,8 +214,8 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
+      <div className="grid gap-6 xl:grid-cols-12">
+        <section className={`${sectionClass} xl:col-span-6`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Latest client updates</h2>
@@ -226,11 +233,13 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="space-y-3">
               {recentClients.map((client) => (
-                <li key={client.property_id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">{client.client_name ?? client.company ?? "Client account"}</p>
+                <li key={client.property_id} className={listCardClass}>
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {client.client_name ?? client.company ?? "Client account"}
+                  </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    {client.address && <span>{client.address}</span>}
-                    {client.assigned_name && <span>Assigned to {client.assigned_name}</span>}
+                    {client.address && <span className="truncate">{client.address}</span>}
+                    {client.assigned_name && <span className="truncate">Assigned to {client.assigned_name}</span>}
                   </div>
                 </li>
               ))}
@@ -238,7 +247,7 @@ export default async function AdminDashboardPage() {
           )}
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
+        <section className={`${sectionClass} xl:col-span-6`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Unassigned jobs</h2>
@@ -256,13 +265,11 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="space-y-3">
               {unassignedJobs.map((job) => (
-                <li key={job.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
+                <li key={job.id} className={listCardClass}>
+                  <p className="truncate text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">
-                      {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                    </span>
-                    <span>{job.day_of_week ?? "—"}</span>
+                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{job.job_type === "bring_in" ? "Bring in" : "Put out"}</span>
+                    <span className="truncate">{job.day_of_week ?? "—"}</span>
                   </div>
                 </li>
               ))}
@@ -271,85 +278,91 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Property requests</h2>
-            <p className="text-xs text-gray-600">Review new properties submitted from client accounts.</p>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <section className={`${sectionClass} xl:col-span-7`}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Property requests</h2>
+              <p className="text-xs text-gray-600">Review new properties submitted from client accounts.</p>
+            </div>
+            <Link
+              href="/admin/clients"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+            >
+              Manage clients
+            </Link>
           </div>
-          <Link
-            href="/admin/clients"
-            className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-          >
-            Manage clients
-          </Link>
-        </div>
-        {propertyRequests.length === 0 ? (
-          <p className="text-sm text-gray-700">No property requests yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {propertyRequests.map((request) => {
-              const addressParts = [
-                request.address_line1,
-                request.address_line2,
-                request.suburb,
-                request.city,
-                request.state,
-                request.postal_code,
-              ].filter(Boolean);
+          {propertyRequests.length === 0 ? (
+            <p className="text-sm text-gray-700">No property requests yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {propertyRequests.map((request) => {
+                const addressParts = [
+                  request.address_line1,
+                  request.address_line2,
+                  request.suburb,
+                  request.city,
+                  request.state,
+                  request.postal_code,
+                ].filter(Boolean);
 
-              return (
-                <li key={request.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {addressParts.length ? addressParts.join(", ") : "Requested property"}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    {request.account_name && <span>Account: {request.account_name}</span>}
-                    {request.requester_email && <span>Contact: {request.requester_email}</span>}
-                    {request.start_date && <span>Start: {new Date(request.start_date).toLocaleDateString()}</span>}
-                    {request.status && (
-                      <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{request.status}</span>
+                return (
+                  <li key={request.id} className={listCardClass}>
+                    <p className="truncate text-sm font-semibold text-gray-900">
+                      {addressParts.length ? addressParts.join(", ") : "Requested property"}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                      {request.account_name && <span className="truncate">Account: {request.account_name}</span>}
+                      {request.requester_email && <span className="truncate">Contact: {request.requester_email}</span>}
+                      {request.start_date && <span className="truncate">Start: {new Date(request.start_date).toLocaleDateString()}</span>}
+                      {request.status && (
+                        <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{request.status}</span>
+                      )}
+                    </div>
+                    {request.instructions && (
+                      <p className="mt-2 overflow-hidden text-ellipsis text-xs text-gray-600 whitespace-nowrap">
+                        Instructions: {request.instructions}
+                      </p>
                     )}
-                  </div>
-                  {request.instructions && (
-                    <p className="mt-2 text-xs text-gray-600">Instructions: {request.instructions}</p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Recent logs</h2>
-            <p className="text-xs text-gray-600">Latest proof uploads and visit notes captured by the team.</p>
+        <section className={`${sectionClass} xl:col-span-5`}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Recent logs</h2>
+              <p className="text-xs text-gray-600">Latest proof uploads and visit notes captured by the team.</p>
+            </div>
+            <Link
+              href="/admin/logs"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+            >
+              View logs
+            </Link>
           </div>
-          <Link
-            href="/admin/logs"
-            className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-          >
-            View logs
-          </Link>
-        </div>
-        {recentLogs.length === 0 ? (
-          <p className="text-sm text-gray-700">No logs recorded yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {recentLogs.map((log) => (
-              <li key={log.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                <p className="text-sm font-semibold text-gray-900">{log.address ?? log.client_name ?? "Log entry"}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                  {log.task_type && <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{log.task_type}</span>}
-                  {log.done_on && <span>Completed {new Date(log.done_on).toLocaleString()}</span>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {recentLogs.length === 0 ? (
+            <p className="text-sm text-gray-700">No logs recorded yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {recentLogs.map((log) => (
+                <li key={log.id} className={listCardClass}>
+                  <p className="truncate text-sm font-semibold text-gray-900">{log.address ?? log.client_name ?? "Log entry"}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                    {log.task_type && (
+                      <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{log.task_type}</span>
+                    )}
+                    {log.done_on && <span className="truncate">Completed {new Date(log.done_on).toLocaleString()}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
