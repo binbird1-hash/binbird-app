@@ -16,6 +16,7 @@ export default function LogsViewer() {
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [addressQuery, setAddressQuery] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -76,19 +77,39 @@ export default function LogsViewer() {
     return <p className="text-sm text-gray-700">Loading logs…</p>;
   }
 
+  const filteredLogs = logs.filter((log) => {
+    const query = addressQuery.trim().toLowerCase();
+    if (!query.length) return true;
+    return (log.address ?? "").toLowerCase().includes(query);
+  });
+
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-900">Logs & Proofs</h2>
-        <p className="text-sm text-gray-700">
-          Review completed work, timestamps, and access proof photos shared with clients.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Logs & Proofs</h2>
+          <p className="text-sm text-gray-700">
+            Review completed work, timestamps, and access proof photos shared with clients.
+          </p>
+        </div>
+        <label className="flex w-full flex-col text-sm text-gray-900 sm:w-72">
+          <span className="font-medium text-gray-800">Filter by property address</span>
+          <input
+            type="search"
+            value={addressQuery}
+            onChange={(event) => setAddressQuery(event.target.value)}
+            placeholder="Search address"
+            className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          />
+        </label>
       </div>
       {logs.length === 0 ? (
         <p className="text-sm text-gray-700">No logs yet.</p>
+      ) : filteredLogs.length === 0 ? (
+        <p className="text-sm text-gray-700">No logs match that address.</p>
       ) : (
         <ul className="space-y-2">
-          {logs.map((log) => (
+          {filteredLogs.map((log) => (
             <li key={log.id} className="rounded-xl border border-gray-200 bg-gray-100 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
