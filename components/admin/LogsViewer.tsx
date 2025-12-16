@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 type LogRow = {
@@ -16,7 +16,7 @@ export default function LogsViewer() {
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
-  const [addressQuery, setAddressQuery] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -77,10 +77,16 @@ export default function LogsViewer() {
     return <p className="text-sm text-gray-700">Loading logs…</p>;
   }
 
+  const addressOptions = useMemo(() => {
+    const addresses = logs
+      .map((log) => log.address?.trim())
+      .filter((value): value is string => Boolean(value && value.length));
+    return Array.from(new Set(addresses)).sort((a, b) => a.localeCompare(b));
+  }, [logs]);
+
   const filteredLogs = logs.filter((log) => {
-    const query = addressQuery.trim().toLowerCase();
-    if (!query.length) return true;
-    return (log.address ?? "").toLowerCase().includes(query);
+    if (!selectedAddress.length) return true;
+    return (log.address ?? "") === selectedAddress;
   });
 
   return (
@@ -94,13 +100,18 @@ export default function LogsViewer() {
         </div>
         <label className="flex w-full flex-col text-sm text-gray-900 sm:w-72">
           <span className="font-medium text-gray-800">Filter by property address</span>
-          <input
-            type="search"
-            value={addressQuery}
-            onChange={(event) => setAddressQuery(event.target.value)}
-            placeholder="Search address"
-            className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
+          <select
+            value={selectedAddress}
+            onChange={(event) => setSelectedAddress(event.target.value)}
+            className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          >
+            <option value="">All addresses</option>
+            {addressOptions.map((address) => (
+              <option key={address} value={address}>
+                {address}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
       {logs.length === 0 ? (
