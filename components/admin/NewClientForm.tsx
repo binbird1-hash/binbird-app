@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
   CLIENT_DATE_FIELD_KEYS,
@@ -11,6 +11,12 @@ import {
 } from "./ClientListManager";
 
 type ClientFormState = Record<string, string>;
+
+type StaffMember = {
+  id: string;
+  name: string;
+  role: string | null;
+};
 
 const createInitialState = () => {
   const state: ClientFormState = {};
@@ -36,6 +42,34 @@ export default function NewClientForm() {
   const [formState, setFormState] = useState<ClientFormState>(createInitialState());
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+
+  useEffect(() => {
+    const loadStaff = async () => {
+      const { data, error } = await supabase
+        .from("user_profile")
+        .select("user_id, full_name, role")
+        .in("role", ["staff", "admin"]);
+
+      if (error) {
+        console.warn("Failed to load staff", error);
+        setStaff([]);
+        return;
+      }
+
+      setStaff(
+        (data ?? []).map((member) => ({
+          id: member.user_id,
+          name: member.full_name?.trim().length ? member.full_name : "Team member",
+          role: member.role ?? null,
+        })),
+      );
+    };
+
+    void loadStaff();
+  }, [supabase]);
+
+  const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
 
   const handleChange = (key: string, value: string) => {
     setFormState((previous) => ({ ...previous, [key]: value }));
@@ -128,7 +162,7 @@ export default function NewClientForm() {
             const commonProps = {
               id: `new-client-${field.key as string}`,
               value,
-              onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+              onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
                 handleChange(field.key as string, event.target.value),
               className:
                 "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
@@ -137,15 +171,27 @@ export default function NewClientForm() {
             return (
               <label key={field.key as string} className="flex flex-col text-sm text-gray-900">
                 <span className="font-medium text-gray-800">{field.label}</span>
-                {field.type === "textarea" ? (
-                  <textarea rows={4} {...commonProps} />
-                ) : field.type === "number" ? (
-                  <input type="number" step="any" {...commonProps} />
-                ) : field.type === "date" ? (
-                  <input type="date" {...commonProps} />
-                ) : (
-                  <input type="text" {...commonProps} />
-                )}
+              {field.type === "textarea" ? (
+                <textarea rows={4} {...commonProps} />
+              ) : field.type === "number" ? (
+                <input type="number" step="any" {...commonProps} />
+              ) : field.type === "date" ? (
+                <input type="date" {...commonProps} />
+              ) : field.type === "assignee" ? (
+                <select {...commonProps}>
+                  <option value="">Unassigned</option>
+                  {staff.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                  {value && !staffById.has(value) ? (
+                    <option value={value}>Assignee not found</option>
+                  ) : null}
+                </select>
+              ) : (
+                <input type="text" {...commonProps} />
+              )}
               </label>
             );
           })}

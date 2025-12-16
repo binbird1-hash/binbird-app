@@ -31,12 +31,20 @@ export type ClientListRow = {
   membership_start: string | null;
 };
 
+type StaffMember = {
+  id: string;
+  name: string;
+  role: string | null;
+};
+
 type ClientFormState = Record<keyof ClientListRow, string>;
+
+type ClientFieldType = "text" | "textarea" | "number" | "date" | "assignee";
 
 type ClientFieldConfig = {
   key: keyof ClientListRow;
   label: string;
-  type?: "text" | "textarea" | "number" | "date";
+  type?: ClientFieldType;
 };
 
 export const CLIENT_FIELD_CONFIGS: ClientFieldConfig[] = [
@@ -49,7 +57,7 @@ export const CLIENT_FIELD_CONFIGS: ClientFieldConfig[] = [
   { key: "lat_lng", label: "Lat/Lng" },
   { key: "collection_day", label: "Collection Day" },
   { key: "put_bins_out", label: "Put Bins Out" },
-  { key: "assigned_to", label: "Assigned To" },
+  { key: "assigned_to", label: "Assigned To", type: "assignee" },
   { key: "notes", label: "Notes", type: "textarea" },
   { key: "photo_path", label: "Photo Path" },
   { key: "red_freq", label: "Red Bin Frequency" },
@@ -109,6 +117,7 @@ const parseNumberInput = (value: string) => {
 export default function ClientListManager() {
   const supabase = useSupabase();
   const [rows, setRows] = useState<ClientListRow[]>([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -119,19 +128,38 @@ export default function ClientListManager() {
 
   const loadRows = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("client_list")
-      .select(
-        "property_id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, red_bins, yellow_freq, yellow_flip, yellow_bins, green_freq, green_flip, green_bins, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start",
-      )
-      .order("client_name", { ascending: true });
+    const [clientsResult, staffResult] = await Promise.all([
+      supabase
+        .from("client_list")
+        .select(
+          "property_id, account_id, client_name, company, address, collection_day, put_bins_out, notes, red_freq, red_flip, red_bins, yellow_freq, yellow_flip, yellow_bins, green_freq, green_flip, green_bins, email, assigned_to, lat_lng, price_per_month, photo_path, trial_start, membership_start",
+        )
+        .order("client_name", { ascending: true }),
+      supabase
+        .from("user_profile")
+        .select("user_id, full_name, role")
+        .in("role", ["staff", "admin"]),
+    ]);
 
-    if (error) {
-      console.warn("Failed to load client list", error);
+    if (clientsResult.error) {
+      console.warn("Failed to load client list", clientsResult.error);
       setRows([]);
       setStatus({ type: "error", message: "Unable to load client records." });
     } else {
-      setRows((data ?? []) as ClientListRow[]);
+      setRows((clientsResult.data ?? []) as ClientListRow[]);
+    }
+
+    if (staffResult.error) {
+      console.warn("Failed to load staff", staffResult.error);
+      setStaff([]);
+    } else {
+      setStaff(
+        (staffResult.data ?? []).map((row) => ({
+          id: row.user_id,
+          name: row.full_name?.trim().length ? row.full_name : "Team member",
+          role: row.role ?? null,
+        })),
+      );
     }
 
     setLoading(false);
@@ -141,24 +169,30 @@ export default function ClientListManager() {
     loadRows();
   }, [loadRows]);
 
+  const staffById = useMemo(() => {
+    const entries = staff.map((member) => [member.id, member.name] as const);
+    return new Map(entries);
+  }, [staff]);
+
   const filteredRows = useMemo(() => {
     const query = normaliseSearch(search);
     if (!query.length) {
       return rows;
     }
     return rows.filter((row) => {
+      const assignedName = row.assigned_to ? staffById.get(row.assigned_to) ?? "" : "";
       const haystack = [
         row.client_name,
         row.company,
         row.address,
         row.email,
-        row.assigned_to,
+        assignedName,
       ]
         .map((value) => value?.toString().toLowerCase() ?? "")
         .join(" ");
       return haystack.includes(query);
     });
-  }, [rows, search]);
+  }, [rows, search, staffById]);
 
   const selectedRow = useMemo(
     () => rows.find((row) => row.property_id === selectedRowId) ?? null,
@@ -330,6 +364,7 @@ export default function ClientListManager() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredRows.map((row) => {
+                    const assignedName = row.assigned_to ? staffById.get(row.assigned_to) : null;
                     const isSelected = row.property_id === selectedRowId;
                     return (
                       <tr
@@ -341,7 +376,9 @@ export default function ClientListManager() {
                       >
                         <td className="px-4 py-3 align-top text-sm text-gray-900">
                           <div className="font-semibold text-gray-900">{row.client_name ?? row.company ?? "Property"}</div>
-                          {row.assigned_to && <div className="text-xs text-gray-600">Assigned to {row.assigned_to}</div>}
+                          <div className="text-xs text-gray-600">
+                            {assignedName ? `Assigned to ${assignedName}` : row.assigned_to ? "Assignee not found" : "Unassigned"}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{row.address ?? "—"}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{row.email ?? "—"}</td>
@@ -394,7 +431,7 @@ export default function ClientListManager() {
                   const commonProps = {
                     id: `client-${field.key}`,
                     value,
-                    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
                       handleInputChange(field.key, event.target.value),
                     className:
                       "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
@@ -409,6 +446,18 @@ export default function ClientListManager() {
                         <input type="number" step="any" {...commonProps} />
                       ) : field.type === "date" ? (
                         <input type="date" {...commonProps} />
+                      ) : field.type === "assignee" ? (
+                        <select {...commonProps}>
+                          <option value="">Unassigned</option>
+                          {staff.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.name}
+                            </option>
+                          ))}
+                          {value && !staffById.has(value) ? (
+                            <option value={value}>Assignee not found</option>
+                          ) : null}
+                        </select>
                       ) : (
                         <input type="text" {...commonProps} />
                       )}

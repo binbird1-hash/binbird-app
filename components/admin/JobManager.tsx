@@ -170,6 +170,8 @@ export default function JobManager() {
     loadData();
   }, [loadData]);
 
+  const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
+
   const filteredJobs = useMemo(() => {
     const trimmedSearch = search.trim().toLowerCase();
     return jobs.filter((job) => {
@@ -177,18 +179,19 @@ export default function JobManager() {
         return false;
       }
       if (!trimmedSearch.length) return true;
+      const assignedName = job.assigned_to ? staffById.get(job.assigned_to) ?? "" : "";
       const haystack = [
         job.address,
         job.client_name,
         job.account_id,
         job.property_id,
-        job.assigned_to,
+        assignedName,
       ]
         .map((value) => value?.toString().toLowerCase() ?? "")
         .join(" ");
       return haystack.includes(trimmedSearch);
     });
-  }, [jobs, dayFilter, search]);
+  }, [jobs, dayFilter, search, staffById]);
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.id === selectedJobId) ?? null,
@@ -404,7 +407,7 @@ export default function JobManager() {
                 <tbody className="divide-y divide-gray-200">
                   {filteredJobs.map((job) => {
                     const isSelected = job.id === selectedJobId && !isCreating;
-                    const assignee = staff.find((member) => member.id === job.assigned_to);
+                    const assigneeName = job.assigned_to ? staffById.get(job.assigned_to) : null;
                     return (
                       <tr
                         key={job.id}
@@ -422,7 +425,7 @@ export default function JobManager() {
                           {job.bins ? <span className="ml-2 text-xs text-gray-600">{job.bins}</span> : null}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
-                          {assignee ? assignee.name : job.assigned_to ? job.assigned_to : "Unassigned"}
+                          {assigneeName ?? (job.assigned_to ? "Assignee not found" : "Unassigned")}
                         </td>
                       </tr>
                     );
@@ -505,6 +508,9 @@ export default function JobManager() {
                               {member.name}
                             </option>
                           ))}
+                          {value && !staffById.has(value) ? (
+                            <option value={value}>Assignee not found</option>
+                          ) : null}
                         </select>
                       ) : field.type === "day" ? (
                         <select {...commonProps}>

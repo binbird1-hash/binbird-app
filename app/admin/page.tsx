@@ -9,6 +9,7 @@ async function loadDashboardData() {
     logsResult,
     jobsResult,
     unassignedJobsResult,
+    staffResult,
   ] = await Promise.all([
     supabase
       .from("client_list")
@@ -31,7 +32,18 @@ async function loadDashboardData() {
       .is("assigned_to", null)
       .order("day_of_week", { ascending: true })
       .limit(6),
+    supabase
+      .from("user_profile")
+      .select("user_id, full_name")
+      .in("role", ["staff", "admin"]),
   ]);
+
+  const staffLookup = new Map(
+    (staffResult.data ?? []).map((member) => [
+      member.user_id,
+      member.full_name?.trim().length ? member.full_name : "Team member",
+    ]),
+  );
 
   const stats = {
     clients: clientsResult.count ?? 0,
@@ -39,9 +51,14 @@ async function loadDashboardData() {
     logs: logsResult.count ?? 0,
   };
 
+  const recentClients = (clientsResult.data ?? []).map((client) => ({
+    ...client,
+    assigned_name: client.assigned_to ? staffLookup.get(client.assigned_to) ?? null : null,
+  }));
+
   return {
     stats,
-    recentClients: clientsResult.data ?? [],
+    recentClients,
     recentLogs: logsResult.data ?? [],
     unassignedJobs: unassignedJobsResult.data ?? [],
   };
@@ -100,7 +117,7 @@ export default async function AdminDashboardPage() {
                   <p className="text-sm font-semibold text-gray-900">{client.client_name ?? client.company ?? "Client account"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
                     {client.address && <span>{client.address}</span>}
-                    {client.assigned_to && <span>Assigned to {client.assigned_to}</span>}
+                    {client.assigned_name && <span>Assigned to {client.assigned_name}</span>}
                   </div>
                 </li>
               ))}
