@@ -10,8 +10,8 @@ async function loadLogs() {
     const supabase = await supabaseServer();
     const { data } = await supabase
       .from("logs")
-      .select("id, task_type, address, done_on, photo_path")
-      .order("done_on", { ascending: false });
+      .select("id, task_type, address, done_on, created_at, photo_path")
+      .order("created_at", { ascending: false });
 
     const logs = (data ?? []) as LogsViewerLog[];
 
