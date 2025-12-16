@@ -26,7 +26,6 @@ type StaffMember = {
 };
 
 type JobFormState = {
-  id: string;
   account_id: string;
   property_id: string;
   address: string;
@@ -51,7 +50,6 @@ type JobFieldConfig = {
 };
 
 const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
-  { key: "id", label: "Job ID", type: "text" },
   { key: "account_id", label: "Account ID" },
   { key: "property_id", label: "Property ID" },
   { key: "address", label: "Address" },
@@ -68,7 +66,6 @@ const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
 ];
 
 const createEmptyJobState = (): JobFormState => ({
-  id: "",
   account_id: "",
   property_id: "",
   address: "",
@@ -90,6 +87,10 @@ const parseCoordinate = (value: string) => {
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 };
+
+const editableJobFields = JOB_FIELD_CONFIGS.filter(
+  (field) => field.key !== "account_id" && field.key !== "property_id",
+);
 
 const buildJobPayload = (state: JobFormState) => {
   const jobType = state.job_type === "bring_in" ? "bring_in" : "put_out";
@@ -169,6 +170,8 @@ export default function JobManager() {
     loadData();
   }, [loadData]);
 
+  const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
+
   const filteredJobs = useMemo(() => {
     const trimmedSearch = search.trim().toLowerCase();
     return jobs.filter((job) => {
@@ -176,18 +179,19 @@ export default function JobManager() {
         return false;
       }
       if (!trimmedSearch.length) return true;
+      const assignedName = job.assigned_to ? staffById.get(job.assigned_to) ?? "" : "";
       const haystack = [
         job.address,
         job.client_name,
         job.account_id,
         job.property_id,
-        job.assigned_to,
+        assignedName,
       ]
         .map((value) => value?.toString().toLowerCase() ?? "")
         .join(" ");
       return haystack.includes(trimmedSearch);
     });
-  }, [jobs, dayFilter, search]);
+  }, [jobs, dayFilter, search, staffById]);
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.id === selectedJobId) ?? null,
@@ -198,7 +202,6 @@ export default function JobManager() {
     setIsCreating(false);
     setSelectedJobId(job.id);
     setFormState({
-      id: job.id,
       account_id: job.account_id ?? "",
       property_id: job.property_id ?? "",
       address: job.address ?? "",
@@ -241,17 +244,9 @@ export default function JobManager() {
       }
 
       if (isCreating) {
-        const jobId = formState.id.trim();
-        if (!jobId.length) {
-          setStatus({ type: "error", message: "Provide a unique job ID." });
-          setSaving(false);
-          return;
-        }
-
-        const insertPayload = { id: jobId, ...payload };
         const { data, error } = await supabase
           .from("jobs")
-          .insert(insertPayload)
+          .insert(payload)
           .select(
             "id, account_id, property_id, address, lat, lng, job_type, bins, notes, client_name, photo_path, last_completed_on, assigned_to, day_of_week",
           )
@@ -343,8 +338,8 @@ export default function JobManager() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold text-white">Jobs & Assignments</h2>
-              <p className="text-sm text-slate-300">
+              <h2 className="text-2xl font-semibold text-gray-900">Jobs & Assignments</h2>
+              <p className="text-sm text-gray-700">
                 Assign staff, edit job details, and keep the schedule aligned with current client needs.
               </p>
             </div>
@@ -352,7 +347,7 @@ export default function JobManager() {
               <button
                 type="button"
                 onClick={loadData}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
                 disabled={loading}
               >
                 Refresh
@@ -360,7 +355,7 @@ export default function JobManager() {
               <button
                 type="button"
                 onClick={startCreate}
-                className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-400"
+                className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-gray-700"
               >
                 New job
               </button>
@@ -368,12 +363,12 @@ export default function JobManager() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <label className="flex w-full flex-col text-sm text-slate-200 sm:w-auto">
-              <span className="font-medium">Filter by day</span>
+            <label className="flex w-full flex-col text-sm text-gray-900 sm:w-auto">
+              <span className="font-medium text-gray-800">Filter by day</span>
               <select
                 value={dayFilter}
                 onChange={(event) => setDayFilter(event.target.value)}
-                className="mt-2 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-white focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 <option value="">All days</option>
                 {DAY_OPTIONS.map((day) => (
@@ -383,54 +378,54 @@ export default function JobManager() {
                 ))}
               </select>
             </label>
-            <label className="flex w-full flex-col text-sm text-slate-200 sm:w-auto">
-              <span className="font-medium">Search</span>
+            <label className="flex w-full flex-col text-sm text-gray-900 sm:w-auto">
+              <span className="font-medium text-gray-800">Search</span>
               <input
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search address, client, or property"
-                className="mt-2 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
             </label>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-800">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             {loading ? (
-              <p className="p-4 text-sm text-slate-300">Loading jobs…</p>
+              <p className="p-4 text-sm text-gray-700">Loading jobs…</p>
             ) : filteredJobs.length === 0 ? (
-              <p className="p-4 text-sm text-slate-300">No jobs match the current filters.</p>
+              <p className="p-4 text-sm text-gray-700">No jobs match the current filters.</p>
             ) : (
-              <table className="min-w-full divide-y divide-slate-800">
-                <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
                     <th className="px-4 py-3 text-left">Address</th>
                     <th className="px-4 py-3 text-left">Job</th>
                     <th className="px-4 py-3 text-left">Assignee</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-900">
+                <tbody className="divide-y divide-gray-200">
                   {filteredJobs.map((job) => {
                     const isSelected = job.id === selectedJobId && !isCreating;
-                    const assignee = staff.find((member) => member.id === job.assigned_to);
+                    const assigneeName = job.assigned_to ? staffById.get(job.assigned_to) : null;
                     return (
                       <tr
                         key={job.id}
                         onClick={() => selectJob(job)}
-                        className={`cursor-pointer transition hover:bg-slate-800/60 ${
-                          isSelected ? "bg-slate-800/80" : "bg-slate-950/20"
+                        className={`cursor-pointer transition hover:bg-gray-100 ${
+                          isSelected ? "bg-gray-100" : "bg-white"
                         }`}
                       >
-                        <td className="px-4 py-3 text-sm text-slate-200">
-                          <div className="font-semibold text-white">{job.address ?? "Address"}</div>
-                          <div className="text-xs text-slate-400">{job.day_of_week ?? "—"}</div>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          <div className="font-semibold text-gray-900">{job.address ?? "Address"}</div>
+                          <div className="text-xs text-gray-600">{job.day_of_week ?? "—"}</div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-300">
+                        <td className="px-4 py-3 text-sm text-gray-700">
                           {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                          {job.bins ? <span className="ml-2 text-xs text-slate-400">{job.bins}</span> : null}
+                          {job.bins ? <span className="ml-2 text-xs text-gray-600">{job.bins}</span> : null}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-300">
-                          {assignee ? assignee.name : job.assigned_to ? job.assigned_to : "Unassigned"}
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {assigneeName ?? (job.assigned_to ? "Assignee not found" : "Unassigned")}
                         </td>
                       </tr>
                     );
@@ -441,13 +436,13 @@ export default function JobManager() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/70 p-5">
+        <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-100 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {isCreating ? "Create job" : selectedJob ? "Edit job" : "Select a job"}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-gray-600">
                 {isCreating
                   ? "Fill in the details below to create a new job."
                   : selectedJob
@@ -459,7 +454,7 @@ export default function JobManager() {
               type="button"
               onClick={handleDelete}
               disabled={deleting || (!selectedJobId && !isCreating)}
-              className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold text-red-200 transition hover:border-red-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {deleting ? "Deleting…" : "Delete"}
             </button>
@@ -469,8 +464,8 @@ export default function JobManager() {
             <div
               className={`rounded-lg px-3 py-2 text-sm ${
                 status.type === "success"
-                  ? "border border-green-500/40 bg-green-500/10 text-green-200"
-                  : "border border-red-500/40 bg-red-500/10 text-red-200"
+                  ? "border border-green-300 bg-green-50 text-green-800"
+                  : "border border-red-300 bg-red-50 text-red-800"
               }`}
             >
               {status.message}
@@ -480,7 +475,7 @@ export default function JobManager() {
           {(isCreating || selectedJob) && (
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                {JOB_FIELD_CONFIGS.map((field) => {
+                {editableJobFields.map((field) => {
                   const value = formState[field.key] ?? "";
                   const commonProps = {
                     id: `job-${field.key}`,
@@ -488,20 +483,18 @@ export default function JobManager() {
                     onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
                       handleInputChange(field.key, event.target.value),
                     className:
-                      "mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40",
+                      "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
                   } as const;
 
-                  const isReadOnly = field.key === "id" && !isCreating;
-
                   return (
-                    <label key={field.key} className="flex flex-col text-sm text-slate-200">
-                      <span className="font-medium">{field.label}</span>
+                    <label key={field.key} className="flex flex-col text-sm text-gray-900">
+                      <span className="font-medium text-gray-800">{field.label}</span>
                       {field.type === "textarea" ? (
-                        <textarea rows={4} {...commonProps} readOnly={isReadOnly} />
+                        <textarea rows={4} {...commonProps} />
                       ) : field.type === "number" ? (
-                        <input type="number" step="any" {...commonProps} readOnly={isReadOnly} />
+                        <input type="number" step="any" {...commonProps} />
                       ) : field.type === "date" ? (
-                        <input type="date" {...commonProps} readOnly={isReadOnly} />
+                        <input type="date" {...commonProps} />
                       ) : field.type === "jobType" ? (
                         <select {...commonProps}>
                           <option value="put_out">Put out</option>
@@ -515,6 +508,9 @@ export default function JobManager() {
                               {member.name}
                             </option>
                           ))}
+                          {value && !staffById.has(value) ? (
+                            <option value={value}>Assignee not found</option>
+                          ) : null}
                         </select>
                       ) : field.type === "day" ? (
                         <select {...commonProps}>
@@ -525,9 +521,9 @@ export default function JobManager() {
                             </option>
                           ))}
                         </select>
-                      ) : (
-                        <input type="text" {...commonProps} readOnly={isReadOnly} />
-                      )}
+                        ) : (
+                          <input type="text" {...commonProps} />
+                        )}
                     </label>
                   );
                 })}
@@ -536,7 +532,7 @@ export default function JobManager() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? "Saving…" : isCreating ? "Create job" : "Save changes"}
                 </button>

@@ -9,6 +9,7 @@ async function loadDashboardData() {
     logsResult,
     jobsResult,
     unassignedJobsResult,
+    staffResult,
   ] = await Promise.all([
     supabase
       .from("client_list")
@@ -31,7 +32,18 @@ async function loadDashboardData() {
       .is("assigned_to", null)
       .order("day_of_week", { ascending: true })
       .limit(6),
+    supabase
+      .from("user_profile")
+      .select("user_id, full_name")
+      .in("role", ["staff", "admin"]),
   ]);
+
+  const staffLookup = new Map(
+    (staffResult.data ?? []).map((member) => [
+      member.user_id,
+      member.full_name?.trim().length ? member.full_name : "Team member",
+    ]),
+  );
 
   const stats = {
     clients: clientsResult.count ?? 0,
@@ -39,16 +51,21 @@ async function loadDashboardData() {
     logs: logsResult.count ?? 0,
   };
 
+  const recentClients = (clientsResult.data ?? []).map((client) => ({
+    ...client,
+    assigned_name: client.assigned_to ? staffLookup.get(client.assigned_to) ?? null : null,
+  }));
+
   return {
     stats,
-    recentClients: clientsResult.data ?? [],
+    recentClients,
     recentLogs: logsResult.data ?? [],
     unassignedJobs: unassignedJobsResult.data ?? [],
   };
 }
 
 const cardClass =
-  "rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm transition hover:border-red-400 hover:shadow-lg hover:shadow-red-900/30";
+  "rounded-2xl border border-gray-200 bg-gray-100 p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md";
 
 export default async function AdminDashboardPage() {
   const { stats, recentClients, recentLogs, unassignedJobs } = await loadDashboardData();
@@ -62,8 +79,8 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">Admin dashboard</h1>
-        <p className="text-sm text-slate-300">
+        <h1 className="text-3xl font-semibold text-gray-900">Admin dashboard</h1>
+        <p className="text-sm text-gray-700">
           Monitor requests, manage clients, and keep teams on track. Use the quick links below to dive into each workflow.
         </p>
       </div>
@@ -71,37 +88,36 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <Link key={card.label} href={card.href} className={cardClass}>
-            <p className="text-xs uppercase tracking-wide text-slate-400">{card.label}</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{card.value}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-600">{card.label}</p>
+            <p className="mt-2 text-3xl font-semibold text-gray-900">{card.value}</p>
           </Link>
         ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-white">Latest client updates</h2>
-              <p className="text-xs text-slate-400">Keep track of newly added properties and account assignments.</p>
+              <h2 className="text-lg font-semibold text-gray-900">Latest client updates</h2>
+              <p className="text-xs text-gray-600">Keep track of newly added properties and account assignments.</p>
             </div>
             <Link
               href="/admin/clients"
-              className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
             >
               Manage clients
             </Link>
           </div>
           {recentClients.length === 0 ? (
-            <p className="text-sm text-slate-300">No client records found yet.</p>
+            <p className="text-sm text-gray-700">No client records found yet.</p>
           ) : (
             <ul className="space-y-3">
               {recentClients.map((client) => (
-                <li key={client.property_id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-sm font-semibold text-white">{client.client_name ?? client.company ?? "Client account"}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                    <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-200">{client.property_id}</span>
+                <li key={client.property_id} className="rounded-xl border border-gray-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-gray-900">{client.client_name ?? client.company ?? "Client account"}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
                     {client.address && <span>{client.address}</span>}
-                    {client.assigned_to && <span>Assigned to {client.assigned_to}</span>}
+                    {client.assigned_name && <span>Assigned to {client.assigned_name}</span>}
                   </div>
                 </li>
               ))}
@@ -109,28 +125,28 @@ export default async function AdminDashboardPage() {
           )}
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-white">Unassigned jobs</h2>
-              <p className="text-xs text-slate-400">Assign jobs to staff to keep the schedule balanced.</p>
+              <h2 className="text-lg font-semibold text-gray-900">Unassigned jobs</h2>
+              <p className="text-xs text-gray-600">Assign jobs to staff to keep the schedule balanced.</p>
             </div>
             <Link
               href="/admin/jobs"
-              className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
             >
               Manage jobs
             </Link>
           </div>
           {unassignedJobs.length === 0 ? (
-            <p className="text-sm text-slate-300">All jobs are assigned.</p>
+            <p className="text-sm text-gray-700">All jobs are assigned.</p>
           ) : (
             <ul className="space-y-3">
               {unassignedJobs.map((job) => (
-                <li key={job.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-sm font-semibold text-white">{job.address ?? "Property"}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                    <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-200">
+                <li key={job.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-gray-900">{job.address ?? "Property"}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                    <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">
                       {job.job_type === "bring_in" ? "Bring in" : "Put out"}
                     </span>
                     <span>{job.day_of_week ?? "—"}</span>
@@ -142,28 +158,28 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
 
-      <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-white">Recent logs</h2>
-            <p className="text-xs text-slate-400">Latest proof uploads and visit notes captured by the team.</p>
+            <h2 className="text-lg font-semibold text-gray-900">Recent logs</h2>
+            <p className="text-xs text-gray-600">Latest proof uploads and visit notes captured by the team.</p>
           </div>
           <Link
             href="/admin/logs"
-            className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+            className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
           >
             View logs
           </Link>
         </div>
         {recentLogs.length === 0 ? (
-          <p className="text-sm text-slate-300">No logs recorded yet.</p>
+          <p className="text-sm text-gray-700">No logs recorded yet.</p>
         ) : (
           <ul className="space-y-3">
             {recentLogs.map((log) => (
-              <li key={log.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                <p className="text-sm font-semibold text-white">{log.address ?? log.client_name ?? "Log entry"}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  {log.task_type && <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-200">{log.task_type}</span>}
+              <li key={log.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                <p className="text-sm font-semibold text-gray-900">{log.address ?? log.client_name ?? "Log entry"}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                  {log.task_type && <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{log.task_type}</span>}
                   {log.done_on && <span>Completed {new Date(log.done_on).toLocaleString()}</span>}
                 </div>
               </li>
