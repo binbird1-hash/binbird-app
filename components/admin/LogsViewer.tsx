@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { useMemo, useState } from "react";
 
-type LogRow = {
+export type LogsViewerLog = {
   id: string;
   task_type: string | null;
   address: string | null;
@@ -11,71 +10,13 @@ type LogRow = {
   photo_path: string | null;
 };
 
-export default function LogsViewer() {
-  const supabase = useSupabase();
-  const [logs, setLogs] = useState<LogRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+type LogsViewerProps = {
+  logs: LogsViewerLog[];
+  signedUrls: Record<string, string>;
+};
+
+export default function LogsViewer({ logs, signedUrls }: LogsViewerProps) {
   const [selectedAddress, setSelectedAddress] = useState("");
-
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("logs")
-        .select("id, task_type, address, done_on, photo_path")
-        .order("done_on", { ascending: false });
-      setLogs((data ?? []) as LogRow[]);
-      setLoading(false);
-    }
-    load();
-  }, [supabase]);
-
-  useEffect(() => {
-    if (logs.length === 0) return;
-
-    const photoPaths = logs
-      .map((log) => log.photo_path ?? null)
-      .filter((path): path is string => Boolean(path));
-
-    const missingPaths = photoPaths.filter((path) => !signedUrls[path]);
-    if (missingPaths.length === 0) return;
-
-    const uniqueMissingPaths = Array.from(new Set(missingPaths));
-    let cancelled = false;
-
-    const loadSignedUrls = async () => {
-      const { data, error } = await supabase.storage
-        .from("proofs")
-        .createSignedUrls(uniqueMissingPaths, 60 * 60);
-
-      if (error) {
-        console.warn("Failed to create signed proof URLs", error);
-        return;
-      }
-
-      if (cancelled || !data) return;
-
-      setSignedUrls((previous) => {
-        const updated = { ...previous };
-        for (const entry of data) {
-          if (entry.path && entry.signedUrl) {
-            updated[entry.path] = entry.signedUrl;
-          }
-        }
-        return updated;
-      });
-    };
-
-    loadSignedUrls();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [logs, signedUrls, supabase]);
-
-  if (loading) {
-    return <p className="text-sm text-gray-700">Loading logs…</p>;
-  }
 
   const addressOptions = useMemo(() => {
     const addresses = logs
@@ -84,10 +25,10 @@ export default function LogsViewer() {
     return Array.from(new Set(addresses)).sort((a, b) => a.localeCompare(b));
   }, [logs]);
 
-  const filteredLogs = logs.filter((log) => {
-    if (!selectedAddress.length) return true;
-    return (log.address ?? "") === selectedAddress;
-  });
+  const filteredLogs = useMemo(() => {
+    if (!selectedAddress.length) return logs;
+    return logs.filter((log) => (log.address ?? "") === selectedAddress);
+  }, [logs, selectedAddress]);
 
   return (
     <div className="space-y-4">
