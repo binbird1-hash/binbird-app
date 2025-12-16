@@ -7,6 +7,7 @@ export type LogsViewerLog = {
   task_type: string | null;
   address: string | null;
   done_on: string | null;
+  created_at: string | null;
   photo_path: string | null;
 };
 
@@ -126,8 +127,10 @@ export default function LogsViewer({ logs, signedUrls }: LogsViewerProps) {
                     </span>
                   </div>
                 </div>
-                {log.done_on && (
-                  <p className="text-xs text-gray-600">{formatTimestamp(log.done_on)}</p>
+                {(log.created_at || log.done_on) && (
+                  <p className="text-xs text-gray-600">
+                    {formatTimestamp(log.created_at ?? log.done_on ?? "")}
+                  </p>
                 )}
               </div>
               {log.photo_path && signedUrls[log.photo_path] && (
