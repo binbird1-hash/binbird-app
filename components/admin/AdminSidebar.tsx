@@ -21,11 +21,11 @@ export default function AdminSidebar({ items, userName, userEmail }: AdminSideba
   const pathname = usePathname();
 
   return (
-    <aside className="hidden min-h-screen w-72 flex-col justify-between border-r border-slate-800 bg-slate-950/95 p-6 lg:flex">
+    <aside className="hidden min-h-screen w-72 flex-col justify-between border-r border-gray-200 bg-gray-50 p-6 lg:flex">
       <div className="space-y-8">
         <div>
-          <p className="text-xs uppercase tracking-widest text-slate-500">Admin</p>
-          <h1 className="mt-2 text-2xl font-semibold text-white">Control Center</h1>
+          <p className="text-xs uppercase tracking-widest text-gray-500">Admin</p>
+          <h1 className="mt-2 text-2xl font-semibold text-gray-900">Control Center</h1>
         </div>
         <nav className="space-y-1">
           {items.map((item) => {
@@ -38,13 +38,13 @@ export default function AdminSidebar({ items, userName, userEmail }: AdminSideba
                   href={item.href}
                   className={`block rounded-lg px-4 py-3 text-sm transition ${
                     isActive
-                      ? "bg-red-500/10 text-red-200"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
                   }`}
                 >
                   <span className="font-medium">{item.label}</span>
                   {item.description && (
-                    <span className="mt-1 block text-xs text-slate-400">{item.description}</span>
+                    <span className="mt-1 block text-xs text-gray-500">{item.description}</span>
                   )}
                 </Link>
               </Fragment>
@@ -54,9 +54,9 @@ export default function AdminSidebar({ items, userName, userEmail }: AdminSideba
       </div>
       <div className="space-y-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Signed in</p>
-          <p className="font-semibold text-white">{userName}</p>
-          <p className="text-xs text-slate-400">{userEmail}</p>
+          <p className="text-xs uppercase tracking-wide text-gray-500">Signed in</p>
+          <p className="font-semibold text-gray-900">{userName}</p>
+          <p className="text-xs text-gray-600">{userEmail}</p>
         </div>
         <AdminSignOutButton />
       </div>

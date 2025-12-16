@@ -50,25 +50,25 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const { displayName, userEmail, navItems } = await resolveAdminContext();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-white text-gray-900">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
         <AdminSidebar items={navItems} userName={displayName} userEmail={userEmail} />
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="border-b border-slate-800 bg-slate-950/90 px-4 py-4 shadow-sm lg:hidden">
+          <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm lg:hidden">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">BinBird</p>
-                <p className="text-lg font-semibold text-white">Admin Control</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">BinBird</p>
+                <p className="text-lg font-semibold text-gray-900">Admin Control</p>
               </div>
               <div className="w-32">
                 <AdminSignOutButton />
               </div>
             </div>
           </header>
-          <div className="border-b border-slate-900 bg-slate-950/80 px-4 py-2 lg:hidden">
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 lg:hidden">
             <AdminMobileNav items={navItems} />
           </div>
-          <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
+          <main className="flex-1 overflow-y-auto bg-white px-4 py-6 sm:px-6 lg:px-10">
             {children}
           </main>
         </div>

@@ -76,6 +76,9 @@ export const CLIENT_DATE_FIELD_KEYS: Array<keyof ClientListRow> = ["trial_start"
 
 const numberFields = new Set(CLIENT_NUMBER_FIELD_KEYS);
 const dateFields = new Set(CLIENT_DATE_FIELD_KEYS);
+const editableClientFields = CLIENT_FIELD_CONFIGS.filter(
+  (field) => field.key !== "property_id" && field.key !== "account_id",
+);
 
 const toFormState = (row: ClientListRow): ClientFormState => {
   const state = {} as ClientFormState;
@@ -145,8 +148,6 @@ export default function ClientListManager() {
     }
     return rows.filter((row) => {
       const haystack = [
-        row.property_id,
-        row.account_id,
         row.client_name,
         row.company,
         row.address,
@@ -280,71 +281,70 @@ export default function ClientListManager() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold text-white">Client List</h2>
-              <p className="text-sm text-slate-300">Search, review, and select a property to edit every column.</p>
+              <h2 className="text-2xl font-semibold text-gray-900">Client List</h2>
+              <p className="text-sm text-gray-700">Search, review, and select a property to edit every column.</p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={loadRows}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
                 disabled={loading}
               >
                 Refresh
               </button>
               <Link
                 href="/admin/clients/new"
-                className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-400"
+                className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-gray-700"
               >
                 Add property
               </Link>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300" htmlFor="client-search">
+            <label className="block text-sm font-medium text-gray-800" htmlFor="client-search">
               Quick search
             </label>
             <input
               id="client-search"
               type="search"
-              placeholder="Search by property, account, client, or email"
+              placeholder="Search by client, address, or email"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
             />
           </div>
-          <div className="overflow-hidden rounded-xl border border-slate-800">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             {loading ? (
-              <p className="p-4 text-sm text-slate-300">Loading client list…</p>
+              <p className="p-4 text-sm text-gray-700">Loading client list…</p>
             ) : filteredRows.length === 0 ? (
-              <p className="p-4 text-sm text-slate-300">No clients match the current filters.</p>
+              <p className="p-4 text-sm text-gray-700">No clients match the current filters.</p>
             ) : (
-              <table className="min-w-full divide-y divide-slate-800">
-                <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
                     <th className="px-4 py-3 text-left">Client</th>
                     <th className="px-4 py-3 text-left">Address</th>
                     <th className="px-4 py-3 text-left">Email</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-900">
+                <tbody className="divide-y divide-gray-200">
                   {filteredRows.map((row) => {
                     const isSelected = row.property_id === selectedRowId;
                     return (
                       <tr
                         key={row.property_id}
                         onClick={() => handleSelectRow(row)}
-                        className={`cursor-pointer transition hover:bg-slate-800/60 ${
-                          isSelected ? "bg-slate-800/80" : "bg-slate-950/20"
+                        className={`cursor-pointer transition hover:bg-gray-100 ${
+                          isSelected ? "bg-gray-100" : "bg-white"
                         }`}
                       >
-                        <td className="px-4 py-3 align-top text-sm text-slate-200">
-                          <div className="font-semibold text-white">{row.client_name ?? row.company ?? row.property_id}</div>
-                          <div className="text-xs text-slate-400">{row.property_id}</div>
-                          {row.account_id && <div className="text-xs text-slate-500">Account: {row.account_id}</div>}
+                        <td className="px-4 py-3 align-top text-sm text-gray-900">
+                          <div className="font-semibold text-gray-900">{row.client_name ?? row.company ?? "Property"}</div>
+                          {row.assigned_to && <div className="text-xs text-gray-600">Assigned to {row.assigned_to}</div>}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-300">{row.address ?? "—"}</td>
-                        <td className="px-4 py-3 text-sm text-slate-300">{row.email ?? "—"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{row.address ?? "—"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{row.email ?? "—"}</td>
                       </tr>
                     );
                   })}
@@ -354,18 +354,18 @@ export default function ClientListManager() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/70 p-5">
+        <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-100 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-white">Property details</h3>
-              <p className="text-xs text-slate-400">Update any column and save to sync with Supabase.</p>
+              <h3 className="text-lg font-semibold text-gray-900">Property details</h3>
+              <p className="text-xs text-gray-600">Update any column and save to sync with Supabase.</p>
             </div>
             {selectedRow && (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold text-red-200 transition hover:border-red-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {deleting ? "Deleting…" : "Delete"}
               </button>
@@ -376,8 +376,8 @@ export default function ClientListManager() {
             <div
               className={`rounded-lg px-3 py-2 text-sm ${
                 status.type === "success"
-                  ? "border border-green-500/40 bg-green-500/10 text-green-200"
-                  : "border border-red-500/40 bg-red-500/10 text-red-200"
+                  ? "border border-green-300 bg-green-50 text-green-800"
+                  : "border border-red-300 bg-red-50 text-red-800"
               }`}
             >
               {status.message}
@@ -385,11 +385,11 @@ export default function ClientListManager() {
           )}
 
           {!selectedRow ? (
-            <p className="text-sm text-slate-300">Select a property from the table to start editing.</p>
+            <p className="text-sm text-gray-700">Select a property from the table to start editing.</p>
           ) : (
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                {CLIENT_FIELD_CONFIGS.map((field) => {
+                {editableClientFields.map((field) => {
                   const value = formState[field.key] ?? "";
                   const commonProps = {
                     id: `client-${field.key}`,
@@ -397,12 +397,12 @@ export default function ClientListManager() {
                     onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                       handleInputChange(field.key, event.target.value),
                     className:
-                      "mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40",
+                      "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
                   } as const;
 
                   return (
-                    <label key={field.key as string} className="flex flex-col text-sm text-slate-200">
-                      <span className="font-medium">{field.label}</span>
+                    <label key={field.key as string} className="flex flex-col text-sm text-gray-900">
+                      <span className="font-medium text-gray-800">{field.label}</span>
                       {field.type === "textarea" ? (
                         <textarea rows={4} {...commonProps} />
                       ) : field.type === "number" ? (
@@ -420,7 +420,7 @@ export default function ClientListManager() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? "Saving…" : "Save changes"}
                 </button>

@@ -73,30 +73,30 @@ export default function LogsViewer() {
   }, [logs, signedUrls, supabase]);
 
   if (loading) {
-    return <p className="text-sm text-slate-300">Loading logs…</p>;
+    return <p className="text-sm text-gray-700">Loading logs…</p>;
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-semibold text-white">Logs & Proofs</h2>
-        <p className="text-sm text-slate-300">
+        <h2 className="text-2xl font-semibold text-gray-900">Logs & Proofs</h2>
+        <p className="text-sm text-gray-700">
           Review completed work, timestamps, and access proof photos shared with clients.
         </p>
       </div>
       {logs.length === 0 ? (
-        <p className="text-sm text-slate-300">No logs yet.</p>
+        <p className="text-sm text-gray-700">No logs yet.</p>
       ) : (
         <ul className="space-y-2">
           {logs.map((log) => (
-            <li key={log.id} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+            <li key={log.id} className="rounded-xl border border-gray-200 bg-gray-100 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">{log.task_type ?? "Task"}</p>
-                  <p className="text-xs text-slate-400">{log.address ?? "—"}</p>
+                  <p className="text-sm font-semibold text-gray-900">{log.task_type ?? "Task"}</p>
+                  <p className="text-xs text-gray-600">{log.address ?? "—"}</p>
                 </div>
                 {log.done_on && (
-                  <p className="text-xs text-slate-500">{new Date(log.done_on).toLocaleString()}</p>
+                  <p className="text-xs text-gray-600">{new Date(log.done_on).toLocaleString()}</p>
                 )}
               </div>
               {log.photo_path && signedUrls[log.photo_path] && (
@@ -104,7 +104,7 @@ export default function LogsViewer() {
                   href={signedUrls[log.photo_path]}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 inline-flex text-sm font-medium text-red-300 hover:text-red-200"
+                  className="mt-3 inline-flex text-sm font-medium text-gray-900 hover:text-gray-700"
                 >
                   View proof
                 </a>
