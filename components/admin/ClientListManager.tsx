@@ -636,6 +636,15 @@ export default function ClientListManager() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="sm:col-span-2 lg:col-span-3">
                   <div className="grid gap-4 sm:grid-cols-2">
+                    {renderSingleField(editableClientFields.find((field) => field.key === "client_name")!)}
+                    {renderSingleField(editableClientFields.find((field) => field.key === "company")!)}
+                    {renderSingleField(editableClientFields.find((field) => field.key === "email")!)}
+                    {renderSingleField(editableClientFields.find((field) => field.key === "address")!)}
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     {renderSingleField(editableClientFields.find((field) => field.key === "lat_lng")!)}
                     {renderSingleField(editableClientFields.find((field) => field.key === "assigned_to")!)}
                   </div>
@@ -665,7 +674,11 @@ export default function ClientListManager() {
                     field.key === "lat_lng" ||
                     field.key === "assigned_to" ||
                     field.key === "put_bins_out" ||
-                    field.key === "collection_day"
+                    field.key === "collection_day" ||
+                    field.key === "client_name" ||
+                    field.key === "company" ||
+                    field.key === "email" ||
+                    field.key === "address"
                   ) {
                     return null;
                   }
