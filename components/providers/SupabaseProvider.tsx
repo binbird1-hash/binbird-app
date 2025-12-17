@@ -13,7 +13,19 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      fetch("/auth/callback", {
+      const shouldSyncAuth =
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED" ||
+        event === "SIGNED_OUT";
+
+      // Skip noisy callbacks that don't need server-side sync, and avoid
+      // forwarding session-less events that previously triggered 400/500s.
+      if (!shouldSyncAuth) return;
+
+      if (!session && event !== "SIGNED_OUT") return;
+
+      void fetch("/auth/callback", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
