@@ -16,7 +16,7 @@ export default function AdminDashboard() {
       <Header title="Admin Console" />
       <div className="grid gap-4 sm:grid-cols-2 mt-6">
         <Card title="Admin Portal" icon={Cog} href="/admin" />
-        <Card title="Client List" icon={Users} href="/admin/clients" />
+        <Card title="Property List" icon={Users} href="/admin/clients" />
         <Card title="Jobs & Assignments" icon={ClipboardCheck} href="/admin/jobs" />
         <Card title="Logs & Proofs" icon={FileText} href="/admin/logs" />
         <Card title="Sign Out" icon={LogOut} onClick={signOut} />

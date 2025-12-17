@@ -252,7 +252,7 @@ export default function ClientListManager() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">Client List</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">Property List</h2>
               <p className="text-sm text-gray-700">Search, review, and select a property to edit every column.</p>
             </div>
             <div className="flex items-center gap-2">
@@ -288,9 +288,9 @@ export default function ClientListManager() {
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             {loading ? (
-              <p className="p-4 text-sm text-gray-700">Loading client list…</p>
+              <p className="p-4 text-sm text-gray-700">Loading property list…</p>
             ) : filteredRows.length === 0 ? (
-              <p className="p-4 text-sm text-gray-700">No clients match the current filters.</p>
+              <p className="p-4 text-sm text-gray-700">No properties match the current filters.</p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">

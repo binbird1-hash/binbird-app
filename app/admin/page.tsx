@@ -109,7 +109,7 @@ export default async function AdminDashboardPage() {
   const { stats, unassignedJobs, dueToday, completedToday, propertyRequests } = await loadDashboardData();
 
   const cards = [
-    { label: "Active clients", value: stats.clients, href: "/admin/clients" },
+    { label: "Active properties", value: stats.clients, href: "/admin/clients" },
     { label: "Jobs scheduled", value: stats.jobs, href: "/admin/jobs" },
     { label: "Logs captured", value: stats.logs, href: "/admin/logs" },
   ];
@@ -123,7 +123,7 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <Link key={card.label} href={card.href} className={cardClass}>
             <p className="text-xs uppercase tracking-wide text-gray-600">{card.label}</p>
@@ -231,57 +231,57 @@ export default async function AdminDashboardPage() {
             </ul>
           )}
         </section>
-      </div>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Property requests</h2>
-            <p className="text-xs text-gray-600">Review new properties submitted from client accounts.</p>
+        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Property requests</h2>
+              <p className="text-xs text-gray-600">Review new properties submitted from client accounts.</p>
+            </div>
+            <Link
+              href="/admin/clients"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+            >
+              Manage clients
+            </Link>
           </div>
-          <Link
-            href="/admin/clients"
-            className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-          >
-            Manage clients
-          </Link>
-        </div>
-        {propertyRequests.length === 0 ? (
-          <p className="text-sm text-gray-700">No property requests yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {propertyRequests.map((request) => {
-              const addressParts = [
-                request.address_line1,
-                request.address_line2,
-                request.suburb,
-                request.city,
-                request.state,
-                request.postal_code,
-              ].filter(Boolean);
+          {propertyRequests.length === 0 ? (
+            <p className="text-sm text-gray-700">No property requests yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {propertyRequests.map((request) => {
+                const addressParts = [
+                  request.address_line1,
+                  request.address_line2,
+                  request.suburb,
+                  request.city,
+                  request.state,
+                  request.postal_code,
+                ].filter(Boolean);
 
-              return (
-                <li key={request.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {addressParts.length ? addressParts.join(", ") : "Requested property"}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    {request.account_name && <span>Account: {request.account_name}</span>}
-                    {request.requester_email && <span>Contact: {request.requester_email}</span>}
-                    {request.start_date && <span>Start: {new Date(request.start_date).toLocaleDateString()}</span>}
-                    {request.status && (
-                      <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{request.status}</span>
+                return (
+                  <li key={request.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {addressParts.length ? addressParts.join(", ") : "Requested property"}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                      {request.account_name && <span>Account: {request.account_name}</span>}
+                      {request.requester_email && <span>Contact: {request.requester_email}</span>}
+                      {request.start_date && <span>Start: {new Date(request.start_date).toLocaleDateString()}</span>}
+                      {request.status && (
+                        <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{request.status}</span>
+                      )}
+                    </div>
+                    {request.instructions && (
+                      <p className="mt-2 text-xs text-gray-600">Instructions: {request.instructions}</p>
                     )}
-                  </div>
-                  {request.instructions && (
-                    <p className="mt-2 text-xs text-gray-600">Instructions: {request.instructions}</p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
