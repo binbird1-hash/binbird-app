@@ -293,6 +293,12 @@ export default function JobManager() {
     setStatus(null);
   };
 
+  const closeCreate = () => {
+    setIsCreating(false);
+    setFormState(createEmptyJobState());
+    setStatus(null);
+  };
+
   const handleInputChange = (key: keyof JobFormState, value: string) => {
     setFormState((previous) => ({ ...previous, [key]: value }));
   };
@@ -696,12 +702,12 @@ export default function JobManager() {
                           {job.day_of_week ?? "—"}
                         </td>
                         <td className="px-4 py-3 align-middle text-sm text-gray-700">
-                          <div className="flex h-full flex-col justify-center gap-1 whitespace-nowrap">
+                          <div className="flex h-full flex-col justify-center gap-1 whitespace-nowrap text-left">
                             <span className="font-semibold text-gray-900">
                               {job.job_type === "bring_in" ? "Bring in" : "Put out"}
                             </span>
                             {binColors.length ? (
-                              <div className="grid grid-flow-col auto-cols-fr gap-3 text-xs font-semibold leading-tight">
+                              <div className="grid grid-cols-3 gap-3 text-xs font-semibold leading-tight">
                                 {binColors.map((color) => (
                                   <span key={`${job.id}-${color}`} className={binTextColorClasses[color]}>
                                     {color}
@@ -734,12 +740,10 @@ export default function JobManager() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {isCreating ? "Create job" : selectedJob ? "Edit job" : "Select a job"}
+                {selectedJob ? "Edit job" : "Select a job"}
               </h3>
               <p className="text-xs text-gray-600">
-                {isCreating
-                  ? "Fill in the details below to create a new job."
-                  : selectedJob
+                {selectedJob
                   ? "Update job details and assignments, then save your changes."
                   : "Select a job from the list to edit its details."}
               </p>
@@ -747,7 +751,7 @@ export default function JobManager() {
             <button
               type="button"
               onClick={handleDelete}
-              disabled={deleting || (!selectedJobId && !isCreating)}
+              disabled={deleting || !selectedJobId || isCreating}
               className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {deleting ? "Deleting…" : "Delete"}
@@ -766,77 +770,37 @@ export default function JobManager() {
             </div>
           )}
 
-          {(isCreating || selectedJob) && (
+          {selectedJob && !isCreating && (
             <form onSubmit={handleSave} className="space-y-4">
-              {isCreating ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col text-sm text-gray-900">
-                      <span className="font-medium text-gray-800">Property address</span>
-                      <select
-                        value={formState.property_id}
-                        onChange={(event) => handlePropertySelect(event.target.value)}
-                        className={selectClasses}
-                      >
-                        <option value="">Select a property</option>
-                        {sortedProperties.map((property) => (
-                          <option key={property.property_id} value={property.property_id}>
-                            {property.address ?? "Address"}
-                            {property.client_name ? ` — ${property.client_name}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {renderSelectField("assigned_to", selectClasses)}
-                  </div>
-
-                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
-                    {renderDayField(selectClasses)}
-                    {renderJobTypeField(selectClasses)}
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    {renderBinSelector()}
-                  </div>
-
-                  <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderTextField("address", baseInputClasses)}
+                  {renderSelectField("assigned_to", selectClasses)}
                 </div>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
-                    {renderTextField("address", baseInputClasses)}
-                    {renderSelectField("assigned_to", selectClasses)}
-                  </div>
 
-                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
-                    {renderDayField(selectClasses)}
-                    {renderJobTypeField(selectClasses)}
-                  </div>
-
-                  <div className="sm:col-span-2">{renderBinSelector()}</div>
-
-                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
-                    {renderNumberField("lat", baseInputClasses)}
-                    {renderNumberField("lng", baseInputClasses)}
-                  </div>
-
-                  <div className="sm:col-span-2">{renderTextField("photo_path", baseInputClasses)}</div>
-
-                  <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
-
-                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
-                    {renderTextField("client_name", baseInputClasses)}
-                    {renderDateField("last_completed_on", baseInputClasses)}
-                  </div>
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderJobTypeField(selectClasses)}
+                  {renderDayField(selectClasses)}
                 </div>
-              )}
+
+                <div className="sm:col-span-2">{renderBinSelector()}</div>
+
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderNumberField("lat", baseInputClasses)}
+                  {renderNumberField("lng", baseInputClasses)}
+                </div>
+
+                <div className="sm:col-span-2">{renderTextField("photo_path", baseInputClasses)}</div>
+
+                <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
+              </div>
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={saving}
                   className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {saving ? "Saving…" : isCreating ? "Create job" : "Save changes"}
+                  {saving ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </form>
@@ -847,6 +811,89 @@ export default function JobManager() {
           )}
         </div>
       </div>
+
+      {isCreating ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Create job</h3>
+                <p className="text-xs text-gray-600">Fill in the details to create a new job.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCreate}
+                className="text-lg font-semibold text-gray-600 transition hover:text-gray-900"
+                aria-label="Close create job"
+              >
+                ×
+              </button>
+            </div>
+
+            {status && (
+              <div
+                className={`mb-4 rounded-lg px-3 py-2 text-sm ${
+                  status.type === "success"
+                    ? "border border-green-300 bg-green-50 text-green-800"
+                    : "border border-red-300 bg-red-50 text-red-800"
+                }`}
+              >
+                {status.message}
+              </div>
+            )}
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col text-sm text-gray-900">
+                    <span className="font-medium text-gray-800">Property address</span>
+                    <select
+                      value={formState.property_id}
+                      onChange={(event) => handlePropertySelect(event.target.value)}
+                      className={selectClasses}
+                    >
+                      <option value="">Select a property</option>
+                      {sortedProperties.map((property) => (
+                        <option key={property.property_id} value={property.property_id}>
+                          {property.address ?? "Address"}
+                          {property.client_name ? ` — ${property.client_name}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {renderSelectField("assigned_to", selectClasses)}
+                </div>
+
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderJobTypeField(selectClasses)}
+                  {renderDayField(selectClasses)}
+                </div>
+
+                <div className="sm:col-span-2">{renderBinSelector()}</div>
+
+                <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeCreate}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : "Create job"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
