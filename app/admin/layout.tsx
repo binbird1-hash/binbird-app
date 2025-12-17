@@ -34,7 +34,6 @@ async function resolveAdminContext() {
   const navItems: AdminNavItem[] = [
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/clients", label: "Client List" },
-    { href: "/admin/clients/new", label: "Add Property" },
     { href: "/admin/jobs", label: "Jobs" },
     { href: "/admin/logs", label: "Logs & Proofs" },
   ];

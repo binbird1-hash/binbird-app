@@ -68,10 +68,7 @@ export async function POST(req: Request) {
       }
     } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
       if (!session) {
-        return NextResponse.json(
-          { received: false, error: 'Missing session for auth callback event' },
-          { status: 400 }
-        )
+        return NextResponse.json({ received: false, error: 'Missing session for auth callback event' })
       }
 
       const { error } = await supabase.auth.setSession(session)
@@ -81,7 +78,7 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error('Auth callback POST failed:', error)
-    return NextResponse.json({ received: false, error: 'Auth callback failed' }, { status: 500 })
+    return NextResponse.json({ received: false, error: 'Auth callback failed' })
   }
 
   const response = NextResponse.json({ received: true })

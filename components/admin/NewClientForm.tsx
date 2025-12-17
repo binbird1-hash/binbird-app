@@ -8,7 +8,7 @@ import {
   CLIENT_FIELD_CONFIGS,
   CLIENT_NUMBER_FIELD_KEYS,
   type ClientListRow,
-} from "./ClientListManager";
+} from "./clientFieldConfig";
 
 type NewClientFormProps = {
   onClose?: () => void;
