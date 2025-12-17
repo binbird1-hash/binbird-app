@@ -10,6 +10,11 @@ import {
   type ClientListRow,
 } from "./ClientListManager";
 
+type NewClientFormProps = {
+  onClose?: () => void;
+  onCreated?: () => void;
+};
+
 type ClientFormState = Record<string, string>;
 
 type StaffMember = {
@@ -37,7 +42,7 @@ const parseNumberInput = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-export default function NewClientForm() {
+export default function NewClientForm({ onClose, onCreated }: NewClientFormProps = {}) {
   const supabase = useSupabase();
   const [formState, setFormState] = useState<ClientFormState>(createInitialState());
   const [saving, setSaving] = useState(false);
@@ -115,6 +120,10 @@ export default function NewClientForm() {
 
       setStatus({ type: "success", message: "Client property added to the list." });
       setFormState(createInitialState());
+      onCreated?.();
+      if (onClose) {
+        onClose();
+      }
     } catch (submitError) {
       console.error("Failed to create client", submitError);
       setStatus({
@@ -135,12 +144,22 @@ export default function NewClientForm() {
             Create a new client list record. Core details are optional and can be updated later.
           </p>
         </div>
-        <Link
-          href="/admin/clients"
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-        >
-          Back to client list
-        </Link>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+          >
+            Close
+          </button>
+        ) : (
+          <Link
+            href="/admin/clients"
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+          >
+            Back to client list
+          </Link>
+        )}
       </div>
 
       {status && (

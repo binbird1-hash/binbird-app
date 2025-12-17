@@ -71,11 +71,6 @@ async function loadDashboardData() {
     logs: logsResult.count ?? 0,
   };
 
-  const recentClients = (clientsResult.data ?? []).map((client) => ({
-    ...client,
-    assigned_name: client.assigned_to ? staffLookup.get(client.assigned_to) ?? null : null,
-  }));
-
   const allJobs = allJobsResult.data ?? [];
   const completedToday = allJobs
     .filter((job) => {
@@ -100,8 +95,6 @@ async function loadDashboardData() {
 
   return {
     stats,
-    recentClients,
-    recentLogs: logsResult.data ?? [],
     unassignedJobs: unassignedJobsResult.data ?? [],
     dueToday,
     completedToday,
@@ -113,8 +106,7 @@ const cardClass =
   "rounded-2xl border border-gray-200 bg-gray-100 p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md";
 
 export default async function AdminDashboardPage() {
-  const { stats, recentClients, recentLogs, unassignedJobs, dueToday, completedToday, propertyRequests } =
-    await loadDashboardData();
+  const { stats, unassignedJobs, dueToday, completedToday, propertyRequests } = await loadDashboardData();
 
   const cards = [
     { label: "Active clients", value: stats.clients, href: "/admin/clients" },
@@ -211,36 +203,6 @@ export default async function AdminDashboardPage() {
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Latest client updates</h2>
-              <p className="text-xs text-gray-600">Keep track of newly added properties and account assignments.</p>
-            </div>
-            <Link
-              href="/admin/clients"
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-            >
-              Manage clients
-            </Link>
-          </div>
-          {recentClients.length === 0 ? (
-            <p className="text-sm text-gray-700">No client records found yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {recentClients.map((client) => (
-                <li key={client.property_id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-gray-900">{client.client_name ?? client.company ?? "Client account"}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    {client.address && <span>{client.address}</span>}
-                    {client.assigned_name && <span>Assigned to {client.assigned_name}</span>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
               <h2 className="text-lg font-semibold text-gray-900">Unassigned jobs</h2>
               <p className="text-xs text-gray-600">Assign jobs to staff to keep the schedule balanced.</p>
             </div>
@@ -317,36 +279,6 @@ export default async function AdminDashboardPage() {
                 </li>
               );
             })}
-          </ul>
-        )}
-      </section>
-
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Recent logs</h2>
-            <p className="text-xs text-gray-600">Latest proof uploads and visit notes captured by the team.</p>
-          </div>
-          <Link
-            href="/admin/logs"
-            className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-          >
-            View logs
-          </Link>
-        </div>
-        {recentLogs.length === 0 ? (
-          <p className="text-sm text-gray-700">No logs recorded yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {recentLogs.map((log) => (
-              <li key={log.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                <p className="text-sm font-semibold text-gray-900">{log.address ?? log.client_name ?? "Log entry"}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                  {log.task_type && <span className="rounded-full bg-gray-200 px-2 py-1 text-gray-800">{log.task_type}</span>}
-                  {log.done_on && <span>Completed {new Date(log.done_on).toLocaleString()}</span>}
-                </div>
-              </li>
-            ))}
           </ul>
         )}
       </section>
