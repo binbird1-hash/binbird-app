@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CompletionTime } from "@/components/CompletionTime";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function loadDashboardData() {
@@ -93,7 +94,7 @@ async function loadDashboardData() {
       return {
         ...job,
         assigned_name: job.assigned_to ? staffLookup.get(job.assigned_to) ?? null : null,
-        completionTime,
+        completionTimeIso: completionTime?.toISOString() ?? null,
       };
     });
 
@@ -205,11 +206,7 @@ export default async function AdminDashboardPage() {
                       {job.job_type === "bring_in" ? "Bring in" : "Put out"}
                     </span>
                     {job.assigned_name ? <span>Assigned to {job.assigned_name}</span> : <span>Unassigned</span>}
-                    <span className="text-gray-500">
-                      {job.completionTime
-                        ? job.completionTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-                        : "Completed"}
-                    </span>
+                    <CompletionTime isoString={job.completionTimeIso ?? ""} />
                   </div>
                 </li>
               ))}
