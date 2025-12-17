@@ -25,7 +25,14 @@ export type ClientListRow = {
   membership_start: string | null
 }
 
-export type ClientFieldType = "text" | "textarea" | "number" | "date" | "assignee"
+export type ClientFieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "date"
+  | "assignee"
+  | "bin-frequency"
+  | "flip"
 
 export type ClientFieldConfig = {
   key: keyof ClientListRow
@@ -45,14 +52,14 @@ export const CLIENT_FIELD_CONFIGS: ClientFieldConfig[] = [
   { key: "put_bins_out", label: "Put Bins Out" },
   { key: "assigned_to", label: "Assigned To", type: "assignee" },
   { key: "notes", label: "Notes", type: "textarea" },
-  { key: "red_freq", label: "Red Bin Frequency" },
-  { key: "red_flip", label: "Red Flip" },
+  { key: "red_freq", label: "Red Bin Frequency", type: "bin-frequency" },
+  { key: "red_flip", label: "Red Flip", type: "flip" },
   { key: "red_bins", label: "Red Bins", type: "number" },
-  { key: "yellow_freq", label: "Yellow Bin Frequency" },
-  { key: "yellow_flip", label: "Yellow Flip" },
+  { key: "yellow_freq", label: "Yellow Bin Frequency", type: "bin-frequency" },
+  { key: "yellow_flip", label: "Yellow Flip", type: "flip" },
   { key: "yellow_bins", label: "Yellow Bins", type: "number" },
-  { key: "green_freq", label: "Green Bin Frequency" },
-  { key: "green_flip", label: "Green Flip" },
+  { key: "green_freq", label: "Green Bin Frequency", type: "bin-frequency" },
+  { key: "green_flip", label: "Green Flip", type: "flip" },
   { key: "green_bins", label: "Green Bins", type: "number" },
   { key: "photo_path", label: "Photo Path" },
   { key: "price_per_month", label: "Price Per Month", type: "number" },
