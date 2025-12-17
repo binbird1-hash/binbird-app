@@ -134,7 +134,7 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Jobs due today</h2>
               <p className="text-xs text-gray-600">Stay ahead of today&apos;s route and assignments.</p>
@@ -166,7 +166,7 @@ export default async function AdminDashboardPage() {
         </section>
 
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Completed today</h2>
               <p className="text-xs text-gray-600">Track proofed jobs and ensure today&apos;s work is done.</p>
@@ -201,7 +201,7 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Unassigned jobs</h2>
               <p className="text-xs text-gray-600">Assign jobs to staff to keep the schedule balanced.</p>
@@ -233,7 +233,7 @@ export default async function AdminDashboardPage() {
         </section>
 
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Property requests</h2>
               <p className="text-xs text-gray-600">Review new properties submitted from client accounts.</p>
