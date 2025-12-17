@@ -25,6 +25,17 @@ const editableClientFields = CLIENT_FIELD_CONFIGS.filter(
 );
 const fullWidthFields = new Set<keyof ClientListRow>(["address", "photo_path"]);
 const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
+const binGroupKeys = new Set([
+  "red_freq",
+  "red_flip",
+  "red_bins",
+  "yellow_freq",
+  "yellow_flip",
+  "yellow_bins",
+  "green_freq",
+  "green_flip",
+  "green_bins",
+] satisfies Array<keyof ClientListRow>);
 
 const toFormState = (row: ClientListRow): ClientFormState => {
   const state = {} as ClientFormState;
@@ -76,6 +87,9 @@ export default function ClientListManager() {
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const baseInputClasses =
+    "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
+  const selectClasses = `${baseInputClasses} pr-10`;
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -253,6 +267,64 @@ export default function ClientListManager() {
     }
   };
 
+  const renderBinGroup = (prefix: "red" | "yellow" | "green") => {
+    const freqKey = `${prefix}_freq` as keyof ClientListRow;
+    const binsKey = `${prefix}_bins` as keyof ClientListRow;
+    const flipKey = `${prefix}_flip` as keyof ClientListRow;
+    const freqValue = formState[freqKey] ?? "";
+    const binsValue = formState[binsKey] ?? "";
+    const flipValue = formState[flipKey] ?? "";
+
+    return (
+      <div key={`${prefix}-bin-group`} className="sm:col-span-2 lg:col-span-3">
+        <div className="grid items-start gap-4 sm:grid-cols-3">
+          <label className="flex flex-col text-sm text-gray-900">
+            <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Bin Frequency`}</span>
+            <select
+              id={`client-${freqKey}`}
+              value={freqValue}
+              onChange={(event) => handleInputChange(freqKey, event.target.value)}
+              className={selectClasses}
+            >
+              <option value="">Select a frequency</option>
+              {binFrequencyOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-900">
+            <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Bins`}</span>
+            <input
+              id={`client-${binsKey}`}
+              type="number"
+              step="any"
+              value={binsValue}
+              onChange={(event) => handleInputChange(binsKey, event.target.value)}
+              className={baseInputClasses}
+            />
+          </label>
+
+          <label className="flex flex-col justify-center text-sm text-gray-900">
+            <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Flip`}</span>
+            <div className="mt-1 flex h-full items-center justify-center gap-2">
+              <input
+                id={`client-${flipKey}`}
+                type="checkbox"
+                checked={flipValue === "Yes"}
+                onChange={(event) => handleInputChange(flipKey, event.target.checked ? "Yes" : "")}
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+              />
+              <span className="text-sm text-gray-800">Yes</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    );
+  };
+
   const handleDelete = async () => {
     if (!selectedRowId) return;
     const confirmed = window.confirm("Delete this client from the list? This cannot be undone.");
@@ -316,7 +388,7 @@ export default function ClientListManager() {
               <input
                 id="client-search"
                 type="search"
-                placeholder="Search by client, address, or assignee"
+                placeholder="Search by address or client"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -330,7 +402,7 @@ export default function ClientListManager() {
                 id="assigned-filter"
                 value={assignedFilter}
                 onChange={(event) => setAssignedFilter(event.target.value)}
-                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 pr-10 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 <option value="">All assignees</option>
                 <option value="__unassigned__">Unassigned</option>
@@ -349,7 +421,7 @@ export default function ClientListManager() {
                 id="sort-day"
                 value={sortField}
                 onChange={(event) => setSortField(event.target.value as typeof sortField)}
-                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 pr-10 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 <option value="">No sorting</option>
                 <option value="put_bins_out">Sort by Put out day</option>
@@ -453,9 +525,20 @@ export default function ClientListManager() {
                     value,
                     onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
                       handleInputChange(field.key, event.target.value),
-                    className:
-                      "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
+                    className: baseInputClasses,
                   } as const;
+
+                  if (
+                    field.key === "red_freq" ||
+                    field.key === "yellow_freq" ||
+                    field.key === "green_freq"
+                  ) {
+                    return renderBinGroup(field.key.split("_")[0] as "red" | "yellow" | "green");
+                  }
+
+                  if (binGroupKeys.has(field.key)) {
+                    return null;
+                  }
 
                   return (
                     <label
@@ -466,7 +549,7 @@ export default function ClientListManager() {
                     >
                       <span className="font-medium text-gray-800">{field.label}</span>
                       {field.key === "collection_day" || field.key === "put_bins_out" ? (
-                        <select {...commonProps}>
+                        <select {...commonProps} className={selectClasses}>
                           <option value="">Select a day</option>
                           {daysOfWeek.map((day) => (
                             <option key={day} value={day}>
@@ -475,7 +558,7 @@ export default function ClientListManager() {
                           ))}
                         </select>
                       ) : field.type === "bin-frequency" ? (
-                        <select {...commonProps}>
+                        <select {...commonProps} className={selectClasses}>
                           <option value="">Select a frequency</option>
                           {binFrequencyOptions.map((option) => (
                             <option key={option} value={option}>
@@ -496,12 +579,14 @@ export default function ClientListManager() {
                         </div>
                       ) : field.type === "textarea" ? (
                         <textarea rows={2} {...commonProps} className={`${commonProps.className} min-h-[44px]`} />
+                      ) : field.key === "price_per_month" ? (
+                        <input type="text" inputMode="decimal" {...commonProps} />
                       ) : field.type === "number" ? (
                         <input type="number" step="any" {...commonProps} />
                       ) : field.type === "date" ? (
                         <input type="date" {...commonProps} />
                       ) : field.type === "assignee" ? (
-                        <select {...commonProps}>
+                        <select {...commonProps} className={selectClasses}>
                           <option value="">Unassigned</option>
                           {staff.map((member) => (
                             <option key={member.id} value={member.id}>

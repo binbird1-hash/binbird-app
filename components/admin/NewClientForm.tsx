@@ -43,6 +43,17 @@ const visibleClientFields = CLIENT_FIELD_CONFIGS.filter(
 );
 const fullWidthFields = new Set<string>(["address", "photo_path"]);
 const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
+const binGroupKeys = new Set([
+  "red_freq",
+  "red_flip",
+  "red_bins",
+  "yellow_freq",
+  "yellow_flip",
+  "yellow_bins",
+  "green_freq",
+  "green_flip",
+  "green_bins",
+] satisfies Array<keyof ClientListRow>);
 
 const daysOfWeek = [
   "Monday",
@@ -69,6 +80,9 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [existingClients, setExistingClients] = useState<ExistingClient[]>([]);
   const [selectedExistingClient, setSelectedExistingClient] = useState<string>("");
+  const baseInputClasses =
+    "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
+  const selectClasses = `${baseInputClasses} pr-10`;
 
   useEffect(() => {
     const loadStaff = async () => {
@@ -104,7 +118,23 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
         return;
       }
 
-      setExistingClients((data ?? []) as ExistingClient[]);
+      const uniqueClients: ExistingClient[] = [];
+      const seen = new Set<string>();
+
+      (data ?? []).forEach((client) => {
+        const primaryName = client.client_name?.trim().length
+          ? client.client_name
+          : client.company?.trim().length
+            ? client.company
+            : client.email ?? client.property_id;
+        const dedupeKey = primaryName?.toLowerCase() ?? client.property_id;
+
+        if (seen.has(dedupeKey)) return;
+        seen.add(dedupeKey);
+        uniqueClients.push(client as ExistingClient);
+      });
+
+      setExistingClients(uniqueClients);
     };
 
     void loadStaff();
@@ -192,6 +222,64 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
     }
   };
 
+  const renderBinGroup = (prefix: "red" | "yellow" | "green") => {
+    const freqKey = `${prefix}_freq` as keyof ClientListRow;
+    const binsKey = `${prefix}_bins` as keyof ClientListRow;
+    const flipKey = `${prefix}_flip` as keyof ClientListRow;
+    const freqValue = formState[freqKey as string] ?? "";
+    const binsValue = formState[binsKey as string] ?? "";
+    const flipValue = formState[flipKey as string] ?? "";
+
+    return (
+      <div key={`${prefix}-bin-group`} className="sm:col-span-2 lg:col-span-3">
+        <div className="grid items-start gap-4 sm:grid-cols-3">
+          <label className="flex flex-col text-sm text-gray-900">
+            <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Bin Frequency`}</span>
+            <select
+              id={`new-client-${freqKey as string}`}
+              value={freqValue}
+              onChange={(event) => handleChange(freqKey as string, event.target.value)}
+              className={selectClasses}
+            >
+              <option value="">Select a frequency</option>
+              {binFrequencyOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-900">
+            <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Bins`}</span>
+            <input
+              id={`new-client-${binsKey as string}`}
+              type="number"
+              step="any"
+              value={binsValue}
+              onChange={(event) => handleChange(binsKey as string, event.target.value)}
+              className={baseInputClasses}
+            />
+          </label>
+
+          <label className="flex flex-col justify-center text-sm text-gray-900">
+            <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Flip`}</span>
+            <div className="mt-1 flex h-full items-center justify-center gap-2">
+              <input
+                id={`new-client-${flipKey as string}`}
+                type="checkbox"
+                checked={flipValue === "Yes"}
+                onChange={(event) => handleChange(flipKey as string, event.target.checked ? "Yes" : "")}
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+              />
+              <span className="text-sm text-gray-800">Yes</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -239,7 +327,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
               id="existing-client"
               value={selectedExistingClient}
               onChange={(event) => handleExistingClientSelect(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              className={selectClasses}
             >
               <option value="">Create a new client</option>
               {existingClients.map((client) => {
@@ -262,13 +350,25 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
           {visibleClientFields.map((field) => {
             const value = formState[field.key as string] ?? "";
             const isFullWidth = fullWidthFields.has(field.key as string);
+
+            if (
+              field.key === "red_freq" ||
+              field.key === "yellow_freq" ||
+              field.key === "green_freq"
+            ) {
+              return renderBinGroup(field.key.split("_")[0] as "red" | "yellow" | "green");
+            }
+
+            if (binGroupKeys.has(field.key as keyof ClientListRow)) {
+              return null;
+            }
+
             const commonProps = {
               id: `new-client-${field.key as string}`,
               value,
               onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
                 handleChange(field.key as string, event.target.value),
-              className:
-                "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
+              className: baseInputClasses,
             } as const;
 
             return (
@@ -280,7 +380,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
               >
                 <span className="font-medium text-gray-800">{field.label}</span>
                 {field.key === "collection_day" || field.key === "put_bins_out" ? (
-                  <select {...commonProps}>
+                  <select {...commonProps} className={selectClasses}>
                     <option value="">Select a day</option>
                     {daysOfWeek.map((day) => (
                       <option key={day} value={day}>
@@ -289,7 +389,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                     ))}
                   </select>
                 ) : field.type === "bin-frequency" ? (
-                  <select {...commonProps}>
+                  <select {...commonProps} className={selectClasses}>
                     <option value="">Select a frequency</option>
                     {binFrequencyOptions.map((option) => (
                       <option key={option} value={option}>
@@ -310,12 +410,14 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                   </div>
                 ) : field.type === "textarea" ? (
                   <textarea rows={2} {...commonProps} className={`${commonProps.className} min-h-[44px]`} />
+                ) : field.key === "price_per_month" ? (
+                  <input type="text" inputMode="decimal" {...commonProps} />
                 ) : field.type === "number" ? (
                   <input type="number" step="any" {...commonProps} />
                 ) : field.type === "date" ? (
                   <input type="date" {...commonProps} />
                 ) : field.type === "assignee" ? (
-                  <select {...commonProps}>
+                  <select {...commonProps} className={selectClasses}>
                     <option value="">Unassigned</option>
                     {staff.map((member) => (
                       <option key={member.id} value={member.id}>
