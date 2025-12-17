@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import NewClientForm from "./NewClientForm";
 
 export type ClientListRow = {
   property_id: string;
@@ -125,6 +125,7 @@ export default function ClientListManager() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -327,12 +328,13 @@ export default function ClientListManager() {
               >
                 Refresh
               </button>
-              <Link
-                href="/admin/clients/new"
+              <button
+                type="button"
+                onClick={() => setShowNewClientModal(true)}
                 className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-gray-700"
               >
                 Add property
-              </Link>
+              </button>
             </div>
           </div>
           <div>
@@ -342,7 +344,7 @@ export default function ClientListManager() {
             <input
               id="client-search"
               type="search"
-              placeholder="Search by client, address, or email"
+              placeholder="Search by client, address, or assignee"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -357,9 +359,10 @@ export default function ClientListManager() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
-                    <th className="px-4 py-3 text-left">Client</th>
                     <th className="px-4 py-3 text-left">Address</th>
-                    <th className="px-4 py-3 text-left">Email</th>
+                    <th className="px-4 py-3 text-left">Assigned to</th>
+                    <th className="px-4 py-3 text-left">Put out</th>
+                    <th className="px-4 py-3 text-left">Bring in</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -375,13 +378,16 @@ export default function ClientListManager() {
                         }`}
                       >
                         <td className="px-4 py-3 align-top text-sm text-gray-900">
-                          <div className="font-semibold text-gray-900">{row.client_name ?? row.company ?? "Property"}</div>
-                          <div className="text-xs text-gray-600">
-                            {assignedName ? `Assigned to ${assignedName}` : row.assigned_to ? "Assignee not found" : "Unassigned"}
+                          <div className="font-semibold text-gray-900">{row.address ?? "—"}</div>
+                          <div className="text-xs text-gray-600">{row.client_name ?? row.company ?? "Property"}</div>
+                        </td>
+                        <td className="px-4 py-3 align-top text-sm text-gray-700">
+                          <div className="text-sm font-medium text-gray-900">
+                            {assignedName ?? (row.assigned_to ? "Assignee not found" : "Unassigned")}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{row.address ?? "—"}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{row.email ?? "—"}</td>
+                        <td className="px-4 py-3 align-top text-sm text-gray-700">{row.put_bins_out ?? "—"}</td>
+                        <td className="px-4 py-3 align-top text-sm text-gray-700">{row.collection_day ?? "—"}</td>
                       </tr>
                     );
                   })}
@@ -478,6 +484,24 @@ export default function ClientListManager() {
           )}
         </div>
       </div>
+
+      {showNewClientModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <button
+              type="button"
+              onClick={() => setShowNewClientModal(false)}
+              className="absolute right-4 top-4 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 hover:text-gray-900"
+            >
+              Close
+            </button>
+            <NewClientForm
+              onClose={() => setShowNewClientModal(false)}
+              onCreated={loadRows}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
