@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import type { JobRecord } from "@/lib/database.types";
 
@@ -51,15 +51,6 @@ type JobFormState = {
   photo_path: string;
 };
 
-const HIDDEN_WHEN_CREATING: Array<keyof JobFormState> = [
-  "address",
-  "client_name",
-  "photo_path",
-  "lat",
-  "lng",
-  "last_completed_on",
-];
-
 type BinColor = (typeof BIN_COLORS)[number];
 
 type JobFieldType = "text" | "textarea" | "number" | "date" | "jobType" | "assignee" | "day" | "bins";
@@ -85,10 +76,6 @@ const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
   { key: "last_completed_on", label: "Last Completed On", type: "date" },
   { key: "photo_path", label: "Photo Path" },
 ];
-
-const editableJobFields = JOB_FIELD_CONFIGS.filter(
-  (field) => field.key !== "account_id" && field.key !== "property_id",
-);
 
 const binTextColorClasses: Record<BinColor, string> = {
   Red: "text-red-600",
@@ -446,20 +433,170 @@ export default function JobManager() {
     }
   };
 
-  const fieldsToRender = useMemo(
-    () =>
-      editableJobFields.filter((field) => !(isCreating && HIDDEN_WHEN_CREATING.includes(field.key))),
-    [isCreating],
-  );
-
   const sortedProperties = useMemo(
     () => [...properties].sort((a, b) => (a.address ?? "").localeCompare(b.address ?? "")),
     [properties],
   );
 
+  const getFieldConfig = (key: keyof JobFormState) => JOB_FIELD_CONFIGS.find((field) => field.key === key);
+
   const baseInputClasses =
     "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
   const selectClasses = `${baseInputClasses} pr-10`;
+
+  const renderTextField = (key: keyof JobFormState, className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <input
+          type="text"
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        />
+      </label>
+    );
+  };
+
+  const renderNumberField = (key: keyof JobFormState, className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <input
+          type="number"
+          step="any"
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        />
+      </label>
+    );
+  };
+
+  const renderDateField = (key: keyof JobFormState, className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <input
+          type="date"
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        />
+      </label>
+    );
+  };
+
+  const renderSelectField = (key: "assigned_to", className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <select
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        >
+          <option value="">Unassigned</option>
+          {staff.map((member) => (
+            <option key={member.id} value={member.id}>
+              {member.name}
+            </option>
+          ))}
+          {value && !staffById.has(value) ? <option value={value}>Assignee not found</option> : null}
+        </select>
+      </label>
+    );
+  };
+
+  const renderDayField = (className: string) => {
+    const config = getFieldConfig("day_of_week");
+    const value = formState.day_of_week ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? "Day of Week"}</span>
+        <select
+          id="job-day_of_week"
+          value={value}
+          onChange={(event) => handleInputChange("day_of_week", event.target.value)}
+          className={className}
+        >
+          <option value="">Not set</option>
+          {DAY_OPTIONS.map((day) => (
+            <option key={day} value={day}>
+              {day}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  };
+
+  const renderJobTypeField = (className: string) => {
+    const config = getFieldConfig("job_type");
+    const value = formState.job_type ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? "Job Type"}</span>
+        <select
+          id="job-job_type"
+          value={value}
+          onChange={(event) => handleInputChange("job_type", event.target.value)}
+          className={className}
+        >
+          <option value="put_out">Put out</option>
+          <option value="bring_in">Bring in</option>
+        </select>
+      </label>
+    );
+  };
+
+  const renderNotesField = (className: string) => {
+    const config = getFieldConfig("notes");
+    const value = formState.notes ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? "Notes"}</span>
+        <textarea
+          id="job-notes"
+          rows={2}
+          value={value}
+          onChange={(event) => handleInputChange("notes", event.target.value)}
+          className={`${className} min-h-[44px]`}
+        />
+      </label>
+    );
+  };
+
+  const renderBinSelector = () => (
+    <div className="rounded-lg border border-gray-300 bg-white px-3 py-2">
+      <span className="text-sm font-medium text-gray-800">Bin colors</span>
+      <div className="mt-2 grid grid-flow-col auto-cols-fr gap-4 text-sm font-semibold">
+        {BIN_COLORS.map((color) => (
+          <label key={color} className="flex items-center justify-center gap-2 whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={selectedBins.has(color)}
+              onChange={(event) => updateBinSelection(color, event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+            />
+            <span className={binTextColorClasses[color]}>{color}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -498,7 +635,7 @@ export default function JobManager() {
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search address, client, or assignee"
+                placeholder="Search by address or client"
                 className={baseInputClasses}
               />
             </label>
@@ -559,12 +696,12 @@ export default function JobManager() {
                           {job.day_of_week ?? "—"}
                         </td>
                         <td className="px-4 py-3 align-middle text-sm text-gray-700">
-                          <div className="flex flex-col gap-1 whitespace-nowrap">
+                          <div className="flex h-full flex-col justify-center gap-1 whitespace-nowrap">
                             <span className="font-semibold text-gray-900">
                               {job.job_type === "bring_in" ? "Bring in" : "Put out"}
                             </span>
                             {binColors.length ? (
-                              <div className="flex flex-nowrap gap-3 text-xs font-semibold leading-tight">
+                              <div className="grid grid-flow-col auto-cols-fr gap-3 text-xs font-semibold leading-tight">
                                 {binColors.map((color) => (
                                   <span key={`${job.id}-${color}`} className={binTextColorClasses[color]}>
                                     {color}
@@ -632,104 +769,67 @@ export default function JobManager() {
           {(isCreating || selectedJob) && (
             <form onSubmit={handleSave} className="space-y-4">
               {isCreating ? (
-                <div className="space-y-2">
-                  <label className="flex flex-col text-sm text-gray-900">
-                    <span className="font-medium text-gray-800">Property address</span>
-                    <select
-                      value={formState.property_id}
-                      onChange={(event) => handlePropertySelect(event.target.value)}
-                      className={selectClasses}
-                    >
-                      <option value="">Select a property</option>
-                      {sortedProperties.map((property) => (
-                        <option key={property.property_id} value={property.property_id}>
-                          {property.address ?? "Address"}
-                          {property.client_name ? ` — ${property.client_name}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <p className="text-xs text-gray-600">
-                    Addresses are pulled from the property list. Client details, location, and photos are filled
-                    automatically.
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {fieldsToRender.map((field) => {
-                  const value = formState[field.key] ?? "";
-
-                  if (field.type === "bins") {
-                    return (
-                      <div key={field.key} className="sm:col-span-2">
-                        <span className="text-sm font-medium text-gray-800">Bin colors</span>
-                        <div className="mt-2 flex flex-wrap gap-4 rounded-lg border border-gray-300 bg-white px-3 py-2">
-                          {BIN_COLORS.map((color) => (
-                            <label key={color} className="flex items-center gap-2 whitespace-nowrap text-sm font-semibold">
-                              <input
-                                type="checkbox"
-                                checked={selectedBins.has(color)}
-                                onChange={(event) => updateBinSelection(color, event.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
-                              />
-                              <span className={binTextColorClasses[color]}>{color}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  const commonProps = {
-                    id: `job-${field.key}`,
-                    value,
-                    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-                      handleInputChange(field.key, event.target.value),
-                  } as const;
-
-                  return (
-                    <label key={field.key} className="flex flex-col text-sm text-gray-900">
-                      <span className="font-medium text-gray-800">{field.label}</span>
-                      {field.type === "textarea" ? (
-                        <textarea rows={2} {...commonProps} className={`${baseInputClasses} min-h-[44px]`} />
-                      ) : field.type === "number" ? (
-                        <input type="number" step="any" {...commonProps} className={baseInputClasses} />
-                      ) : field.type === "date" ? (
-                        <input type="date" {...commonProps} className={baseInputClasses} />
-                      ) : field.type === "jobType" ? (
-                        <select {...commonProps} className={selectClasses}>
-                          <option value="put_out">Put out</option>
-                          <option value="bring_in">Bring in</option>
-                        </select>
-                      ) : field.type === "assignee" ? (
-                        <select {...commonProps} className={selectClasses}>
-                          <option value="">Unassigned</option>
-                          {staff.map((member) => (
-                            <option key={member.id} value={member.id}>
-                              {member.name}
-                            </option>
-                          ))}
-                          {value && !staffById.has(value) ? (
-                            <option value={value}>Assignee not found</option>
-                          ) : null}
-                        </select>
-                      ) : field.type === "day" ? (
-                        <select {...commonProps} className={selectClasses}>
-                          <option value="">Not set</option>
-                          {DAY_OPTIONS.map((day) => (
-                            <option key={day} value={day}>
-                              {day}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input type="text" {...commonProps} className={baseInputClasses} />
-                      )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                    <label className="flex flex-col text-sm text-gray-900">
+                      <span className="font-medium text-gray-800">Property address</span>
+                      <select
+                        value={formState.property_id}
+                        onChange={(event) => handlePropertySelect(event.target.value)}
+                        className={selectClasses}
+                      >
+                        <option value="">Select a property</option>
+                        {sortedProperties.map((property) => (
+                          <option key={property.property_id} value={property.property_id}>
+                            {property.address ?? "Address"}
+                            {property.client_name ? ` — ${property.client_name}` : ""}
+                          </option>
+                        ))}
+                      </select>
                     </label>
-                  );
-                })}
-              </div>
+                    {renderSelectField("assigned_to", selectClasses)}
+                  </div>
+
+                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                    {renderDayField(selectClasses)}
+                    {renderJobTypeField(selectClasses)}
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    {renderBinSelector()}
+                  </div>
+
+                  <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                    {renderTextField("address", baseInputClasses)}
+                    {renderSelectField("assigned_to", selectClasses)}
+                  </div>
+
+                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                    {renderDayField(selectClasses)}
+                    {renderJobTypeField(selectClasses)}
+                  </div>
+
+                  <div className="sm:col-span-2">{renderBinSelector()}</div>
+
+                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                    {renderNumberField("lat", baseInputClasses)}
+                    {renderNumberField("lng", baseInputClasses)}
+                  </div>
+
+                  <div className="sm:col-span-2">{renderTextField("photo_path", baseInputClasses)}</div>
+
+                  <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
+
+                  <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                    {renderTextField("client_name", baseInputClasses)}
+                    {renderDateField("last_completed_on", baseInputClasses)}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end">
                 <button
                   type="submit"
