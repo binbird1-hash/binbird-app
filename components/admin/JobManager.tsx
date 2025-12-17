@@ -4,15 +4,23 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import type { JobRecord } from "@/lib/database.types";
 
-const DAY_OPTIONS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+const DAY_OPTIONS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 const BIN_COLORS = ["Red", "Yellow", "Green"] as const;
 
 const sortJobs = (entries: JobRecord[]) => {
+  const getDayIndex = (day: string | null | undefined) => {
+    const value = day?.toLowerCase().trim();
+    const idx = DAY_OPTIONS.findIndex((option) => option.toLowerCase() === value);
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+  };
+
   return [...entries].sort((a, b) => {
     const dayA = a.day_of_week ?? "";
     const dayB = b.day_of_week ?? "";
-    if (dayA !== dayB) {
-      return dayA.localeCompare(dayB);
+    const dayOrderA = getDayIndex(dayA);
+    const dayOrderB = getDayIndex(dayB);
+    if (dayOrderA !== dayOrderB) {
+      return dayOrderA - dayOrderB;
     }
     const addressA = a.address ?? "";
     const addressB = b.address ?? "";
