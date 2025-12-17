@@ -3,33 +3,12 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import NewClientForm from "./NewClientForm";
-
-export type ClientListRow = {
-  property_id: string;
-  account_id: string | null;
-  client_name: string | null;
-  company: string | null;
-  address: string | null;
-  collection_day: string | null;
-  put_bins_out: string | null;
-  notes: string | null;
-  red_freq: string | null;
-  red_flip: string | null;
-  red_bins: number | string | null;
-  yellow_freq: string | null;
-  yellow_flip: string | null;
-  yellow_bins: number | string | null;
-  green_freq: string | null;
-  green_flip: string | null;
-  green_bins: number | string | null;
-  email: string | null;
-  assigned_to: string | null;
-  lat_lng: string | null;
-  price_per_month: number | null;
-  photo_path: string | null;
-  trial_start: string | null;
-  membership_start: string | null;
-};
+import {
+  CLIENT_DATE_FIELD_KEYS,
+  CLIENT_FIELD_CONFIGS,
+  CLIENT_NUMBER_FIELD_KEYS,
+  type ClientListRow,
+} from "./clientFieldConfig";
 
 type StaffMember = {
   id: string;
@@ -38,49 +17,6 @@ type StaffMember = {
 };
 
 type ClientFormState = Record<keyof ClientListRow, string>;
-
-type ClientFieldType = "text" | "textarea" | "number" | "date" | "assignee";
-
-type ClientFieldConfig = {
-  key: keyof ClientListRow;
-  label: string;
-  type?: ClientFieldType;
-};
-
-export const CLIENT_FIELD_CONFIGS: ClientFieldConfig[] = [
-  { key: "property_id", label: "Property ID" },
-  { key: "account_id", label: "Account ID" },
-  { key: "client_name", label: "Client Name" },
-  { key: "company", label: "Company" },
-  { key: "email", label: "Email" },
-  { key: "address", label: "Address" },
-  { key: "lat_lng", label: "Lat/Lng" },
-  { key: "collection_day", label: "Collection Day" },
-  { key: "put_bins_out", label: "Put Bins Out" },
-  { key: "assigned_to", label: "Assigned To", type: "assignee" },
-  { key: "notes", label: "Notes", type: "textarea" },
-  { key: "photo_path", label: "Photo Path" },
-  { key: "red_freq", label: "Red Bin Frequency" },
-  { key: "red_flip", label: "Red Flip" },
-  { key: "red_bins", label: "Red Bins", type: "number" },
-  { key: "yellow_freq", label: "Yellow Bin Frequency" },
-  { key: "yellow_flip", label: "Yellow Flip" },
-  { key: "yellow_bins", label: "Yellow Bins", type: "number" },
-  { key: "green_freq", label: "Green Bin Frequency" },
-  { key: "green_flip", label: "Green Flip" },
-  { key: "green_bins", label: "Green Bins", type: "number" },
-  { key: "price_per_month", label: "Price Per Month", type: "number" },
-  { key: "trial_start", label: "Trial Start", type: "date" },
-  { key: "membership_start", label: "Membership Start", type: "date" },
-];
-
-export const CLIENT_NUMBER_FIELD_KEYS: Array<keyof ClientListRow> = [
-  "red_bins",
-  "yellow_bins",
-  "green_bins",
-  "price_per_month",
-];
-export const CLIENT_DATE_FIELD_KEYS: Array<keyof ClientListRow> = ["trial_start", "membership_start"];
 
 const numberFields = new Set(CLIENT_NUMBER_FIELD_KEYS);
 const dateFields = new Set(CLIENT_DATE_FIELD_KEYS);
