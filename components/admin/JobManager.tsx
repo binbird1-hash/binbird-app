@@ -5,6 +5,7 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 import type { JobRecord } from "@/lib/database.types";
 
 const DAY_OPTIONS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+const BIN_COLORS = ["Red", "Yellow", "Green"] as const;
 
 const sortJobs = (entries: JobRecord[]) => {
   return [...entries].sort((a, b) => {
@@ -25,6 +26,15 @@ type StaffMember = {
   role: string | null;
 };
 
+type ClientProperty = {
+  property_id: string;
+  account_id: string | null;
+  address: string | null;
+  client_name: string | null;
+  photo_path: string | null;
+  lat_lng: string | null;
+};
+
 type JobFormState = {
   account_id: string;
   property_id: string;
@@ -41,7 +51,18 @@ type JobFormState = {
   photo_path: string;
 };
 
-type JobFieldType = "text" | "textarea" | "number" | "date" | "jobType" | "assignee" | "day";
+const HIDDEN_WHEN_CREATING: Array<keyof JobFormState> = [
+  "address",
+  "client_name",
+  "photo_path",
+  "lat",
+  "lng",
+  "last_completed_on",
+];
+
+type BinColor = (typeof BIN_COLORS)[number];
+
+type JobFieldType = "text" | "textarea" | "number" | "date" | "jobType" | "assignee" | "day" | "bins";
 
 type JobFieldConfig = {
   key: keyof JobFormState;
@@ -55,7 +76,7 @@ const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
   { key: "address", label: "Address" },
   { key: "client_name", label: "Client Name" },
   { key: "job_type", label: "Job Type", type: "jobType" },
-  { key: "bins", label: "Bins" },
+  { key: "bins", label: "Bins", type: "bins" },
   { key: "notes", label: "Notes", type: "textarea" },
   { key: "assigned_to", label: "Assigned To", type: "assignee" },
   { key: "day_of_week", label: "Day of Week", type: "day" },
@@ -64,6 +85,16 @@ const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
   { key: "last_completed_on", label: "Last Completed On", type: "date" },
   { key: "photo_path", label: "Photo Path" },
 ];
+
+const editableJobFields = JOB_FIELD_CONFIGS.filter(
+  (field) => field.key !== "account_id" && field.key !== "property_id",
+);
+
+const binTextColorClasses: Record<BinColor, string> = {
+  Red: "text-red-600",
+  Yellow: "text-yellow-600",
+  Green: "text-green-600",
+};
 
 const createEmptyJobState = (): JobFormState => ({
   account_id: "",
@@ -88,13 +119,38 @@ const parseCoordinate = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const editableJobFields = JOB_FIELD_CONFIGS.filter(
-  (field) => field.key !== "account_id" && field.key !== "property_id",
-);
+const parseLatLngString = (value: string | null | undefined) => {
+  if (!value) return { lat: "", lng: "" };
+  const parts = value.split(",").map((part) => part.trim()).filter(Boolean);
+  const [lat = "", lng = ""] = parts;
+  return { lat, lng };
+};
+
+const parseBinsFromString = (value: string | null | undefined): BinColor[] => {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((color) => {
+      const lower = color.toLowerCase();
+      if (lower.startsWith("red")) return "Red" as const;
+      if (lower.startsWith("yellow")) return "Yellow" as const;
+      if (lower.startsWith("green")) return "Green" as const;
+      return null;
+    })
+    .filter(Boolean) as BinColor[];
+};
+
+const formatBinsValue = (colors: Iterable<BinColor>) => {
+  const ordered = Array.from(new Set(colors));
+  return ordered.join(", ");
+};
 
 const buildJobPayload = (state: JobFormState) => {
   const jobType = state.job_type === "bring_in" ? "bring_in" : "put_out";
   const address = state.address.trim();
+  const bins = formatBinsValue(parseBinsFromString(state.bins));
 
   return {
     account_id: state.account_id.trim().length ? state.account_id.trim() : null,
@@ -102,7 +158,7 @@ const buildJobPayload = (state: JobFormState) => {
     address,
     client_name: state.client_name.trim().length ? state.client_name.trim() : null,
     job_type: jobType,
-    bins: state.bins.trim().length ? state.bins.trim() : null,
+    bins: bins.length ? bins : null,
     notes: state.notes.trim().length ? state.notes.trim() : null,
     assigned_to: state.assigned_to.trim().length ? state.assigned_to.trim() : null,
     day_of_week: state.day_of_week.trim().length ? state.day_of_week.trim() : null,
@@ -117,6 +173,7 @@ export default function JobManager() {
   const supabase = useSupabase();
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [properties, setProperties] = useState<ClientProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -129,7 +186,7 @@ export default function JobManager() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [jobsResult, staffResult] = await Promise.all([
+    const [jobsResult, staffResult, propertyResult] = await Promise.all([
       supabase
         .from("jobs")
         .select(
@@ -141,6 +198,10 @@ export default function JobManager() {
         .from("user_profile")
         .select("user_id, full_name, role")
         .in("role", ["staff", "admin"]),
+      supabase
+        .from("client_list")
+        .select("property_id, account_id, address, client_name, photo_path, lat_lng")
+        .order("address", { ascending: true }),
     ]);
 
     if (jobsResult.error) {
@@ -163,6 +224,13 @@ export default function JobManager() {
       );
     }
 
+    if (propertyResult.error) {
+      console.warn("Failed to load properties", propertyResult.error);
+      setProperties([]);
+    } else {
+      setProperties(propertyResult.data as ClientProperty[]);
+    }
+
     setLoading(false);
   }, [supabase]);
 
@@ -171,6 +239,12 @@ export default function JobManager() {
   }, [loadData]);
 
   const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
+  const propertiesById = useMemo(
+    () => new Map(properties.map((property) => [property.property_id, property] as const)),
+    [properties],
+  );
+
+  const selectedBins = useMemo(() => new Set(parseBinsFromString(formState.bins)), [formState.bins]);
 
   const filteredJobs = useMemo(() => {
     const trimmedSearch = search.trim().toLowerCase();
@@ -186,10 +260,16 @@ export default function JobManager() {
         job.account_id,
         job.property_id,
         assignedName,
+        job.assigned_to,
       ]
         .map((value) => value?.toString().toLowerCase() ?? "")
-        .join(" ");
-      return haystack.includes(trimmedSearch);
+        .filter(Boolean);
+
+      if (!job.assigned_to && "unassigned".includes(trimmedSearch)) {
+        haystack.push("unassigned");
+      }
+
+      return haystack.some((value) => value.includes(trimmedSearch));
     });
   }, [jobs, dayFilter, search, staffById]);
 
@@ -230,12 +310,46 @@ export default function JobManager() {
     setFormState((previous) => ({ ...previous, [key]: value }));
   };
 
+  const handlePropertySelect = (propertyId: string) => {
+    const property = propertiesById.get(propertyId);
+    const { lat, lng } = parseLatLngString(property?.lat_lng ?? "");
+
+    setFormState((previous) => ({
+      ...previous,
+      property_id: propertyId,
+      account_id: property?.account_id ?? "",
+      address: property?.address ?? "",
+      client_name: property?.client_name ?? "",
+      photo_path: property?.photo_path ?? "",
+      lat,
+      lng,
+    }));
+  };
+
+  const updateBinSelection = (color: BinColor, checked: boolean) => {
+    setFormState((previous) => {
+      const current = new Set(parseBinsFromString(previous.bins));
+      if (checked) {
+        current.add(color);
+      } else {
+        current.delete(color);
+      }
+      return { ...previous, bins: formatBinsValue(current) };
+    });
+  };
+
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setStatus(null);
 
     try {
+      if (isCreating && !formState.property_id.trim().length) {
+        setStatus({ type: "error", message: "Select a property address before creating a job." });
+        setSaving(false);
+        return;
+      }
+
       const payload = buildJobPayload(formState);
       if (!payload.address || typeof payload.address !== "string" || !payload.address.trim().length) {
         setStatus({ type: "error", message: "An address is required." });
@@ -332,6 +446,21 @@ export default function JobManager() {
     }
   };
 
+  const fieldsToRender = useMemo(
+    () =>
+      editableJobFields.filter((field) => !(isCreating && HIDDEN_WHEN_CREATING.includes(field.key))),
+    [isCreating],
+  );
+
+  const sortedProperties = useMemo(
+    () => [...properties].sort((a, b) => (a.address ?? "").localeCompare(b.address ?? "")),
+    [properties],
+  );
+
+  const baseInputClasses =
+    "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
+  const selectClasses = `${baseInputClasses} pr-10`;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-8">
@@ -362,13 +491,23 @@ export default function JobManager() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <label className="flex w-full flex-col text-sm text-gray-900 sm:w-auto">
+          <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
+            <label className="flex w-full flex-col text-sm text-gray-900 sm:col-span-3">
+              <span className="font-medium text-gray-800">Search</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search address, client, or assignee"
+                className={baseInputClasses}
+              />
+            </label>
+            <label className="flex w-full flex-col text-sm text-gray-900 sm:col-span-1">
               <span className="font-medium text-gray-800">Filter by day</span>
               <select
                 value={dayFilter}
                 onChange={(event) => setDayFilter(event.target.value)}
-                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className={selectClasses}
               >
                 <option value="">All days</option>
                 {DAY_OPTIONS.map((day) => (
@@ -378,16 +517,6 @@ export default function JobManager() {
                 ))}
               </select>
             </label>
-            <label className="flex w-full flex-col text-sm text-gray-900 sm:w-auto">
-              <span className="font-medium text-gray-800">Search</span>
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search address, client, or property"
-                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-            </label>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -396,10 +525,11 @@ export default function JobManager() {
             ) : filteredJobs.length === 0 ? (
               <p className="p-4 text-sm text-gray-700">No jobs match the current filters.</p>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
                     <th className="px-4 py-3 text-left">Address</th>
+                    <th className="px-4 py-3 text-left">Day</th>
                     <th className="px-4 py-3 text-left">Job</th>
                     <th className="px-4 py-3 text-left">Assignee</th>
                   </tr>
@@ -408,6 +538,7 @@ export default function JobManager() {
                   {filteredJobs.map((job) => {
                     const isSelected = job.id === selectedJobId && !isCreating;
                     const assigneeName = job.assigned_to ? staffById.get(job.assigned_to) : null;
+                    const binColors = parseBinsFromString(job.bins);
                     return (
                       <tr
                         key={job.id}
@@ -416,16 +547,42 @@ export default function JobManager() {
                           isSelected ? "bg-gray-100" : "bg-white"
                         }`}
                       >
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          <div className="font-semibold text-gray-900">{job.address ?? "Address"}</div>
-                          <div className="text-xs text-gray-600">{job.day_of_week ?? "—"}</div>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-900">
+                          <div
+                            className="font-semibold text-gray-900 whitespace-nowrap truncate"
+                            title={job.address ?? undefined}
+                          >
+                            {job.address ?? "Address"}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                          {job.bins ? <span className="ml-2 text-xs text-gray-600">{job.bins}</span> : null}
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700 whitespace-nowrap">
+                          {job.day_of_week ?? "—"}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {assigneeName ?? (job.assigned_to ? "Assignee not found" : "Unassigned")}
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700">
+                          <div className="flex flex-col gap-1 whitespace-nowrap">
+                            <span className="font-semibold text-gray-900">
+                              {job.job_type === "bring_in" ? "Bring in" : "Put out"}
+                            </span>
+                            {binColors.length ? (
+                              <div className="flex flex-nowrap gap-3 text-xs font-semibold leading-tight">
+                                {binColors.map((color) => (
+                                  <span key={`${job.id}-${color}`} className={binTextColorClasses[color]}>
+                                    {color}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-500">—</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700">
+                          <div
+                            className="whitespace-nowrap truncate text-sm font-medium text-gray-900"
+                            title={assigneeName ?? job.assigned_to ?? undefined}
+                          >
+                            {assigneeName ?? (job.assigned_to ? "Assignee not found" : "Unassigned")}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -474,34 +631,79 @@ export default function JobManager() {
 
           {(isCreating || selectedJob) && (
             <form onSubmit={handleSave} className="space-y-4">
+              {isCreating ? (
+                <div className="space-y-2">
+                  <label className="flex flex-col text-sm text-gray-900">
+                    <span className="font-medium text-gray-800">Property address</span>
+                    <select
+                      value={formState.property_id}
+                      onChange={(event) => handlePropertySelect(event.target.value)}
+                      className={selectClasses}
+                    >
+                      <option value="">Select a property</option>
+                      {sortedProperties.map((property) => (
+                        <option key={property.property_id} value={property.property_id}>
+                          {property.address ?? "Address"}
+                          {property.client_name ? ` — ${property.client_name}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    Addresses are pulled from the property list. Client details, location, and photos are filled
+                    automatically.
+                  </p>
+                </div>
+              ) : null}
+
               <div className="grid gap-4 sm:grid-cols-2">
-                {editableJobFields.map((field) => {
+                {fieldsToRender.map((field) => {
                   const value = formState[field.key] ?? "";
+
+                  if (field.type === "bins") {
+                    return (
+                      <div key={field.key} className="sm:col-span-2">
+                        <span className="text-sm font-medium text-gray-800">Bin colors</span>
+                        <div className="mt-2 flex flex-wrap gap-4 rounded-lg border border-gray-300 bg-white px-3 py-2">
+                          {BIN_COLORS.map((color) => (
+                            <label key={color} className="flex items-center gap-2 whitespace-nowrap text-sm font-semibold">
+                              <input
+                                type="checkbox"
+                                checked={selectedBins.has(color)}
+                                onChange={(event) => updateBinSelection(color, event.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+                              />
+                              <span className={binTextColorClasses[color]}>{color}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const commonProps = {
                     id: `job-${field.key}`,
                     value,
                     onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
                       handleInputChange(field.key, event.target.value),
-                    className:
-                      "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
                   } as const;
 
                   return (
                     <label key={field.key} className="flex flex-col text-sm text-gray-900">
                       <span className="font-medium text-gray-800">{field.label}</span>
                       {field.type === "textarea" ? (
-                        <textarea rows={4} {...commonProps} />
+                        <textarea rows={2} {...commonProps} className={`${baseInputClasses} min-h-[44px]`} />
                       ) : field.type === "number" ? (
-                        <input type="number" step="any" {...commonProps} />
+                        <input type="number" step="any" {...commonProps} className={baseInputClasses} />
                       ) : field.type === "date" ? (
-                        <input type="date" {...commonProps} />
+                        <input type="date" {...commonProps} className={baseInputClasses} />
                       ) : field.type === "jobType" ? (
-                        <select {...commonProps}>
+                        <select {...commonProps} className={selectClasses}>
                           <option value="put_out">Put out</option>
                           <option value="bring_in">Bring in</option>
                         </select>
                       ) : field.type === "assignee" ? (
-                        <select {...commonProps}>
+                        <select {...commonProps} className={selectClasses}>
                           <option value="">Unassigned</option>
                           {staff.map((member) => (
                             <option key={member.id} value={member.id}>
@@ -513,7 +715,7 @@ export default function JobManager() {
                           ) : null}
                         </select>
                       ) : field.type === "day" ? (
-                        <select {...commonProps}>
+                        <select {...commonProps} className={selectClasses}>
                           <option value="">Not set</option>
                           {DAY_OPTIONS.map((day) => (
                             <option key={day} value={day}>
@@ -521,9 +723,9 @@ export default function JobManager() {
                             </option>
                           ))}
                         </select>
-                        ) : (
-                          <input type="text" {...commonProps} />
-                        )}
+                      ) : (
+                        <input type="text" {...commonProps} className={baseInputClasses} />
+                      )}
                     </label>
                   );
                 })}
