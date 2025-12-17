@@ -1,7 +1,7 @@
 'use client'
 import Header from '../UI/Header'
 import Card from '../UI/Card'
-import { Users, Cog, FileText, LogOut, ClipboardList, ClipboardCheck } from 'lucide-react'
+import { Users, Cog, FileText, LogOut, ClipboardCheck } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 export default function AdminDashboard() {
@@ -17,7 +17,6 @@ export default function AdminDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 mt-6">
         <Card title="Admin Portal" icon={Cog} href="/admin" />
         <Card title="Client List" icon={Users} href="/admin/clients" />
-        <Card title="Add Property" icon={ClipboardList} href="/admin/clients/new" />
         <Card title="Jobs & Assignments" icon={ClipboardCheck} href="/admin/jobs" />
         <Card title="Logs & Proofs" icon={FileText} href="/admin/logs" />
         <Card title="Sign Out" icon={LogOut} onClick={signOut} />
