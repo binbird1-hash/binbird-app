@@ -23,7 +23,7 @@ const dateFields = new Set(CLIENT_DATE_FIELD_KEYS);
 const editableClientFields = CLIENT_FIELD_CONFIGS.filter(
   (field) => field.key !== "property_id" && field.key !== "account_id",
 );
-const fullWidthFields = new Set<keyof ClientListRow>(["address", "photo_path"]);
+const fullWidthFields = new Set<keyof ClientListRow>(["address", "photo_path", "notes"]);
 const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
 type BinGroupKey =
   | "red_freq"
@@ -103,7 +103,7 @@ export default function ClientListManager() {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const baseInputClasses =
     "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
-  const selectClasses = `${baseInputClasses} pr-10`;
+  const selectClasses = `${baseInputClasses} pr-12`;
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -321,9 +321,9 @@ export default function ClientListManager() {
             />
           </label>
 
-          <label className="flex flex-col justify-center text-sm text-gray-900">
+          <label className="flex flex-col text-sm text-gray-900">
             <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Flip`}</span>
-            <div className="mt-1 flex h-full items-center justify-center gap-2">
+            <div className="mt-1 flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800">
               <input
                 id={`client-${flipKey}`}
                 type="checkbox"
@@ -331,7 +331,7 @@ export default function ClientListManager() {
                 onChange={(event) => handleInputChange(flipKey, event.target.checked ? "Yes" : "")}
                 className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
               />
-              <span className="text-sm text-gray-800">Yes</span>
+              <span className="text-sm">Yes</span>
             </div>
           </label>
         </div>

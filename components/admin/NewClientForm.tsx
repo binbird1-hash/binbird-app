@@ -41,7 +41,7 @@ const createInitialState = () => {
 const visibleClientFields = CLIENT_FIELD_CONFIGS.filter(
   (field) => field.key !== "property_id" && field.key !== "account_id",
 );
-const fullWidthFields = new Set<string>(["address", "photo_path"]);
+const fullWidthFields = new Set<string>(["address", "photo_path", "notes"]);
 const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
 type BinGroupKey =
   | "red_freq"
@@ -96,7 +96,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
   const [selectedExistingClient, setSelectedExistingClient] = useState<string>("");
   const baseInputClasses =
     "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
-  const selectClasses = `${baseInputClasses} pr-10`;
+  const selectClasses = `${baseInputClasses} pr-12`;
 
   useEffect(() => {
     const loadStaff = async () => {
@@ -276,9 +276,9 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
             />
           </label>
 
-          <label className="flex flex-col justify-center text-sm text-gray-900">
+          <label className="flex flex-col text-sm text-gray-900">
             <span className="font-medium text-gray-800">{`${prefix[0].toUpperCase()}${prefix.slice(1)} Flip`}</span>
-            <div className="mt-1 flex h-full items-center justify-center gap-2">
+            <div className="mt-1 flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800">
               <input
                 id={`new-client-${flipKey as string}`}
                 type="checkbox"
@@ -286,7 +286,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                 onChange={(event) => handleChange(flipKey as string, event.target.checked ? "Yes" : "")}
                 className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
               />
-              <span className="text-sm text-gray-800">Yes</span>
+              <span className="text-sm">Yes</span>
             </div>
           </label>
         </div>
@@ -355,9 +355,6 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                 );
               })}
             </select>
-            <span className="mt-1 text-xs text-gray-600">
-              Selecting an existing client will auto-fill the Client Name, Company, and Email fields.
-            </span>
           </label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -412,7 +409,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                     ))}
                   </select>
                 ) : field.type === "flip" ? (
-                  <div className="mt-1 flex items-center gap-2">
+                  <div className="mt-1 flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800">
                     <input
                       id={`new-client-${field.key as string}`}
                       type="checkbox"
@@ -420,7 +417,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                       onChange={(event) => handleChange(field.key as string, event.target.checked ? "Yes" : "")}
                       className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
                     />
-                    <span className="text-sm text-gray-800">Yes</span>
+                    <span className="text-sm">Yes</span>
                   </div>
                 ) : field.type === "textarea" ? (
                   <textarea rows={2} {...commonProps} className={`${commonProps.className} min-h-[44px]`} />
