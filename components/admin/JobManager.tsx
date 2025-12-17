@@ -77,12 +77,6 @@ const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
   { key: "photo_path", label: "Photo Path" },
 ];
 
-const binTextColorClasses: Record<BinColor, string> = {
-  Red: "text-red-600",
-  Yellow: "text-yellow-600",
-  Green: "text-green-600",
-};
-
 const createEmptyJobState = (): JobFormState => ({
   account_id: "",
   property_id: "",
@@ -474,8 +468,8 @@ export default function JobManager() {
       <label className="flex flex-col text-sm text-gray-900">
         <span className="font-medium text-gray-800">{config?.label ?? key}</span>
         <input
-          type="number"
-          step="any"
+          type="text"
+          inputMode="decimal"
           id={`job-${key}`}
           value={value}
           onChange={(event) => handleInputChange(key, event.target.value)}
@@ -586,18 +580,18 @@ export default function JobManager() {
   };
 
   const renderBinSelector = () => (
-    <div className="rounded-lg border border-gray-300 bg-white px-3 py-2">
+    <div className="flex items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
       <span className="text-sm font-medium text-gray-800">Bin colors</span>
-      <div className="mt-2 grid grid-flow-col auto-cols-fr gap-4 text-sm font-semibold">
+      <div className="flex items-center gap-4 text-sm font-semibold">
         {BIN_COLORS.map((color) => (
-          <label key={color} className="flex items-center justify-center gap-2 whitespace-nowrap">
+          <label key={color} className="flex items-center justify-start gap-2 whitespace-nowrap">
             <input
               type="checkbox"
               checked={selectedBins.has(color)}
               onChange={(event) => updateBinSelection(color, event.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
             />
-            <span className={binTextColorClasses[color]}>{color}</span>
+            <span className="text-gray-900">{color}</span>
           </label>
         ))}
       </div>
@@ -674,14 +668,13 @@ export default function JobManager() {
                     <th className="px-4 py-3 text-left">Address</th>
                     <th className="px-4 py-3 text-left">Day</th>
                     <th className="px-4 py-3 text-left">Job</th>
-                    <th className="px-4 py-3 text-left">Assignee</th>
+                    <th className="px-4 py-3 text-left">Assigned To</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredJobs.map((job) => {
                     const isSelected = job.id === selectedJobId && !isCreating;
                     const assigneeName = job.assigned_to ? staffById.get(job.assigned_to) : null;
-                    const binColors = parseBinsFromString(job.bins);
                     return (
                       <tr
                         key={job.id}
@@ -702,21 +695,8 @@ export default function JobManager() {
                           {job.day_of_week ?? "—"}
                         </td>
                         <td className="px-4 py-3 align-middle text-sm text-gray-700">
-                          <div className="flex h-full flex-col justify-center gap-1 whitespace-nowrap text-left">
-                            <span className="font-semibold text-gray-900">
-                              {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                            </span>
-                            {binColors.length ? (
-                              <div className="grid grid-cols-3 gap-3 text-xs font-semibold leading-tight">
-                                {binColors.map((color) => (
-                                  <span key={`${job.id}-${color}`} className={binTextColorClasses[color]}>
-                                    {color}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-500">—</span>
-                            )}
+                          <div className="flex h-full items-center gap-1 whitespace-nowrap text-left font-semibold text-gray-900">
+                            {job.job_type === "bring_in" ? "Bring in" : "Put out"}
                           </div>
                         </td>
                         <td className="px-4 py-3 align-middle text-sm text-gray-700">
