@@ -23,6 +23,13 @@ type StaffMember = {
   role: string | null;
 };
 
+type ExistingClient = {
+  property_id: string;
+  client_name: string | null;
+  company: string | null;
+  email: string | null;
+};
+
 const createInitialState = () => {
   const state: ClientFormState = {};
   CLIENT_FIELD_CONFIGS.forEach(({ key }) => {
@@ -34,6 +41,8 @@ const createInitialState = () => {
 const visibleClientFields = CLIENT_FIELD_CONFIGS.filter(
   (field) => field.key !== "property_id" && field.key !== "account_id",
 );
+const fullWidthFields = new Set<string>(["address", "photo_path"]);
+const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
 
 const daysOfWeek = [
   "Monday",
@@ -58,6 +67,8 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [existingClients, setExistingClients] = useState<ExistingClient[]>([]);
+  const [selectedExistingClient, setSelectedExistingClient] = useState<string>("");
 
   useEffect(() => {
     const loadStaff = async () => {
@@ -81,13 +92,48 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
       );
     };
 
+    const loadExistingClients = async () => {
+      const { data, error } = await supabase
+        .from("client_list")
+        .select("property_id, client_name, company, email")
+        .order("client_name", { ascending: true });
+
+      if (error) {
+        console.warn("Failed to load existing clients", error);
+        setExistingClients([]);
+        return;
+      }
+
+      setExistingClients((data ?? []) as ExistingClient[]);
+    };
+
     void loadStaff();
+    void loadExistingClients();
   }, [supabase]);
 
   const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
 
   const handleChange = (key: string, value: string) => {
     setFormState((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const handleExistingClientSelect = (propertyId: string) => {
+    setSelectedExistingClient(propertyId);
+
+    if (!propertyId.length) {
+      setFormState((previous) => ({ ...previous, client_name: "", company: "", email: "" }));
+      return;
+    }
+
+    const selectedClient = existingClients.find((client) => client.property_id === propertyId);
+    if (!selectedClient) return;
+
+    setFormState((previous) => ({
+      ...previous,
+      client_name: selectedClient.client_name ?? "",
+      company: selectedClient.company ?? "",
+      email: selectedClient.email ?? "",
+    }));
   };
 
   const buildPayload = () => {
@@ -130,6 +176,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
 
       setStatus({ type: "success", message: "Client property added to the list." });
       setFormState(createInitialState());
+      setSelectedExistingClient("");
       onCreated?.();
       if (onClose) {
         onClose();
@@ -186,8 +233,35 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-gray-100 p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="flex flex-col text-sm text-gray-900 sm:col-span-2 lg:col-span-3">
+            <span className="font-medium text-gray-800">Use existing client (optional)</span>
+            <select
+              id="existing-client"
+              value={selectedExistingClient}
+              onChange={(event) => handleExistingClientSelect(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <option value="">Create a new client</option>
+              {existingClients.map((client) => {
+                const primaryName = client.client_name?.trim().length ? client.client_name : client.company;
+                const secondary = client.company && primaryName !== client.company ? client.company : client.email;
+                return (
+                  <option key={client.property_id} value={client.property_id}>
+                    {primaryName ?? "Client"}
+                    {secondary ? ` — ${secondary}` : ""}
+                  </option>
+                );
+              })}
+            </select>
+            <span className="mt-1 text-xs text-gray-600">
+              Selecting an existing client will auto-fill the Client Name, Company, and Email fields.
+            </span>
+          </label>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleClientFields.map((field) => {
             const value = formState[field.key as string] ?? "";
+            const isFullWidth = fullWidthFields.has(field.key as string);
             const commonProps = {
               id: `new-client-${field.key as string}`,
               value,
@@ -198,7 +272,12 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
             } as const;
 
             return (
-              <label key={field.key as string} className="flex flex-col text-sm text-gray-900">
+              <label
+                key={field.key as string}
+                className={`flex flex-col text-sm text-gray-900 ${
+                  isFullWidth ? "sm:col-span-2 lg:col-span-3" : ""
+                }`}
+              >
                 <span className="font-medium text-gray-800">{field.label}</span>
                 {field.key === "collection_day" || field.key === "put_bins_out" ? (
                   <select {...commonProps}>
@@ -209,8 +288,28 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
                       </option>
                     ))}
                   </select>
+                ) : field.type === "bin-frequency" ? (
+                  <select {...commonProps}>
+                    <option value="">Select a frequency</option>
+                    {binFrequencyOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : field.type === "flip" ? (
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      id={`new-client-${field.key as string}`}
+                      type="checkbox"
+                      checked={value === "Yes"}
+                      onChange={(event) => handleChange(field.key as string, event.target.checked ? "Yes" : "")}
+                      className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+                    />
+                    <span className="text-sm text-gray-800">Yes</span>
+                  </div>
                 ) : field.type === "textarea" ? (
-                  <textarea rows={4} {...commonProps} />
+                  <textarea rows={2} {...commonProps} className={`${commonProps.className} min-h-[44px]`} />
                 ) : field.type === "number" ? (
                   <input type="number" step="any" {...commonProps} />
                 ) : field.type === "date" ? (

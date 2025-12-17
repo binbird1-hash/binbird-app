@@ -23,6 +23,8 @@ const dateFields = new Set(CLIENT_DATE_FIELD_KEYS);
 const editableClientFields = CLIENT_FIELD_CONFIGS.filter(
   (field) => field.key !== "property_id" && field.key !== "account_id",
 );
+const fullWidthFields = new Set<keyof ClientListRow>(["address", "photo_path"]);
+const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
 
 const toFormState = (row: ClientListRow): ClientFormState => {
   const state = {} as ClientFormState;
@@ -66,6 +68,8 @@ export default function ClientListManager() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [assignedFilter, setAssignedFilter] = useState<string>("");
+  const [sortField, setSortField] = useState<"" | "put_bins_out" | "collection_day">("");
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [formState, setFormState] = useState<ClientFormState>(emptyFormState);
   const [saving, setSaving] = useState(false);
@@ -123,10 +127,7 @@ export default function ClientListManager() {
 
   const filteredRows = useMemo(() => {
     const query = normaliseSearch(search);
-    if (!query.length) {
-      return rows;
-    }
-    return rows.filter((row) => {
+    const filteredBySearch = rows.filter((row) => {
       const assignedName = row.assigned_to ? staffById.get(row.assigned_to) ?? "" : "";
       const haystack = [
         row.client_name,
@@ -134,12 +135,36 @@ export default function ClientListManager() {
         row.address,
         row.email,
         assignedName,
+        row.assigned_to,
+        row.assigned_to ? "" : "unassigned",
       ]
         .map((value) => value?.toString().toLowerCase() ?? "")
         .join(" ");
-      return haystack.includes(query);
+      return !query.length || haystack.includes(query);
     });
-  }, [rows, search, staffById]);
+
+    const filteredByAssignee = filteredBySearch.filter((row) => {
+      if (!assignedFilter.length) return true;
+      if (assignedFilter === "__unassigned__") return !row.assigned_to;
+      return row.assigned_to === assignedFilter;
+    });
+
+    if (!sortField) {
+      return filteredByAssignee;
+    }
+
+    const getDayIndex = (value: string | null) => {
+      if (!value) return Number.POSITIVE_INFINITY;
+      const index = daysOfWeek.findIndex((day) => day.toLowerCase() === value.toLowerCase());
+      return index === -1 ? Number.POSITIVE_INFINITY : index;
+    };
+
+    return [...filteredByAssignee].sort((a, b) => {
+      const aIndex = getDayIndex(a[sortField]);
+      const bIndex = getDayIndex(b[sortField]);
+      return aIndex - bIndex;
+    });
+  }, [assignedFilter, rows, search, sortField, staffById]);
 
   const selectedRow = useMemo(
     () => rows.find((row) => row.property_id === selectedRowId) ?? null,
@@ -283,18 +308,54 @@ export default function ClientListManager() {
               </button>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-800" htmlFor="client-search">
-              Quick search
-            </label>
-            <input
-              id="client-search"
-              type="search"
-              placeholder="Search by client, address, or assignee"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-            />
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-800" htmlFor="client-search">
+                Quick search
+              </label>
+              <input
+                id="client-search"
+                type="search"
+                placeholder="Search by client, address, or assignee"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-800" htmlFor="assigned-filter">
+                Filter by assignee
+              </label>
+              <select
+                id="assigned-filter"
+                value={assignedFilter}
+                onChange={(event) => setAssignedFilter(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <option value="">All assignees</option>
+                <option value="__unassigned__">Unassigned</option>
+                {staff.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-800" htmlFor="sort-day">
+                Sort by bin day
+              </label>
+              <select
+                id="sort-day"
+                value={sortField}
+                onChange={(event) => setSortField(event.target.value as typeof sortField)}
+                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <option value="">No sorting</option>
+                <option value="put_bins_out">Sort by Put out day</option>
+                <option value="collection_day">Sort by Bring in day</option>
+              </select>
+            </div>
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             {loading ? (
@@ -302,7 +363,7 @@ export default function ClientListManager() {
             ) : filteredRows.length === 0 ? (
               <p className="p-4 text-sm text-gray-700">No properties match the current filters.</p>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
                     <th className="px-4 py-3 text-left">Address</th>
@@ -319,21 +380,27 @@ export default function ClientListManager() {
                       <tr
                         key={row.property_id}
                         onClick={() => handleSelectRow(row)}
-                        className={`cursor-pointer transition hover:bg-gray-100 ${
+                        className={`h-[92px] cursor-pointer align-middle transition hover:bg-gray-100 ${
                           isSelected ? "bg-gray-100" : "bg-white"
                         }`}
                       >
-                        <td className="px-4 py-3 align-top text-sm text-gray-900">
-                          <div className="font-semibold text-gray-900">{row.address ?? "—"}</div>
-                          <div className="text-xs text-gray-600">{row.client_name ?? row.company ?? "Property"}</div>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-900">
+                          <div className="font-semibold text-gray-900 whitespace-nowrap truncate" title={row.address ?? undefined}>
+                            {row.address ?? "—"}
+                          </div>
+                          <div className="text-xs text-gray-600 whitespace-nowrap truncate" title={
+                            row.client_name ?? row.company ?? undefined
+                          }>
+                            {row.client_name ?? row.company ?? "Property"}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 align-top text-sm text-gray-700 whitespace-nowrap">
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {assignedName ?? (row.assigned_to ? "Assignee not found" : "Unassigned")}
                           </div>
                         </td>
-                        <td className="px-4 py-3 align-top text-sm text-gray-700">{row.put_bins_out ?? "—"}</td>
-                        <td className="px-4 py-3 align-top text-sm text-gray-700">{row.collection_day ?? "—"}</td>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700">{row.put_bins_out ?? "—"}</td>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700">{row.collection_day ?? "—"}</td>
                       </tr>
                     );
                   })}
@@ -380,6 +447,7 @@ export default function ClientListManager() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {editableClientFields.map((field) => {
                   const value = formState[field.key] ?? "";
+                  const isFullWidth = fullWidthFields.has(field.key);
                   const commonProps = {
                     id: `client-${field.key}`,
                     value,
@@ -390,7 +458,12 @@ export default function ClientListManager() {
                   } as const;
 
                   return (
-                    <label key={field.key as string} className="flex flex-col text-sm text-gray-900">
+                    <label
+                      key={field.key as string}
+                      className={`flex flex-col text-sm text-gray-900 ${
+                        isFullWidth ? "sm:col-span-2 lg:col-span-3" : ""
+                      }`}
+                    >
                       <span className="font-medium text-gray-800">{field.label}</span>
                       {field.key === "collection_day" || field.key === "put_bins_out" ? (
                         <select {...commonProps}>
@@ -401,8 +474,28 @@ export default function ClientListManager() {
                             </option>
                           ))}
                         </select>
+                      ) : field.type === "bin-frequency" ? (
+                        <select {...commonProps}>
+                          <option value="">Select a frequency</option>
+                          {binFrequencyOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === "flip" ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <input
+                            id={`client-${field.key}`}
+                            type="checkbox"
+                            checked={value === "Yes"}
+                            onChange={(event) => handleInputChange(field.key, event.target.checked ? "Yes" : "")}
+                            className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+                          />
+                          <span className="text-sm text-gray-800">Yes</span>
+                        </div>
                       ) : field.type === "textarea" ? (
-                        <textarea rows={4} {...commonProps} />
+                        <textarea rows={2} {...commonProps} className={`${commonProps.className} min-h-[44px]`} />
                       ) : field.type === "number" ? (
                         <input type="number" step="any" {...commonProps} />
                       ) : field.type === "date" ? (
