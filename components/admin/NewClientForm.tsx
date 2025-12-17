@@ -35,6 +35,16 @@ const visibleClientFields = CLIENT_FIELD_CONFIGS.filter(
   (field) => field.key !== "property_id" && field.key !== "account_id",
 );
 
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
 const parseNumberInput = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed.length) return null;
@@ -175,7 +185,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-gray-100 p-5">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleClientFields.map((field) => {
             const value = formState[field.key as string] ?? "";
             const commonProps = {
@@ -190,27 +200,36 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
             return (
               <label key={field.key as string} className="flex flex-col text-sm text-gray-900">
                 <span className="font-medium text-gray-800">{field.label}</span>
-              {field.type === "textarea" ? (
-                <textarea rows={4} {...commonProps} />
-              ) : field.type === "number" ? (
-                <input type="number" step="any" {...commonProps} />
-              ) : field.type === "date" ? (
-                <input type="date" {...commonProps} />
-              ) : field.type === "assignee" ? (
-                <select {...commonProps}>
-                  <option value="">Unassigned</option>
-                  {staff.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                  {value && !staffById.has(value) ? (
-                    <option value={value}>Assignee not found</option>
-                  ) : null}
-                </select>
-              ) : (
-                <input type="text" {...commonProps} />
-              )}
+                {field.key === "collection_day" || field.key === "put_bins_out" ? (
+                  <select {...commonProps}>
+                    <option value="">Select a day</option>
+                    {daysOfWeek.map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                ) : field.type === "textarea" ? (
+                  <textarea rows={4} {...commonProps} />
+                ) : field.type === "number" ? (
+                  <input type="number" step="any" {...commonProps} />
+                ) : field.type === "date" ? (
+                  <input type="date" {...commonProps} />
+                ) : field.type === "assignee" ? (
+                  <select {...commonProps}>
+                    <option value="">Unassigned</option>
+                    {staff.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name}
+                      </option>
+                    ))}
+                    {value && !staffById.has(value) ? (
+                      <option value={value}>Assignee not found</option>
+                    ) : null}
+                  </select>
+                ) : (
+                  <input type="text" {...commonProps} />
+                )}
               </label>
             );
           })}

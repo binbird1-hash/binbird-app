@@ -1,7 +1,7 @@
 import ClientListManager from "@/components/admin/ClientListManager";
 
 export const metadata = {
-  title: "Client list • Admin",
+  title: "Property list • Admin",
 };
 
 export default function AdminClientsPage() {

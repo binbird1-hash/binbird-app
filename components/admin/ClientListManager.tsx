@@ -50,6 +50,16 @@ const parseNumberInput = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
 export default function ClientListManager() {
   const supabase = useSupabase();
   const [rows, setRows] = useState<ClientListRow[]>([]);
@@ -252,7 +262,7 @@ export default function ClientListManager() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">Client List</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">Property List</h2>
               <p className="text-sm text-gray-700">Search, review, and select a property to edit every column.</p>
             </div>
             <div className="flex items-center gap-2">
@@ -288,15 +298,15 @@ export default function ClientListManager() {
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             {loading ? (
-              <p className="p-4 text-sm text-gray-700">Loading client list…</p>
+              <p className="p-4 text-sm text-gray-700">Loading property list…</p>
             ) : filteredRows.length === 0 ? (
-              <p className="p-4 text-sm text-gray-700">No clients match the current filters.</p>
+              <p className="p-4 text-sm text-gray-700">No properties match the current filters.</p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
                     <th className="px-4 py-3 text-left">Address</th>
-                    <th className="px-4 py-3 text-left">Assigned to</th>
+                    <th className="px-4 py-3 text-left whitespace-nowrap">Assigned to</th>
                     <th className="px-4 py-3 text-left">Put out</th>
                     <th className="px-4 py-3 text-left">Bring in</th>
                   </tr>
@@ -317,7 +327,7 @@ export default function ClientListManager() {
                           <div className="font-semibold text-gray-900">{row.address ?? "—"}</div>
                           <div className="text-xs text-gray-600">{row.client_name ?? row.company ?? "Property"}</div>
                         </td>
-                        <td className="px-4 py-3 align-top text-sm text-gray-700">
+                        <td className="px-4 py-3 align-top text-sm text-gray-700 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {assignedName ?? (row.assigned_to ? "Assignee not found" : "Unassigned")}
                           </div>
@@ -367,7 +377,7 @@ export default function ClientListManager() {
             <p className="text-sm text-gray-700">Select a property from the table to start editing.</p>
           ) : (
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {editableClientFields.map((field) => {
                   const value = formState[field.key] ?? "";
                   const commonProps = {
@@ -382,7 +392,16 @@ export default function ClientListManager() {
                   return (
                     <label key={field.key as string} className="flex flex-col text-sm text-gray-900">
                       <span className="font-medium text-gray-800">{field.label}</span>
-                      {field.type === "textarea" ? (
+                      {field.key === "collection_day" || field.key === "put_bins_out" ? (
+                        <select {...commonProps}>
+                          <option value="">Select a day</option>
+                          {daysOfWeek.map((day) => (
+                            <option key={day} value={day}>
+                              {day}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === "textarea" ? (
                         <textarea rows={4} {...commonProps} />
                       ) : field.type === "number" ? (
                         <input type="number" step="any" {...commonProps} />
@@ -424,13 +443,6 @@ export default function ClientListManager() {
       {showNewClientModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <button
-              type="button"
-              onClick={() => setShowNewClientModal(false)}
-              className="absolute right-4 top-4 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 hover:text-gray-900"
-            >
-              Close
-            </button>
             <NewClientForm
               onClose={() => setShowNewClientModal(false)}
               onCreated={loadRows}
