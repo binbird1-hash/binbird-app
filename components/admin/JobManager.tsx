@@ -1,17 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import type { JobRecord } from "@/lib/database.types";
 
-const DAY_OPTIONS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+const DAY_OPTIONS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+const BIN_COLORS = ["Red", "Yellow", "Green"] as const;
 
 const sortJobs = (entries: JobRecord[]) => {
+  const getDayIndex = (day: string | null | undefined) => {
+    const value = day?.toLowerCase().trim();
+    const idx = DAY_OPTIONS.findIndex((option) => option.toLowerCase() === value);
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+  };
+
   return [...entries].sort((a, b) => {
     const dayA = a.day_of_week ?? "";
     const dayB = b.day_of_week ?? "";
-    if (dayA !== dayB) {
-      return dayA.localeCompare(dayB);
+    const dayOrderA = getDayIndex(dayA);
+    const dayOrderB = getDayIndex(dayB);
+    if (dayOrderA !== dayOrderB) {
+      return dayOrderA - dayOrderB;
     }
     const addressA = a.address ?? "";
     const addressB = b.address ?? "";
@@ -23,6 +32,15 @@ type StaffMember = {
   id: string;
   name: string;
   role: string | null;
+};
+
+type ClientProperty = {
+  property_id: string;
+  account_id: string | null;
+  address: string | null;
+  client_name: string | null;
+  photo_path: string | null;
+  lat_lng: string | null;
 };
 
 type JobFormState = {
@@ -41,7 +59,9 @@ type JobFormState = {
   photo_path: string;
 };
 
-type JobFieldType = "text" | "textarea" | "number" | "date" | "jobType" | "assignee" | "day";
+type BinColor = (typeof BIN_COLORS)[number];
+
+type JobFieldType = "text" | "textarea" | "number" | "date" | "jobType" | "assignee" | "day" | "bins";
 
 type JobFieldConfig = {
   key: keyof JobFormState;
@@ -55,7 +75,7 @@ const JOB_FIELD_CONFIGS: JobFieldConfig[] = [
   { key: "address", label: "Address" },
   { key: "client_name", label: "Client Name" },
   { key: "job_type", label: "Job Type", type: "jobType" },
-  { key: "bins", label: "Bins" },
+  { key: "bins", label: "Bins", type: "bins" },
   { key: "notes", label: "Notes", type: "textarea" },
   { key: "assigned_to", label: "Assigned To", type: "assignee" },
   { key: "day_of_week", label: "Day of Week", type: "day" },
@@ -88,13 +108,38 @@ const parseCoordinate = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const editableJobFields = JOB_FIELD_CONFIGS.filter(
-  (field) => field.key !== "account_id" && field.key !== "property_id",
-);
+const parseLatLngString = (value: string | null | undefined) => {
+  if (!value) return { lat: "", lng: "" };
+  const parts = value.split(",").map((part) => part.trim()).filter(Boolean);
+  const [lat = "", lng = ""] = parts;
+  return { lat, lng };
+};
+
+const parseBinsFromString = (value: string | null | undefined): BinColor[] => {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((color) => {
+      const lower = color.toLowerCase();
+      if (lower.startsWith("red")) return "Red" as const;
+      if (lower.startsWith("yellow")) return "Yellow" as const;
+      if (lower.startsWith("green")) return "Green" as const;
+      return null;
+    })
+    .filter(Boolean) as BinColor[];
+};
+
+const formatBinsValue = (colors: Iterable<BinColor>) => {
+  const ordered = Array.from(new Set(colors));
+  return ordered.join(", ");
+};
 
 const buildJobPayload = (state: JobFormState) => {
   const jobType = state.job_type === "bring_in" ? "bring_in" : "put_out";
   const address = state.address.trim();
+  const bins = formatBinsValue(parseBinsFromString(state.bins));
 
   return {
     account_id: state.account_id.trim().length ? state.account_id.trim() : null,
@@ -102,7 +147,7 @@ const buildJobPayload = (state: JobFormState) => {
     address,
     client_name: state.client_name.trim().length ? state.client_name.trim() : null,
     job_type: jobType,
-    bins: state.bins.trim().length ? state.bins.trim() : null,
+    bins: bins.length ? bins : null,
     notes: state.notes.trim().length ? state.notes.trim() : null,
     assigned_to: state.assigned_to.trim().length ? state.assigned_to.trim() : null,
     day_of_week: state.day_of_week.trim().length ? state.day_of_week.trim() : null,
@@ -117,6 +162,7 @@ export default function JobManager() {
   const supabase = useSupabase();
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [properties, setProperties] = useState<ClientProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -129,7 +175,7 @@ export default function JobManager() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [jobsResult, staffResult] = await Promise.all([
+    const [jobsResult, staffResult, propertyResult] = await Promise.all([
       supabase
         .from("jobs")
         .select(
@@ -141,6 +187,10 @@ export default function JobManager() {
         .from("user_profile")
         .select("user_id, full_name, role")
         .in("role", ["staff", "admin"]),
+      supabase
+        .from("client_list")
+        .select("property_id, account_id, address, client_name, photo_path, lat_lng")
+        .order("address", { ascending: true }),
     ]);
 
     if (jobsResult.error) {
@@ -163,6 +213,13 @@ export default function JobManager() {
       );
     }
 
+    if (propertyResult.error) {
+      console.warn("Failed to load properties", propertyResult.error);
+      setProperties([]);
+    } else {
+      setProperties(propertyResult.data as ClientProperty[]);
+    }
+
     setLoading(false);
   }, [supabase]);
 
@@ -171,6 +228,12 @@ export default function JobManager() {
   }, [loadData]);
 
   const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
+  const propertiesById = useMemo(
+    () => new Map(properties.map((property) => [property.property_id, property] as const)),
+    [properties],
+  );
+
+  const selectedBins = useMemo(() => new Set(parseBinsFromString(formState.bins)), [formState.bins]);
 
   const filteredJobs = useMemo(() => {
     const trimmedSearch = search.trim().toLowerCase();
@@ -186,10 +249,16 @@ export default function JobManager() {
         job.account_id,
         job.property_id,
         assignedName,
+        job.assigned_to,
       ]
         .map((value) => value?.toString().toLowerCase() ?? "")
-        .join(" ");
-      return haystack.includes(trimmedSearch);
+        .filter(Boolean);
+
+      if (!job.assigned_to && "unassigned".includes(trimmedSearch)) {
+        haystack.push("unassigned");
+      }
+
+      return haystack.some((value) => value.includes(trimmedSearch));
     });
   }, [jobs, dayFilter, search, staffById]);
 
@@ -226,8 +295,42 @@ export default function JobManager() {
     setStatus(null);
   };
 
+  const closeCreate = () => {
+    setIsCreating(false);
+    setFormState(createEmptyJobState());
+    setStatus(null);
+  };
+
   const handleInputChange = (key: keyof JobFormState, value: string) => {
     setFormState((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const handlePropertySelect = (propertyId: string) => {
+    const property = propertiesById.get(propertyId);
+    const { lat, lng } = parseLatLngString(property?.lat_lng ?? "");
+
+    setFormState((previous) => ({
+      ...previous,
+      property_id: propertyId,
+      account_id: property?.account_id ?? "",
+      address: property?.address ?? "",
+      client_name: property?.client_name ?? "",
+      photo_path: property?.photo_path ?? "",
+      lat,
+      lng,
+    }));
+  };
+
+  const updateBinSelection = (color: BinColor, checked: boolean) => {
+    setFormState((previous) => {
+      const current = new Set(parseBinsFromString(previous.bins));
+      if (checked) {
+        current.add(color);
+      } else {
+        current.delete(color);
+      }
+      return { ...previous, bins: formatBinsValue(current) };
+    });
   };
 
   const handleSave = async (event: FormEvent) => {
@@ -236,6 +339,12 @@ export default function JobManager() {
     setStatus(null);
 
     try {
+      if (isCreating && !formState.property_id.trim().length) {
+        setStatus({ type: "error", message: "Select a property address before creating a job." });
+        setSaving(false);
+        return;
+      }
+
       const payload = buildJobPayload(formState);
       if (!payload.address || typeof payload.address !== "string" || !payload.address.trim().length) {
         setStatus({ type: "error", message: "An address is required." });
@@ -332,6 +441,171 @@ export default function JobManager() {
     }
   };
 
+  const sortedProperties = useMemo(
+    () => [...properties].sort((a, b) => (a.address ?? "").localeCompare(b.address ?? "")),
+    [properties],
+  );
+
+  const getFieldConfig = (key: keyof JobFormState) => JOB_FIELD_CONFIGS.find((field) => field.key === key);
+
+  const baseInputClasses =
+    "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300";
+  const selectClasses = `${baseInputClasses} pr-10`;
+
+  const renderTextField = (key: keyof JobFormState, className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <input
+          type="text"
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        />
+      </label>
+    );
+  };
+
+  const renderNumberField = (key: keyof JobFormState, className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        />
+      </label>
+    );
+  };
+
+  const renderDateField = (key: keyof JobFormState, className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <input
+          type="date"
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        />
+      </label>
+    );
+  };
+
+  const renderSelectField = (key: "assigned_to", className: string) => {
+    const config = getFieldConfig(key);
+    const value = formState[key] ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? key}</span>
+        <select
+          id={`job-${key}`}
+          value={value}
+          onChange={(event) => handleInputChange(key, event.target.value)}
+          className={className}
+        >
+          <option value="">Unassigned</option>
+          {staff.map((member) => (
+            <option key={member.id} value={member.id}>
+              {member.name}
+            </option>
+          ))}
+          {value && !staffById.has(value) ? <option value={value}>Assignee not found</option> : null}
+        </select>
+      </label>
+    );
+  };
+
+  const renderDayField = (className: string) => {
+    const config = getFieldConfig("day_of_week");
+    const value = formState.day_of_week ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? "Day of Week"}</span>
+        <select
+          id="job-day_of_week"
+          value={value}
+          onChange={(event) => handleInputChange("day_of_week", event.target.value)}
+          className={className}
+        >
+          <option value="">Not set</option>
+          {DAY_OPTIONS.map((day) => (
+            <option key={day} value={day}>
+              {day}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  };
+
+  const renderJobTypeField = (className: string) => {
+    const config = getFieldConfig("job_type");
+    const value = formState.job_type ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? "Job Type"}</span>
+        <select
+          id="job-job_type"
+          value={value}
+          onChange={(event) => handleInputChange("job_type", event.target.value)}
+          className={className}
+        >
+          <option value="put_out">Put out</option>
+          <option value="bring_in">Bring in</option>
+        </select>
+      </label>
+    );
+  };
+
+  const renderNotesField = (className: string) => {
+    const config = getFieldConfig("notes");
+    const value = formState.notes ?? "";
+    return (
+      <label className="flex flex-col text-sm text-gray-900">
+        <span className="font-medium text-gray-800">{config?.label ?? "Notes"}</span>
+        <textarea
+          id="job-notes"
+          rows={2}
+          value={value}
+          onChange={(event) => handleInputChange("notes", event.target.value)}
+          className={`${className} min-h-[44px]`}
+        />
+      </label>
+    );
+  };
+
+  const renderBinSelector = () => (
+    <div className="flex items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
+      <span className="text-sm font-medium text-gray-800">Bin colors</span>
+      <div className="flex items-center gap-4 text-sm font-semibold">
+        {BIN_COLORS.map((color) => (
+          <label key={color} className="flex items-center justify-start gap-2 whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={selectedBins.has(color)}
+              onChange={(event) => updateBinSelection(color, event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+            />
+            <span className="text-gray-900">{color}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-8">
@@ -362,13 +636,23 @@ export default function JobManager() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <label className="flex w-full flex-col text-sm text-gray-900 sm:w-auto">
+          <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
+            <label className="flex w-full flex-col text-sm text-gray-900 sm:col-span-3">
+              <span className="font-medium text-gray-800">Search</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by address or client"
+                className={baseInputClasses}
+              />
+            </label>
+            <label className="flex w-full flex-col text-sm text-gray-900 sm:col-span-1">
               <span className="font-medium text-gray-800">Filter by day</span>
               <select
                 value={dayFilter}
                 onChange={(event) => setDayFilter(event.target.value)}
-                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className={selectClasses}
               >
                 <option value="">All days</option>
                 {DAY_OPTIONS.map((day) => (
@@ -378,16 +662,6 @@ export default function JobManager() {
                 ))}
               </select>
             </label>
-            <label className="flex w-full flex-col text-sm text-gray-900 sm:w-auto">
-              <span className="font-medium text-gray-800">Search</span>
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search address, client, or property"
-                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-            </label>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -396,12 +670,13 @@ export default function JobManager() {
             ) : filteredJobs.length === 0 ? (
               <p className="p-4 text-sm text-gray-700">No jobs match the current filters.</p>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
                   <tr>
                     <th className="px-4 py-3 text-left">Address</th>
+                    <th className="px-4 py-3 text-left">Day</th>
                     <th className="px-4 py-3 text-left">Job</th>
-                    <th className="px-4 py-3 text-left">Assignee</th>
+                    <th className="px-4 py-3 text-left">Assigned To</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -416,16 +691,29 @@ export default function JobManager() {
                           isSelected ? "bg-gray-100" : "bg-white"
                         }`}
                       >
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          <div className="font-semibold text-gray-900">{job.address ?? "Address"}</div>
-                          <div className="text-xs text-gray-600">{job.day_of_week ?? "—"}</div>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-900">
+                          <div
+                            className="font-semibold text-gray-900 whitespace-nowrap truncate"
+                            title={job.address ?? undefined}
+                          >
+                            {job.address ?? "Address"}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {job.job_type === "bring_in" ? "Bring in" : "Put out"}
-                          {job.bins ? <span className="ml-2 text-xs text-gray-600">{job.bins}</span> : null}
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700 whitespace-nowrap">
+                          {job.day_of_week ?? "—"}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {assigneeName ?? (job.assigned_to ? "Assignee not found" : "Unassigned")}
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700">
+                          <div className="flex h-full items-center gap-1 whitespace-nowrap text-left font-semibold text-gray-900">
+                            {job.job_type === "bring_in" ? "Bring in" : "Put out"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-middle text-sm text-gray-700">
+                          <div
+                            className="whitespace-nowrap truncate text-sm font-medium text-gray-900"
+                            title={assigneeName ?? job.assigned_to ?? undefined}
+                          >
+                            {assigneeName ?? (job.assigned_to ? "Assignee not found" : "Unassigned")}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -440,12 +728,10 @@ export default function JobManager() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {isCreating ? "Create job" : selectedJob ? "Edit job" : "Select a job"}
+                {selectedJob ? "Edit job" : "Select a job"}
               </h3>
               <p className="text-xs text-gray-600">
-                {isCreating
-                  ? "Fill in the details below to create a new job."
-                  : selectedJob
+                {selectedJob
                   ? "Update job details and assignments, then save your changes."
                   : "Select a job from the list to edit its details."}
               </p>
@@ -453,7 +739,7 @@ export default function JobManager() {
             <button
               type="button"
               onClick={handleDelete}
-              disabled={deleting || (!selectedJobId && !isCreating)}
+              disabled={deleting || !selectedJobId || isCreating}
               className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {deleting ? "Deleting…" : "Delete"}
@@ -472,61 +758,29 @@ export default function JobManager() {
             </div>
           )}
 
-          {(isCreating || selectedJob) && (
+          {selectedJob && !isCreating && (
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                {editableJobFields.map((field) => {
-                  const value = formState[field.key] ?? "";
-                  const commonProps = {
-                    id: `job-${field.key}`,
-                    value,
-                    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-                      handleInputChange(field.key, event.target.value),
-                    className:
-                      "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300",
-                  } as const;
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderTextField("address", baseInputClasses)}
+                  {renderSelectField("assigned_to", selectClasses)}
+                </div>
 
-                  return (
-                    <label key={field.key} className="flex flex-col text-sm text-gray-900">
-                      <span className="font-medium text-gray-800">{field.label}</span>
-                      {field.type === "textarea" ? (
-                        <textarea rows={4} {...commonProps} />
-                      ) : field.type === "number" ? (
-                        <input type="number" step="any" {...commonProps} />
-                      ) : field.type === "date" ? (
-                        <input type="date" {...commonProps} />
-                      ) : field.type === "jobType" ? (
-                        <select {...commonProps}>
-                          <option value="put_out">Put out</option>
-                          <option value="bring_in">Bring in</option>
-                        </select>
-                      ) : field.type === "assignee" ? (
-                        <select {...commonProps}>
-                          <option value="">Unassigned</option>
-                          {staff.map((member) => (
-                            <option key={member.id} value={member.id}>
-                              {member.name}
-                            </option>
-                          ))}
-                          {value && !staffById.has(value) ? (
-                            <option value={value}>Assignee not found</option>
-                          ) : null}
-                        </select>
-                      ) : field.type === "day" ? (
-                        <select {...commonProps}>
-                          <option value="">Not set</option>
-                          {DAY_OPTIONS.map((day) => (
-                            <option key={day} value={day}>
-                              {day}
-                            </option>
-                          ))}
-                        </select>
-                        ) : (
-                          <input type="text" {...commonProps} />
-                        )}
-                    </label>
-                  );
-                })}
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderJobTypeField(selectClasses)}
+                  {renderDayField(selectClasses)}
+                </div>
+
+                <div className="sm:col-span-2">{renderBinSelector()}</div>
+
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderNumberField("lat", baseInputClasses)}
+                  {renderNumberField("lng", baseInputClasses)}
+                </div>
+
+                <div className="sm:col-span-2">{renderTextField("photo_path", baseInputClasses)}</div>
+
+                <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
               </div>
               <div className="flex justify-end">
                 <button
@@ -534,7 +788,7 @@ export default function JobManager() {
                   disabled={saving}
                   className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {saving ? "Saving…" : isCreating ? "Create job" : "Save changes"}
+                  {saving ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </form>
@@ -545,6 +799,89 @@ export default function JobManager() {
           )}
         </div>
       </div>
+
+      {isCreating ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Create job</h3>
+                <p className="text-xs text-gray-600">Fill in the details to create a new job.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCreate}
+                className="text-lg font-semibold text-gray-600 transition hover:text-gray-900"
+                aria-label="Close create job"
+              >
+                ×
+              </button>
+            </div>
+
+            {status && (
+              <div
+                className={`mb-4 rounded-lg px-3 py-2 text-sm ${
+                  status.type === "success"
+                    ? "border border-green-300 bg-green-50 text-green-800"
+                    : "border border-red-300 bg-red-50 text-red-800"
+                }`}
+              >
+                {status.message}
+              </div>
+            )}
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col text-sm text-gray-900">
+                    <span className="font-medium text-gray-800">Property address</span>
+                    <select
+                      value={formState.property_id}
+                      onChange={(event) => handlePropertySelect(event.target.value)}
+                      className={selectClasses}
+                    >
+                      <option value="">Select a property</option>
+                      {sortedProperties.map((property) => (
+                        <option key={property.property_id} value={property.property_id}>
+                          {property.address ?? "Address"}
+                          {property.client_name ? ` — ${property.client_name}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {renderSelectField("assigned_to", selectClasses)}
+                </div>
+
+                <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                  {renderJobTypeField(selectClasses)}
+                  {renderDayField(selectClasses)}
+                </div>
+
+                <div className="sm:col-span-2">{renderBinSelector()}</div>
+
+                <div className="sm:col-span-2">{renderNotesField(baseInputClasses)}</div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeCreate}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : "Create job"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
