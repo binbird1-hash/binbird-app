@@ -72,22 +72,37 @@ async function loadDashboardData() {
   };
 
   const allJobs = allJobsResult.data ?? [];
+  const isCompletedToday = (job: { last_completed_on: string | null; completed_at: string | null }) => {
+    const completedCandidates = [job.completed_at, job.last_completed_on].filter(Boolean) as string[];
+
+    return completedCandidates.some((value) => {
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return false;
+      return parsed.toISOString().slice(0, 10) === todayIso;
+    });
+  };
+
   const completedToday = allJobs
-    .filter((job) => {
-      const completedCandidates = [job.last_completed_on, job.completed_at].filter(Boolean) as string[];
-      return completedCandidates.some((value) => {
-        const parsed = new Date(value);
-        if (Number.isNaN(parsed.getTime())) return false;
-        return parsed.toISOString().slice(0, 10) === todayIso;
-      });
-    })
-    .map((job) => ({
-      ...job,
-      assigned_name: job.assigned_to ? staffLookup.get(job.assigned_to) ?? null : null,
-    }));
+    .filter((job) => isCompletedToday(job))
+    .map((job) => {
+      const completionCandidates = [job.completed_at, job.last_completed_on].filter(Boolean) as string[];
+      const completionTime = completionCandidates
+        .map((value) => new Date(value))
+        .find((date) => !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === todayIso);
+
+      return {
+        ...job,
+        assigned_name: job.assigned_to ? staffLookup.get(job.assigned_to) ?? null : null,
+        completionTime,
+      };
+    });
+
+  const completedTodayIds = new Set(completedToday.map((job) => job.id));
 
   const dueToday = allJobs
-    .filter((job) => job.day_of_week?.toLowerCase() === todayLabel.toLowerCase())
+    .filter(
+      (job) => job.day_of_week?.toLowerCase() === todayLabel.toLowerCase() && !completedTodayIds.has(job.id),
+    )
     .map((job) => ({
       ...job,
       assigned_name: job.assigned_to ? staffLookup.get(job.assigned_to) ?? null : null,
@@ -190,7 +205,11 @@ export default async function AdminDashboardPage() {
                       {job.job_type === "bring_in" ? "Bring in" : "Put out"}
                     </span>
                     {job.assigned_name ? <span>Assigned to {job.assigned_name}</span> : <span>Unassigned</span>}
-                    <span className="text-gray-500">Logged today</span>
+                    <span className="text-gray-500">
+                      {job.completionTime
+                        ? job.completionTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+                        : "Completed"}
+                    </span>
                   </div>
                 </li>
               ))}
@@ -236,7 +255,7 @@ export default async function AdminDashboardPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Property requests</h2>
-              <p className="text-xs text-gray-600">Review new properties submitted from client accounts.</p>
+              <p className="text-xs text-gray-600">Review property requests from clients.</p>
             </div>
             <Link
               href="/admin/clients"
