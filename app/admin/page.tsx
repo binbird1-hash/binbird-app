@@ -141,7 +141,7 @@ export default async function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/jobs"
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900 whitespace-nowrap"
             >
               View jobs
             </Link>
@@ -173,7 +173,7 @@ export default async function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/logs"
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900 whitespace-nowrap"
             >
               View logs
             </Link>
@@ -208,7 +208,7 @@ export default async function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/jobs"
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900 whitespace-nowrap"
             >
               Manage jobs
             </Link>
@@ -240,9 +240,9 @@ export default async function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/clients"
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-800 transition hover:border-gray-400 hover:text-gray-900 whitespace-nowrap"
             >
-              Manage clients
+              Manage properties
             </Link>
           </div>
           {propertyRequests.length === 0 ? (
