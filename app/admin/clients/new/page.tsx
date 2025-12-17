@@ -1,9 +1,9 @@
-import NewClientForm from "@/components/admin/NewClientForm";
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Add property • Admin",
+  title: "Client list • Admin",
 };
 
 export default function AdminAddClientPage() {
-  return <NewClientForm />;
+  redirect("/admin/clients");
 }
