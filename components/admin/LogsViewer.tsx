@@ -28,6 +28,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
     "put_out" | "bring_in" | ""
   >("");
   const [proofPreview, setProofPreview] = useState<{ url: string; description: string } | null>(null);
+  const [notesPreview, setNotesPreview] = useState<string | null>(null);
   const [purging, setPurging] = useState(false);
 
   const addressOptions = useMemo(() => {
@@ -196,33 +197,38 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                         </span>
                       </div>
                     </div>
-                    {log.notes ? (
-                      <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-800">
-                        <p className="font-semibold text-gray-900">Notes</p>
-                        <p className="text-gray-800">{log.notes}</p>
-                      </div>
-                    ) : null}
                   </div>
-                  <div className="flex w-full flex-col items-start gap-2 text-xs text-gray-600 sm:w-auto sm:items-end sm:text-right">
+                  <div className="flex w-full flex-col items-start gap-3 text-xs text-gray-600 sm:w-auto sm:items-end sm:text-right">
                     {(log.created_at || log.done_on) && (
                       <p className="text-sm font-medium text-gray-800">
                         {formatTimestamp(log.created_at ?? log.done_on ?? "")}
                       </p>
                     )}
-                    {proofUrl && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setProofPreview({
-                            url: proofUrl,
-                            description: `${taskLabel(log.task_type)} proof for ${log.address ?? "property"}`,
-                          })
-                        }
-                        className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-                      >
-                        View proof
-                      </button>
-                    )}
+                    <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
+                      {proofUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProofPreview({
+                              url: proofUrl,
+                              description: `${taskLabel(log.task_type)} proof for ${log.address ?? "property"}`,
+                            })
+                          }
+                          className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+                        >
+                          View proof
+                        </button>
+                      )}
+                      {log.notes ? (
+                        <button
+                          type="button"
+                          onClick={() => setNotesPreview(log.notes!)}
+                          className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+                        >
+                          View notes
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </li>
@@ -254,6 +260,28 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                 className="max-h-[70vh] w-full rounded-xl object-contain"
               />
             </div>
+          </div>
+        </div>
+      ) : null}
+      {notesPreview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setNotesPreview(null);
+            }
+          }}
+        >
+          <div className="relative w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setNotesPreview(null)}
+              className="absolute right-4 top-4 rounded-full border border-gray-300 bg-white p-2 text-gray-600 transition hover:border-gray-400 hover:text-gray-900"
+            >
+              Close
+            </button>
+            <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-gray-800">{notesPreview}</p>
           </div>
         </div>
       ) : null}
