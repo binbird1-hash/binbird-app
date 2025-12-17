@@ -50,7 +50,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
+      <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col lg:flex-row">
         <AdminSidebar items={navItems} userName={displayName} userEmail={userEmail} />
         <div className="flex min-h-screen flex-1 flex-col">
           <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm lg:hidden">
