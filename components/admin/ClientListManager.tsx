@@ -25,7 +25,18 @@ const editableClientFields = CLIENT_FIELD_CONFIGS.filter(
 );
 const fullWidthFields = new Set<keyof ClientListRow>(["address", "photo_path"]);
 const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
-const binGroupKeys = new Set([
+type BinGroupKey =
+  | "red_freq"
+  | "red_flip"
+  | "red_bins"
+  | "yellow_freq"
+  | "yellow_flip"
+  | "yellow_bins"
+  | "green_freq"
+  | "green_flip"
+  | "green_bins";
+
+const binGroupKeys = new Set<BinGroupKey>([
   "red_freq",
   "red_flip",
   "red_bins",
@@ -35,7 +46,10 @@ const binGroupKeys = new Set([
   "green_freq",
   "green_flip",
   "green_bins",
-] satisfies Array<keyof ClientListRow>);
+]);
+
+const isBinGroupKey = (key: keyof ClientListRow): key is BinGroupKey =>
+  binGroupKeys.has(key as BinGroupKey);
 
 const toFormState = (row: ClientListRow): ClientFormState => {
   const state = {} as ClientFormState;
@@ -536,7 +550,7 @@ export default function ClientListManager() {
                     return renderBinGroup(field.key.split("_")[0] as "red" | "yellow" | "green");
                   }
 
-                  if (binGroupKeys.has(field.key)) {
+                  if (isBinGroupKey(field.key)) {
                     return null;
                   }
 

@@ -43,7 +43,18 @@ const visibleClientFields = CLIENT_FIELD_CONFIGS.filter(
 );
 const fullWidthFields = new Set<string>(["address", "photo_path"]);
 const binFrequencyOptions = ["Weekly", "Fortnightly"] as const;
-const binGroupKeys = new Set([
+type BinGroupKey =
+  | "red_freq"
+  | "red_flip"
+  | "red_bins"
+  | "yellow_freq"
+  | "yellow_flip"
+  | "yellow_bins"
+  | "green_freq"
+  | "green_flip"
+  | "green_bins";
+
+const binGroupKeys = new Set<BinGroupKey>([
   "red_freq",
   "red_flip",
   "red_bins",
@@ -53,7 +64,10 @@ const binGroupKeys = new Set([
   "green_freq",
   "green_flip",
   "green_bins",
-] satisfies Array<keyof ClientListRow>);
+]);
+
+const isBinGroupKey = (key: keyof ClientListRow): key is BinGroupKey =>
+  binGroupKeys.has(key as BinGroupKey);
 
 const daysOfWeek = [
   "Monday",
@@ -359,7 +373,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
               return renderBinGroup(field.key.split("_")[0] as "red" | "yellow" | "green");
             }
 
-            if (binGroupKeys.has(field.key as keyof ClientListRow)) {
+            if (isBinGroupKey(field.key)) {
               return null;
             }
 
