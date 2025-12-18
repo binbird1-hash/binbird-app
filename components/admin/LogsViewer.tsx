@@ -27,6 +27,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
   const [selectedJobType, setSelectedJobType] = useState<
     "put_out" | "bring_in" | ""
   >("");
+  const [selectedAssignee, setSelectedAssignee] = useState<string>("");
   const [proofPreview, setProofPreview] = useState<{ url: string; description: string } | null>(null);
   const [notesPreview, setNotesPreview] = useState<string | null>(null);
   const [purging, setPurging] = useState(false);
@@ -44,9 +45,32 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
         !selectedAddress.length || (log.address ?? "") === selectedAddress;
       const matchesJobType =
         !selectedJobType.length || log.task_type === selectedJobType;
-      return matchesAddress && matchesJobType;
+      const matchesAssignee =
+        !selectedAssignee.length ||
+        (selectedAssignee === "__unassigned__"
+          ? !log.user_id
+          : log.user_id === selectedAssignee);
+      return matchesAddress && matchesJobType && matchesAssignee;
     });
-  }, [logs, selectedAddress, selectedJobType]);
+  }, [logs, selectedAddress, selectedJobType, selectedAssignee]);
+
+  const assigneeOptions = useMemo(() => {
+    const withAssignee = logs
+      .map((log) => log.user_id)
+      .filter((value): value is string => Boolean(value));
+    const unique = Array.from(new Set(withAssignee));
+
+    const options = unique
+      .map((userId) => ({ id: userId, label: assigneeLookup[userId] ?? "Team member" }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    const hasUnassigned = logs.some((log) => !log.user_id);
+    if (hasUnassigned) {
+      options.unshift({ id: "__unassigned__", label: "Unassigned" });
+    }
+
+    return options;
+  }, [assigneeLookup, logs]);
 
   const formatTimestamp = (value: string) => {
     const parsed = new Date(value);
@@ -113,50 +137,67 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
             type="button"
             onClick={handlePurgeOldLogs}
             disabled={purging}
-            className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 bg-red-600 text-white shadow hover:bg-red-700"
           >
             {purging ? "Deleting…" : "Purge Old Logs"}
           </button>
         </div>
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
-          <label className="flex w-full flex-col text-sm text-gray-900 lg:w-80">
-            <span className="font-medium text-gray-800">Filter by property address</span>
-            <select
-              value={selectedAddress}
-              onChange={(event) => setSelectedAddress(event.target.value)}
-              className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-            >
-              <option value="">All addresses</option>
-              {addressOptions.map((address) => (
-                <option key={address} value={address}>
-                  {address}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {["put_out", "bring_in"].map((type) => {
-              const isActive = selectedJobType === type;
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() =>
-                    setSelectedJobType((current) =>
-                      current === type ? "" : (type as "put_out" | "bring_in"),
-                    )
-                  }
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    isActive
-                      ? "bg-gray-900 text-white shadow"
-                      : "border border-gray-300 bg-white text-gray-800 hover:border-gray-400"
-                  }`}
-                >
-                  {type === "put_out" ? "Put out" : "Bring in"}
-                </button>
-              );
-            })}
+          <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 lg:items-end lg:gap-4">
+            <label className="flex w-full flex-col text-sm text-gray-900">
+              <span className="font-medium text-gray-800">Filter by property address</span>
+              <select
+                value={selectedAddress}
+                onChange={(event) => setSelectedAddress(event.target.value)}
+                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <option value="">All addresses</option>
+                {addressOptions.map((address) => (
+                  <option key={address} value={address}>
+                    {address}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex w-full flex-col text-sm text-gray-900">
+              <span className="font-medium text-gray-800">Filter by assignee</span>
+              <select
+                value={selectedAssignee}
+                onChange={(event) => setSelectedAssignee(event.target.value)}
+                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <option value="">All assignees</option>
+                {assigneeOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              {["put_out", "bring_in"].map((type) => {
+                const isActive = selectedJobType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() =>
+                      setSelectedJobType((current) =>
+                        current === type ? "" : (type as "put_out" | "bring_in"),
+                      )
+                    }
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      isActive
+                        ? "bg-gray-900 text-white shadow"
+                        : "border border-gray-300 bg-white text-gray-800 hover:border-gray-400"
+                    }`}
+                  >
+                    {type === "put_out" ? "Put out" : "Bring in"}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -205,6 +246,15 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                       </p>
                     )}
                     <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
+                      {log.notes ? (
+                        <button
+                          type="button"
+                          onClick={() => setNotesPreview(log.notes!)}
+                          className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+                        >
+                          View notes
+                        </button>
+                      ) : null}
                       {proofUrl && (
                         <button
                           type="button"
@@ -219,15 +269,6 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                           View proof
                         </button>
                       )}
-                      {log.notes ? (
-                        <button
-                          type="button"
-                          onClick={() => setNotesPreview(log.notes!)}
-                          className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
-                        >
-                          View notes
-                        </button>
-                      ) : null}
                     </div>
                   </div>
                 </div>
