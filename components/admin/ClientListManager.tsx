@@ -10,6 +10,7 @@ import {
   CLIENT_NUMBER_FIELD_KEYS,
   type ClientListRow,
 } from "./clientFieldConfig";
+import { getBinSchedule } from "@/lib/binSchedule";
 
 type StaffMember = {
   id: string;
@@ -170,6 +171,25 @@ export default function ClientListManager() {
     const entries = staff.map((member) => [member.id, member.name] as const);
     return new Map(entries);
   }, [staff]);
+  const binSchedule = useMemo(
+    () =>
+      getBinSchedule({
+        red_freq: formState.red_freq,
+        red_flip: formState.red_flip,
+        yellow_freq: formState.yellow_freq,
+        yellow_flip: formState.yellow_flip,
+        green_freq: formState.green_freq,
+        green_flip: formState.green_flip,
+      }),
+    [
+      formState.green_flip,
+      formState.green_freq,
+      formState.red_flip,
+      formState.red_freq,
+      formState.yellow_flip,
+      formState.yellow_freq,
+    ],
+  );
 
   const filteredRows = useMemo(() => {
     const query = normaliseSearch(search);
@@ -318,6 +338,7 @@ export default function ClientListManager() {
     const freqValue = formState[freqKey] ?? "";
     const binsValue = formState[binsKey] ?? "";
     const flipValue = formState[flipKey] ?? "";
+    const scheduledThisWeek = binSchedule.status[prefix];
 
     return (
       <div key={`${prefix}-bin-group`} className="sm:col-span-2 lg:col-span-3">
@@ -366,6 +387,13 @@ export default function ClientListManager() {
             </div>
           </label>
         </div>
+        <p className="mt-2 text-xs text-gray-600">
+          {freqValue
+            ? scheduledThisWeek
+              ? "Scheduled this week based on the current flip setting."
+              : "Off-week this week with the current selections."
+            : "Choose a frequency to preview this week's schedule."}
+        </p>
       </div>
     );
   };
@@ -687,6 +715,17 @@ export default function ClientListManager() {
 
                   return renderSingleField(field);
                 })}
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800">
+                <p className="font-semibold text-gray-900">This week’s bins</p>
+                <p className="mt-1 text-gray-700">
+                  {binSchedule.activeColors.length
+                    ? binSchedule.activeColors.join(", ")
+                    : "No bins scheduled this week with the current selections."}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-600">
+                  Preview follows the Supabase refresh_jobs fortnightly flip logic.
+                </p>
               </div>
               <div className="flex justify-end">
                 <button
