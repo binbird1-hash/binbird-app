@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export type LogsViewerLog = {
@@ -28,9 +28,16 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
     "put_out" | "bring_in" | ""
   >("");
   const [selectedAssignee, setSelectedAssignee] = useState<string>("");
+  const [page, setPage] = useState(1);
   const [proofPreview, setProofPreview] = useState<{ url: string; description: string } | null>(null);
   const [notesPreview, setNotesPreview] = useState<string | null>(null);
   const [purging, setPurging] = useState(false);
+
+  const PAGE_SIZE = 20;
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedAddress, selectedJobType, selectedAssignee]);
 
   const addressOptions = useMemo(() => {
     const addresses = logs
@@ -53,6 +60,13 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
       return matchesAddress && matchesJobType && matchesAssignee;
     });
   }, [logs, selectedAddress, selectedJobType, selectedAssignee]);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE)), [filteredLogs.length]);
+  const currentPage = Math.min(page, totalPages);
+  const visibleLogs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredLogs.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filteredLogs]);
 
   const assigneeOptions = useMemo(() => {
     const withAssignee = logs
@@ -175,7 +189,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                 ))}
               </select>
             </label>
-            <div className="flex flex-wrap gap-2 lg:justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
               {["put_out", "bring_in"].map((type) => {
                 const isActive = selectedJobType === type;
                 return (
@@ -207,7 +221,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
         <p className="text-sm text-gray-700">No logs match that address.</p>
       ) : (
         <ul className="space-y-3">
-          {filteredLogs.map((log) => {
+          {visibleLogs.map((log) => {
             const proofUrl = log.photo_path ? signedUrls[log.photo_path] : undefined;
             const binList = binsLabel(log.bins);
 
@@ -250,7 +264,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                         <button
                           type="button"
                           onClick={() => setNotesPreview(log.notes!)}
-                          className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900"
+                          className="inline-flex items-center justify-center rounded-lg border border-yellow-300 bg-yellow-100 px-3 py-2 text-xs font-semibold text-yellow-900 transition hover:border-yellow-400 hover:bg-yellow-200"
                         >
                           View notes
                         </button>
@@ -277,6 +291,35 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
           })}
         </ul>
       )}
+      {filteredLogs.length > PAGE_SIZE ? (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-800">
+          <p>
+            Showing {Math.min(filteredLogs.length, (currentPage - 1) * PAGE_SIZE + 1)}-
+            {Math.min(filteredLogs.length, currentPage * PAGE_SIZE)} of {filteredLogs.length} logs
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+              disabled={currentPage === 1}
+              className="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-xs text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-800 transition hover:border-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      ) : null}
       {proofPreview ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
