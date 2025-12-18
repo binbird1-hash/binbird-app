@@ -126,6 +126,10 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
   };
 
   const handlePurgeOldLogs = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to purge logs older than 6 weeks? This will permanently remove them.",
+    );
+    if (!confirmed) return;
     try {
       setPurging(true);
       const response = await fetch("/api/admin/logs/purge-old", { method: "POST" });

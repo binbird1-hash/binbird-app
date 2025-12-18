@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CompletionTime } from "@/components/CompletionTime";
+import TodayChangeTracker from "@/components/admin/TodayChangeTracker";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 async function loadDashboardData() {
@@ -10,6 +11,7 @@ async function loadDashboardData() {
   const todayIso = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
     .toISOString()
     .slice(0, 10);
+  const startOfTodayIso = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).toISOString();
 
   const [
     clientsResult,
@@ -19,6 +21,7 @@ async function loadDashboardData() {
     staffResult,
     allJobsResult,
     propertyRequestsResult,
+    todayChangesResult,
   ] = await Promise.all([
     supabase
       .from("client_list")
@@ -57,6 +60,12 @@ async function loadDashboardData() {
       )
       .order("created_at", { ascending: false })
       .limit(8),
+    supabase
+      .from("logs")
+      .select("id, address, task_type, created_at, user_id")
+      .gte("created_at", startOfTodayIso)
+      .order("created_at", { ascending: false })
+      .limit(12),
   ]);
 
   const staffLookup = new Map(
@@ -115,6 +124,7 @@ async function loadDashboardData() {
     dueToday,
     completedToday,
     propertyRequests: propertyRequestsResult.data ?? [],
+    todayChanges: todayChangesResult.data ?? [],
   };
 }
 
@@ -122,7 +132,8 @@ const cardClass =
   "rounded-2xl border border-gray-200 bg-gray-100 p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md";
 
 export default async function AdminDashboardPage() {
-  const { stats, unassignedJobs, dueToday, completedToday, propertyRequests } = await loadDashboardData();
+  const { stats, unassignedJobs, dueToday, completedToday, propertyRequests, todayChanges } =
+    await loadDashboardData();
 
   const cards = [
     { label: "Active properties", value: stats.clients, href: "/admin/clients" },
@@ -147,6 +158,8 @@ export default async function AdminDashboardPage() {
           </Link>
         ))}
       </div>
+
+      <TodayChangeTracker initialChanges={todayChanges} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-5">
