@@ -29,15 +29,14 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
   >("");
   const [selectedAssignee, setSelectedAssignee] = useState<string>("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number | "all">(20);
   const [proofPreview, setProofPreview] = useState<{ url: string; description: string } | null>(null);
   const [notesPreview, setNotesPreview] = useState<string | null>(null);
   const [purging, setPurging] = useState(false);
 
-  const PAGE_SIZE = 20;
-
   useEffect(() => {
     setPage(1);
-  }, [selectedAddress, selectedJobType, selectedAssignee]);
+  }, [selectedAddress, selectedJobType, selectedAssignee, pageSize]);
 
   const addressOptions = useMemo(() => {
     const addresses = logs
@@ -61,12 +60,17 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
     });
   }, [logs, selectedAddress, selectedJobType, selectedAssignee]);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE)), [filteredLogs.length]);
+  const totalPages = useMemo(() => {
+    if (pageSize === "all") return 1;
+    return Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  }, [filteredLogs.length, pageSize]);
+
   const currentPage = Math.min(page, totalPages);
   const visibleLogs = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredLogs.slice(start, start + PAGE_SIZE);
-  }, [currentPage, filteredLogs]);
+    if (pageSize === "all") return filteredLogs;
+    const start = (currentPage - 1) * pageSize;
+    return filteredLogs.slice(start, start + pageSize);
+  }, [currentPage, filteredLogs, pageSize]);
 
   const assigneeOptions = useMemo(() => {
     const withAssignee = logs
@@ -189,6 +193,23 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                 ))}
               </select>
             </label>
+            <label className="flex w-full flex-col text-sm text-gray-900">
+              <span className="font-medium text-gray-800">Logs per page</span>
+              <select
+                value={pageSize}
+                onChange={(event) =>
+                  setPageSize(event.target.value === "all" ? "all" : parseInt(event.target.value, 10))
+                }
+                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                {[10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+                <option value="all">All</option>
+              </select>
+            </label>
             <div className="flex flex-wrap justify-end gap-2">
               {["put_out", "bring_in"].map((type) => {
                 const isActive = selectedJobType === type;
@@ -291,11 +312,11 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
           })}
         </ul>
       )}
-      {filteredLogs.length > PAGE_SIZE ? (
+      {pageSize !== "all" && filteredLogs.length > pageSize ? (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-800">
           <p>
-            Showing {Math.min(filteredLogs.length, (currentPage - 1) * PAGE_SIZE + 1)}-
-            {Math.min(filteredLogs.length, currentPage * PAGE_SIZE)} of {filteredLogs.length} logs
+            Showing {Math.min(filteredLogs.length, (currentPage - 1) * pageSize + 1)}-
+            {Math.min(filteredLogs.length, currentPage * pageSize)} of {filteredLogs.length} logs
           </p>
           <div className="flex items-center gap-2">
             <button
