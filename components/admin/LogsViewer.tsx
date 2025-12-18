@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmDialog from "./ConfirmDialog";
 
 export type LogsViewerLog = {
   id: string;
@@ -32,6 +33,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
   const [pageSize, setPageSize] = useState<number | "all">(20);
   const [proofPreview, setProofPreview] = useState<{ url: string; description: string } | null>(null);
   const [notesPreview, setNotesPreview] = useState<string | null>(null);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
   const [purging, setPurging] = useState(false);
 
   useEffect(() => {
@@ -133,9 +135,11 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
         throw new Error("Unable to delete old logs");
       }
       router.refresh();
+      return true;
     } catch (error) {
       console.error(error);
       alert("Failed to delete old logs. Please try again.");
+      return false;
     } finally {
       setPurging(false);
     }
@@ -153,7 +157,7 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
           </div>
           <button
             type="button"
-            onClick={handlePurgeOldLogs}
+            onClick={() => setShowPurgeConfirm(true)}
             disabled={purging}
             className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 bg-red-600 text-white shadow hover:bg-red-700"
           >
@@ -341,6 +345,22 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={showPurgeConfirm}
+        title="Purge old logs"
+        description="This will permanently delete old log entries. Are you sure you want to continue?"
+        confirmLabel={purging ? "Deleting…" : "Purge logs"}
+        onCancel={() => {
+          if (!purging) setShowPurgeConfirm(false);
+        }}
+        onConfirm={async () => {
+          await handlePurgeOldLogs();
+          setShowPurgeConfirm(false);
+        }}
+        loading={purging}
+        destructive
+      />
       {proofPreview ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"

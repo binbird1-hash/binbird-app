@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import ConfirmDialog from "./ConfirmDialog";
 import NewClientForm from "./NewClientForm";
 import {
   CLIENT_DATE_FIELD_KEYS,
@@ -115,6 +116,7 @@ export default function ClientListManager() {
   const [formState, setFormState] = useState<ClientFormState>(emptyFormState);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const baseInputClasses =
@@ -260,7 +262,7 @@ export default function ClientListManager() {
 
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedRowId) return;
+    if (!selectedRowId) return false;
     setSaving(true);
     setStatus(null);
     try {
@@ -444,8 +446,6 @@ export default function ClientListManager() {
 
   const handleDelete = async () => {
     if (!selectedRowId) return;
-    const confirmed = window.confirm("Delete this client from the list? This cannot be undone.");
-    if (!confirmed) return;
     setDeleting(true);
     setStatus(null);
     try {
@@ -453,18 +453,20 @@ export default function ClientListManager() {
       if (error) {
         setStatus({ type: "error", message: error.message });
         setDeleting(false);
-        return;
+        return false;
       }
       setRows((current) => current.filter((row) => row.property_id !== selectedRowId));
       setSelectedRowId(null);
       setFormState(emptyFormState());
       setStatus({ type: "success", message: "Client removed from the list." });
+      return true;
     } catch (deleteError) {
       console.error("Failed to delete client", deleteError);
       setStatus({
         type: "error",
         message: deleteError instanceof Error ? deleteError.message : "Unable to delete the client. Please try again.",
       });
+      return false;
     } finally {
       setDeleting(false);
     }
@@ -608,7 +610,7 @@ export default function ClientListManager() {
             {selectedRow && (
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleting}
                 className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -699,6 +701,22 @@ export default function ClientListManager() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete property"
+        description="Are you sure you want to remove this property from the list? This cannot be undone."
+        confirmLabel={deleting ? "Deleting…" : "Delete property"}
+        onCancel={() => {
+          if (!deleting) setShowDeleteConfirm(false);
+        }}
+        onConfirm={async () => {
+          await handleDelete();
+          setShowDeleteConfirm(false);
+        }}
+        loading={deleting}
+        destructive
+      />
 
       {showNewClientModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
