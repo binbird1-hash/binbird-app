@@ -444,7 +444,7 @@ export default function ClientListManager() {
 
   const handleDelete = async () => {
     if (!selectedRowId) return;
-    const confirmed = window.confirm("Delete this client from the list? This cannot be undone.");
+    const confirmed = window.confirm("Are you sure you want to delete this client from the list? This cannot be undone.");
     if (!confirmed) return;
     setDeleting(true);
     setStatus(null);

@@ -414,7 +414,7 @@ export default function JobManager() {
       setStatus({ type: "error", message: "Select a job to delete." });
       return;
     }
-    const confirmed = window.confirm("Delete this job? This action cannot be undone.");
+    const confirmed = window.confirm("Are you sure you want to delete this job? This action cannot be undone.");
     if (!confirmed) return;
     setDeleting(true);
     setStatus(null);
