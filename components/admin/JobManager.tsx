@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import ConfirmDialog from "./ConfirmDialog";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import type { JobRecord } from "@/lib/database.types";
 
@@ -170,6 +171,7 @@ export default function JobManager() {
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dayFilter, setDayFilter] = useState<string>("");
   const [search, setSearch] = useState("");
 
@@ -412,30 +414,30 @@ export default function JobManager() {
     const jobId = isCreating ? null : selectedJobId;
     if (!jobId) {
       setStatus({ type: "error", message: "Select a job to delete." });
-      return;
+      return false;
     }
-    const confirmed = window.confirm("Delete this job? This action cannot be undone.");
-    if (!confirmed) return;
+
     setDeleting(true);
     setStatus(null);
     try {
       const { error } = await supabase.from("jobs").delete().eq("id", jobId);
       if (error) {
         setStatus({ type: "error", message: error.message });
-        setDeleting(false);
-        return;
+        return false;
       }
       setJobs((current) => current.filter((job) => job.id !== jobId));
       setSelectedJobId(null);
       setFormState(createEmptyJobState());
       setIsCreating(false);
       setStatus({ type: "success", message: "Job deleted." });
+      return true;
     } catch (deleteError) {
       console.error("Failed to delete job", deleteError);
       setStatus({
         type: "error",
         message: deleteError instanceof Error ? deleteError.message : "Unable to delete the job. Please try again.",
       });
+      return false;
     } finally {
       setDeleting(false);
     }
@@ -738,7 +740,7 @@ export default function JobManager() {
             </div>
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting || !selectedJobId || isCreating}
               className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -882,6 +884,22 @@ export default function JobManager() {
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete job"
+        description="Are you sure you want to delete this job? This action cannot be undone."
+        confirmLabel={deleting ? "Deleting…" : "Delete job"}
+        onCancel={() => {
+          if (!deleting) setShowDeleteConfirm(false);
+        }}
+        onConfirm={async () => {
+          await handleDelete();
+          setShowDeleteConfirm(false);
+        }}
+        loading={deleting}
+        destructive
+      />
     </div>
   );
 }
