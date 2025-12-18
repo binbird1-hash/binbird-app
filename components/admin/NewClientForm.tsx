@@ -9,6 +9,7 @@ import {
   CLIENT_NUMBER_FIELD_KEYS,
   type ClientListRow,
 } from "./clientFieldConfig";
+import { getBinSchedule } from "@/lib/binSchedule";
 
 type NewClientFormProps = {
   onClose?: () => void;
@@ -166,6 +167,25 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
   }, [supabase]);
 
   const staffById = useMemo(() => new Map(staff.map((member) => [member.id, member.name] as const)), [staff]);
+  const binSchedule = useMemo(
+    () =>
+      getBinSchedule({
+        red_freq: formState.red_freq,
+        red_flip: formState.red_flip,
+        yellow_freq: formState.yellow_freq,
+        yellow_flip: formState.yellow_flip,
+        green_freq: formState.green_freq,
+        green_flip: formState.green_flip,
+      }),
+    [
+      formState.green_flip,
+      formState.green_freq,
+      formState.red_flip,
+      formState.red_freq,
+      formState.yellow_flip,
+      formState.yellow_freq,
+    ],
+  );
 
   const handleChange = (key: string, value: string) => {
     let nextValue = value;
@@ -259,6 +279,7 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
     const freqValue = formState[freqKey as string] ?? "";
     const binsValue = formState[binsKey as string] || defaultBinCount;
     const flipValue = formState[flipKey as string] ?? "";
+    const scheduledThisWeek = binSchedule.status[prefix];
 
     return (
       <div key={`${prefix}-bin-group`} className="sm:col-span-2 lg:col-span-3">
@@ -307,6 +328,13 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
             </div>
           </label>
         </div>
+        <p className="mt-2 text-xs text-gray-600">
+          {freqValue
+            ? scheduledThisWeek
+              ? "Scheduled this week based on the current flip setting."
+              : "Off-week this week with the current selections."
+            : "Choose a frequency to preview this week's schedule."}
+        </p>
       </div>
     );
   };
@@ -498,6 +526,17 @@ export default function NewClientForm({ onClose, onCreated }: NewClientFormProps
 
             return renderSingleField(field);
           })}
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800">
+          <p className="font-semibold text-gray-900">This week’s bins</p>
+          <p className="mt-1 text-gray-700">
+            {binSchedule.activeColors.length
+              ? binSchedule.activeColors.join(", ")
+              : "No bins scheduled this week with the current selections."}
+          </p>
+          <p className="mt-0.5 text-xs text-gray-600">
+            Preview follows the Supabase refresh_jobs fortnightly flip logic.
+          </p>
         </div>
         <div className="flex justify-end">
           <button
