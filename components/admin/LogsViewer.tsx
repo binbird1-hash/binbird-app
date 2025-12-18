@@ -210,29 +210,29 @@ export default function LogsViewer({ logs, signedUrls, assigneeLookup }: LogsVie
                 <option value="all">All</option>
               </select>
             </label>
-            <div className="flex flex-wrap justify-end gap-2">
-              {["put_out", "bring_in"].map((type) => {
-                const isActive = selectedJobType === type;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() =>
-                      setSelectedJobType((current) =>
-                        current === type ? "" : (type as "put_out" | "bring_in"),
-                      )
-                    }
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      isActive
-                        ? "bg-gray-900 text-white shadow"
-                        : "border border-gray-300 bg-white text-gray-800 hover:border-gray-400"
-                    }`}
-                  >
-                    {type === "put_out" ? "Put out" : "Bring in"}
-                  </button>
-                );
-              })}
-            </div>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2 lg:flex-none">
+            {["put_out", "bring_in"].map((type) => {
+              const isActive = selectedJobType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() =>
+                    setSelectedJobType((current) =>
+                      current === type ? "" : (type as "put_out" | "bring_in"),
+                    )
+                  }
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? "bg-gray-900 text-white shadow"
+                      : "border border-gray-300 bg-white text-gray-800 hover:border-gray-400"
+                  }`}
+                >
+                  {type === "put_out" ? "Put out" : "Bring in"}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
