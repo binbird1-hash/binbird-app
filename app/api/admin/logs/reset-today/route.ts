@@ -15,7 +15,7 @@ export async function POST() {
       .from("logs")
       .delete()
       .gte("created_at", todayIso)
-      .select("id", { count: "exact" });
+      .select("id");
 
     if (error) {
       console.error("Failed to reset today logs", error);
