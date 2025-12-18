@@ -16,8 +16,8 @@ export const isBinScheduledThisWeek = (frequency: string | null, flip: string | 
   const isEvenWeek = weeksSinceStart % 2 === 0;
   const isFlipped = normalise(flip) === "yes";
 
-  // Supabase logic: no flip => odd weeks, flip => even weeks
-  return isFlipped ? isEvenWeek : !isEvenWeek;
+  // Supabase logic: no flip => even weeks, flip => odd weeks
+  return isFlipped ? !isEvenWeek : isEvenWeek;
 };
 
 export const getBinSchedule = (selection: BinSelection, now = new Date()) => {
