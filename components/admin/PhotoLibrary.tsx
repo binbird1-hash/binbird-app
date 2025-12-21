@@ -13,6 +13,7 @@ export type PhotoLibraryItem = {
   address: string | null;
   photoPath: string;
   taskType: "put_out" | "bring_in";
+  bins: string | null;
   completedOn: string | null;
   weekLabel: string | null;
   weekParity: "odd" | "even" | null;
@@ -51,6 +52,29 @@ function describePreference(
     (pref) => pref.parity === "even" && pref.job_type === photo.taskType && pref.photo_path === photo.photoPath,
   );
   return { matchesOdd, matchesEven, hasAny: list.length > 0 };
+}
+
+function normalizeBins(bins: string | null): string[] {
+  if (!bins) return [];
+  return bins
+    .split(",")
+    .map((bin) => bin.trim())
+    .filter(Boolean);
+}
+
+function renderBinChip(bin: string) {
+  const normalized = bin.toLowerCase();
+  let color = "bg-gray-200 text-gray-900";
+
+  if (normalized.includes("red")) color = "bg-red-100 text-red-800";
+  else if (normalized.includes("yellow")) color = "bg-yellow-100 text-yellow-900";
+  else if (normalized.includes("green")) color = "bg-green-100 text-green-800";
+
+  return (
+    <span key={bin} className={`rounded-full px-2 py-1 text-xs font-semibold ${color}`}>
+      {bin}
+    </span>
+  );
 }
 
 export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps) {
@@ -354,6 +378,10 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
         {sorted.map((photo) => {
           const signedUrl = signedUrls[photo.photoPath];
           const preference = describePreference(preferenceLookup, photo);
+          const binList = normalizeBins(photo.bins);
+
+          const shouldShowOddButton = photo.weekParity === "odd" || photo.weekParity === null;
+          const shouldShowEvenButton = photo.weekParity === "even" || photo.weekParity === null;
 
           return (
             <article
@@ -413,23 +441,36 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
                 )}
               </div>
 
+              {binList.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                  <span className="font-semibold text-gray-900">
+                    {photo.taskType === "put_out" ? "Bins to put out:" : "Bins to bring in:"}
+                  </span>
+                  {binList.map((bin) => renderBinChip(bin))}
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={savingPreferenceFor === photo.id}
-                  onClick={() => handlePreference(photo, "odd")}
-                  className="inline-flex items-center justify-center rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 transition hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {savingPreferenceFor === photo.id ? "Saving…" : "Use for odd weeks"}
-                </button>
-                <button
-                  type="button"
-                  disabled={savingPreferenceFor === photo.id}
-                  onClick={() => handlePreference(photo, "even")}
-                  className="inline-flex items-center justify-center rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-800 transition hover:border-purple-300 hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {savingPreferenceFor === photo.id ? "Saving…" : "Use for even weeks"}
-                </button>
+                {shouldShowOddButton && (
+                  <button
+                    type="button"
+                    disabled={savingPreferenceFor === photo.id}
+                    onClick={() => handlePreference(photo, "odd")}
+                    className="inline-flex items-center justify-center rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 transition hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingPreferenceFor === photo.id ? "Saving…" : "Use for odd weeks"}
+                  </button>
+                )}
+                {shouldShowEvenButton && (
+                  <button
+                    type="button"
+                    disabled={savingPreferenceFor === photo.id}
+                    onClick={() => handlePreference(photo, "even")}
+                    className="inline-flex items-center justify-center rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-800 transition hover:border-purple-300 hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingPreferenceFor === photo.id ? "Saving…" : "Use for even weeks"}
+                  </button>
+                )}
               </div>
             </article>
           );

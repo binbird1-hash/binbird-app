@@ -17,7 +17,7 @@ async function loadPhotos(): Promise<{
     const { data: logs } = await supabase
       .from("logs")
       .select(
-        "id, job_id, property_id, account_id, client_name, address, task_type, photo_path, done_on, created_at",
+        "id, job_id, property_id, account_id, client_name, address, bins, task_type, photo_path, done_on, created_at",
       )
       .not("photo_path", "is", null)
       .order("created_at", { ascending: false });
@@ -30,11 +30,14 @@ async function loadPhotos(): Promise<{
       ),
     );
 
-    const jobLookup = new Map<string, { property_id: string | null; client_name: string | null; address: string | null }>();
+    const jobLookup = new Map<
+      string,
+      { property_id: string | null; client_name: string | null; address: string | null; bins: string | null }
+    >();
     if (jobIds.length) {
       const { data: jobs } = await supabase
         .from("jobs")
-        .select("id, property_id, client_name, address")
+        .select("id, property_id, client_name, address, bins")
         .in("id", jobIds);
 
       for (const job of jobs ?? []) {
@@ -42,6 +45,7 @@ async function loadPhotos(): Promise<{
           property_id: job.property_id ?? null,
           client_name: job.client_name ?? null,
           address: job.address ?? null,
+          bins: job.bins ?? null,
         });
       }
     }
@@ -60,6 +64,7 @@ async function loadPhotos(): Promise<{
           clientName: job?.client_name ?? log.client_name ?? null,
           address: job?.address ?? log.address ?? null,
           photoPath: log.photo_path!,
+          bins: log.bins ?? job?.bins ?? null,
           taskType: log.task_type === "bring_in" ? "bring_in" : "put_out",
           completedOn: completionDate,
           weekLabel: weekInfo.label,
