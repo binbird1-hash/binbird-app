@@ -211,8 +211,10 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
         throw new Error(message || "Unable to save preference");
       }
 
-      const json = (await response.json()) as { preference?: ProofPhotoPreference };
-      if (json.preference) {
+      const json = (await response.json()) as { preference?: ProofPhotoPreference | null };
+      const preference = json.preference;
+
+      if (preference) {
         setPreferenceLookup((current) => {
           const next = new Map(current);
           const list = photo.propertyId ? [...(next.get(photo.propertyId) ?? [])] : [];
@@ -220,9 +222,9 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
             (pref) => pref.job_type === photo.taskType && pref.parity === parity,
           );
           if (existingIdx >= 0) {
-            list[existingIdx] = json.preference;
+            list[existingIdx] = preference;
           } else {
-            list.push(json.preference);
+            list.push(preference);
           }
           if (photo.propertyId) {
             next.set(photo.propertyId, list);
