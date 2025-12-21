@@ -7,7 +7,13 @@ export type ProofPhotoPreference = {
   created_at?: string | null;
 };
 
-export function normalizeProofPreference(raw: Partial<ProofPhotoPreference>): ProofPhotoPreference | null {
+export function normalizeProofPreference(
+  raw: Partial<ProofPhotoPreference> | null | undefined,
+): ProofPhotoPreference | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
   const propertyId = typeof raw.property_id === "string" && raw.property_id.trim().length ? raw.property_id : null;
   const jobType = raw.job_type === "bring_in" ? "bring_in" : raw.job_type === "put_out" ? "put_out" : null;
   const parity = raw.parity === "even" ? "even" : raw.parity === "odd" ? "odd" : null;
