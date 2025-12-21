@@ -17,7 +17,7 @@ async function loadPhotos(): Promise<{
     const { data: logs } = await supabase
       .from("logs")
       .select(
-        "id, job_id, account_id, client_name, address, task_type, photo_path, done_on, created_at",
+        "id, job_id, property_id, account_id, client_name, address, task_type, photo_path, done_on, created_at",
       )
       .not("photo_path", "is", null)
       .order("created_at", { ascending: false });
@@ -56,7 +56,7 @@ async function loadPhotos(): Promise<{
         return {
           id: String(log.id),
           jobId: log.job_id ?? null,
-          propertyId: job?.property_id ?? null,
+          propertyId: log.property_id ?? job?.property_id ?? null,
           clientName: job?.client_name ?? log.client_name ?? null,
           address: job?.address ?? log.address ?? null,
           photoPath: log.photo_path!,
