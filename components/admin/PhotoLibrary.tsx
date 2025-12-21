@@ -374,7 +374,7 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {sorted.map((photo) => {
           const signedUrl = signedUrls[photo.photoPath];
           const preference = describePreference(preferenceLookup, photo);
@@ -410,10 +410,10 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
                 <img
                   src={signedUrl}
                   alt={`Proof for ${photo.address ?? "property"}`}
-                  className="h-56 w-full rounded-xl object-cover"
+                  className="aspect-[3/4] w-full rounded-xl bg-gray-50 object-contain shadow-inner"
                 />
               ) : (
-                <div className="flex h-56 w-full items-center justify-center rounded-xl bg-gray-100 text-sm text-gray-600">
+                <div className="flex aspect-[3/4] w-full items-center justify-center rounded-xl bg-gray-100 text-sm text-gray-600">
                   Loading preview…
                 </div>
               )}
