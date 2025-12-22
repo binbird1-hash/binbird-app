@@ -231,11 +231,19 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
       });
 
       if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || "Unable to save preference");
+        try {
+          const json = (await response.json()) as { error?: string };
+          if (json?.error) throw new Error(json.error);
+        } catch (err) {
+          // fall back to the plain text response if JSON parsing fails
+          const message = await response.text();
+          throw new Error(message || "Unable to save preference");
+        }
       }
 
-      const json = (await response.json()) as { preference?: ProofPhotoPreference | null };
+      const json = (await response.json()) as { error?: string; preference?: ProofPhotoPreference | null };
+      if (json?.error) throw new Error(json.error);
+
       const preference = json.preference;
 
       if (preference) {
@@ -260,7 +268,8 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert("Unable to save proof preference. Please try again.");
+      const message = error instanceof Error ? error.message : "Unable to save proof preference. Please try again.";
+      alert(message);
     } finally {
       setSavingPreferenceFor(null);
     }

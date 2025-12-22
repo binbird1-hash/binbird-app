@@ -31,7 +31,10 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("Failed to save proof preference", error);
-      return NextResponse.json({ error: "Unable to save proof preference" }, { status: 500 });
+      return NextResponse.json(
+        { error: error.message || "Unable to save proof preference" },
+        { status: 500 },
+      );
     }
 
     const normalized = data ? normalizeProofPreference(data) : null;
