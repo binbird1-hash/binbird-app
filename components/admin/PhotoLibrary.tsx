@@ -231,13 +231,16 @@ export default function PhotoLibrary({ photos, preferences }: PhotoLibraryProps)
       });
 
       if (!response.ok) {
+        const raw = await response.text();
+        const fallbackMessage = raw?.trim() || "Unable to save preference";
+
         try {
-          const json = (await response.json()) as { error?: string };
-          if (json?.error) throw new Error(json.error);
+          const json = JSON.parse(raw) as { error?: string };
+          const message = json?.error || fallbackMessage;
+          throw new Error(message);
         } catch (err) {
-          // fall back to the plain text response if JSON parsing fails
-          const message = await response.text();
-          throw new Error(message || "Unable to save preference");
+          if (err instanceof Error) throw err;
+          throw new Error(fallbackMessage);
         }
       }
 
