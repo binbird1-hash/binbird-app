@@ -512,14 +512,17 @@ export default function ClientListManager() {
         body: JSON.stringify({ propertyId: selectedRowId }),
       });
 
-      const payload = (await response.json().catch(() => null)) as
-        | { status?: string; message?: string }
-        | null;
+      const payloadText = await response.text().catch(() => "");
+      const payload = payloadText
+        ? ((JSON.parse(payloadText) as { status?: string; message?: string }) ?? null)
+        : null;
 
       if (!response.ok) {
         setStatus({
           type: "error",
-          message: payload?.message ?? "Unable to create jobs for this property.",
+          message:
+            payload?.message ??
+            (payloadText ? `Unable to create jobs for this property: ${payloadText}` : "Unable to create jobs for this property."),
         });
         return;
       }
