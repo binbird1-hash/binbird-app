@@ -16,7 +16,7 @@ type CreateJobsPayload = {
 };
 
 type NewJobRow = {
-  account_id: string;
+  account_id: string | null;
   property_id: string | null;
   address: string;
   lat: number | null;

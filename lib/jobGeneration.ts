@@ -103,8 +103,10 @@ const describeBinFrequency = (label: string, frequency: string | null, flip: str
   return base;
 };
 
-export const deriveAccountId = (row: JobSourceClientRow): string =>
-  row.account_id && row.account_id.trim().length ? row.account_id.trim() : row.property_id;
+export const deriveAccountId = (row: JobSourceClientRow): string | null => {
+  const explicit = row.account_id?.trim();
+  return explicit && explicit.length > 0 ? explicit : null;
+};
 
 export const deriveClientName = (row: JobSourceClientRow): string =>
   row.client_name?.trim() || row.company?.trim() || "Client";
