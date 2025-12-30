@@ -71,6 +71,20 @@ export const parseDayIndex = (value: string | null | undefined): number | null =
 export const matchesDay = (value: string | null, dayIndex: number): boolean =>
   tokensFor(value).some((token) => DAY_ALIASES[token] === dayIndex);
 
+export const extractDayNames = (value: string | null | undefined): string[] => {
+  const dayIndexes = new Set<number>();
+  tokensFor(value).forEach((token) => {
+    const idx = DAY_ALIASES[token];
+    if (idx !== undefined) {
+      dayIndexes.add(idx);
+    }
+  });
+
+  return [...dayIndexes]
+    .sort((a, b) => a - b)
+    .map((idx) => DAY_NAMES[idx]);
+};
+
 export const parseLatLng = (value: string | null): { lat: number | null; lng: number | null } => {
   if (!value) return { lat: null, lng: null };
   const [latRaw, lngRaw] = value.split(",").map((part) => Number.parseFloat(part.trim()));

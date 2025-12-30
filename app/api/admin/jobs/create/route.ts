@@ -6,8 +6,7 @@ import {
   buildBinsSummary,
   deriveAccountId,
   deriveClientName,
-  getJobGenerationDayInfo,
-  matchesDay,
+  extractDayNames,
   parseLatLng,
   type JobSourceClientRow,
 } from "@/lib/jobGeneration";
@@ -96,16 +95,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Property not found." }, { status: 404 });
     }
 
-    const { dayIndex, dayName } = getJobGenerationDayInfo();
     const accountId = deriveAccountId(client);
     const clientName = deriveClientName(client);
     const { lat, lng } = parseLatLng(client.lat_lng);
     const bins = buildBinsSummary(client);
     const address = client.address?.trim() ?? "";
+    const putOutDays = extractDayNames(client.put_bins_out);
+    const bringInDays = extractDayNames(client.collection_day);
 
     const jobs: NewJobRow[] = [];
 
-    if (matchesDay(client.put_bins_out, dayIndex)) {
+    putOutDays.forEach((dayName) => {
       jobs.push({
         account_id: accountId,
         property_id: client.property_id,
@@ -121,9 +121,9 @@ export async function POST(request: Request) {
         day_of_week: dayName,
         last_completed_on: null,
       });
-    }
+    });
 
-    if (matchesDay(client.collection_day, dayIndex)) {
+    bringInDays.forEach((dayName) => {
       jobs.push({
         account_id: accountId,
         property_id: client.property_id,
@@ -139,32 +139,33 @@ export async function POST(request: Request) {
         day_of_week: dayName,
         last_completed_on: null,
       });
-    }
+    });
 
     if (!jobs.length) {
       console.info("[admin/jobs/create] no jobs scheduled", {
         propertyId,
-        dayName,
-        dayIndex,
+        putOutDays,
+        bringInDays,
       });
       return NextResponse.json({
         status: "success",
-        message: `No jobs scheduled for ${dayName} for this property.`,
+        message: "No jobs scheduled for this property.",
       });
     }
 
+    const scheduledDays = [...new Set([...putOutDays, ...bringInDays])];
     const { error: deleteError } = await supabase
       .from("jobs")
       .delete()
       .eq("property_id", propertyId)
-      .eq("day_of_week", dayName)
+      .in("day_of_week", scheduledDays)
       .is("last_completed_on", null);
 
     if (deleteError) {
       console.error("[admin/jobs/create] failed to clear existing jobs", {
         deleteError,
         propertyId,
-        dayName,
+        scheduledDays,
       });
       return NextResponse.json({ message: "Failed to clear existing jobs." }, { status: 500 });
     }
@@ -175,7 +176,7 @@ export async function POST(request: Request) {
       console.error("[admin/jobs/create] failed to create jobs", {
         insertError,
         propertyId,
-        dayName,
+        scheduledDays,
         jobCount: jobs.length,
       });
       return NextResponse.json({ message: "Failed to create jobs." }, { status: 500 });
@@ -183,12 +184,12 @@ export async function POST(request: Request) {
 
     console.info("[admin/jobs/create] jobs created", {
       propertyId,
-      dayName,
+      scheduledDays,
       jobCount: jobs.length,
     });
     return NextResponse.json({
       status: "success",
-      message: `Created ${jobs.length} job${jobs.length === 1 ? "" : "s"} for ${dayName}.`,
+      message: `Created ${jobs.length} job${jobs.length === 1 ? "" : "s"} for ${scheduledDays.join(", ")}.`,
     });
   } catch (error) {
     console.error("[admin/jobs/create] unexpected error", { error });
