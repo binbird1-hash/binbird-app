@@ -12,6 +12,8 @@ import {
 } from "@/lib/run-session";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { clearPlannedRun, readPlannedRun, writePlannedRun } from "@/lib/planned-run";
+import { findPreference, groupPreferencesByProperty, normalizeProofPreference, type ProofPhotoPreference } from "@/lib/proof-photos";
+import { getCustomWeek, getWeekParity } from "@/lib/weeks";
 
 const PUT_OUT_PLACEHOLDER_URL =
   "/images/put-out-placeholder.jpg";
@@ -106,29 +108,6 @@ function toKebab(value: string | null | undefined, fallback: string): string {
     .replace(/,\s*/g, "-")
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-// custom week helper (Monday-Saturday cycle, Sunday joins next week)
-function getCustomWeek(date: Date) {
-  const d = new Date(date);
-
-  // If Sunday, push to Monday (next cycle)
-  if (d.getDay() === 0) {
-    d.setDate(d.getDate() + 1);
-  }
-
-  // ISO week calc
-  const target = new Date(d.valueOf());
-  const dayNr = (target.getDay() + 6) % 7; // Monday=0 … Sunday=6
-  target.setDate(target.getDate() - dayNr + 3); // Thursday of current week
-  const firstThursday = new Date(target.getFullYear(), 0, 4);
-  const diff = target.valueOf() - firstThursday.valueOf();
-  const week = 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
-
-  return {
-    year: target.getFullYear(),
-    week: `Week-${week}`,
-  };
 }
 
 function generateSequentialFileName(
@@ -237,6 +216,9 @@ export default function ProofPageContent() {
     bringIn: null,
   });
   const [referenceLookupComplete, setReferenceLookupComplete] = useState(false);
+  const [preferenceLookup, setPreferenceLookup] = useState<
+    Map<string, ProofPhotoPreference[]>
+  >(new Map());
 
   const [gpsData, setGpsData] = useState<{ lat: number | null; lng: number | null; acc: number | null; time: string | null; }>({ lat: null, lng: null, acc: null, time: null });
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -378,6 +360,49 @@ export default function ProofPageContent() {
     }
   }, [filterJobsForVisibility, params]);
 
+  useEffect(() => {
+    const propertyIds = Array.from(
+      new Set(
+        jobs
+          .map((job) => job.property_id)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (!propertyIds.length) {
+      setPreferenceLookup(new Map());
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPreferences = async () => {
+      const { data, error } = await supabase
+        .from("proof_photo_preferences")
+        .select("id, property_id, job_type, parity, photo_path, created_at")
+        .in("property_id", propertyIds);
+
+      if (error) {
+        console.warn("Failed to load proof preferences", error);
+        return;
+      }
+
+      if (cancelled) return;
+
+      const normalized = (data ?? [])
+        .map((row) => normalizeProofPreference(row))
+        .filter((value): value is ProofPhotoPreference => Boolean(value));
+
+      setPreferenceLookup(groupPreferencesByProperty(normalized));
+    };
+
+    void loadPreferences();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [jobs, supabase]);
+
   const getActiveRunSession = useCallback(() => {
     const existing = readRunSession();
     if (!existing) return null;
@@ -393,13 +418,36 @@ export default function ProofPageContent() {
   const jobId = job?.id ?? null;
   const photoPath = job?.photo_path ?? null;
   const alternatingPhotoPath = getAlternatingPhotoPath(photoPath, new Date());
+  const currentWeekParity = getWeekParity(new Date());
+  const preferredPutOut = findPreference(
+    preferenceLookup,
+    job?.property_id ?? null,
+    "put_out",
+    currentWeekParity,
+  );
+  const preferredBringIn = findPreference(
+    preferenceLookup,
+    job?.property_id ?? null,
+    "bring_in",
+    currentWeekParity,
+  );
+  const fallbackReference = alternatingPhotoPath
+    ? {
+        putOut: `${alternatingPhotoPath}/Put Out.jpg`,
+        bringIn: `${alternatingPhotoPath}/Bring In.jpg`,
+      }
+    : { putOut: null, bringIn: null };
+  const referenceTargets = {
+    putOut: preferredPutOut?.photo_path ?? fallbackReference.putOut,
+    bringIn: preferredBringIn?.photo_path ?? fallbackReference.bringIn,
+  };
 
   useEffect(() => {
     let isCancelled = false;
 
-    if (!alternatingPhotoPath) {
+    if (!referenceTargets.putOut && !referenceTargets.bringIn) {
       setReferenceUrls({ putOut: null, bringIn: null });
-      setReferenceLookupComplete(false);
+      setReferenceLookupComplete(true);
       return () => {
         isCancelled = true;
       };
@@ -413,8 +461,12 @@ export default function ProofPageContent() {
 
       try {
         const [putOutRes, bringInRes] = await Promise.all([
-          bucket.createSignedUrl(`${alternatingPhotoPath}/Put Out.jpg`, 3600),
-          bucket.createSignedUrl(`${alternatingPhotoPath}/Bring In.jpg`, 3600),
+          referenceTargets.putOut
+            ? bucket.createSignedUrl(referenceTargets.putOut, 3600)
+            : Promise.resolve({ data: { signedUrl: null } }),
+          referenceTargets.bringIn
+            ? bucket.createSignedUrl(referenceTargets.bringIn, 3600)
+            : Promise.resolve({ data: { signedUrl: null } }),
         ]);
 
         if (isCancelled) return;
@@ -447,7 +499,7 @@ export default function ProofPageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [alternatingPhotoPath, supabase]);
+  }, [referenceTargets.bringIn, referenceTargets.putOut, supabase]);
 
   useEffect(() => {
     if (!jobs.length) return;

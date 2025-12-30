@@ -36,6 +36,7 @@ async function resolveAdminContext() {
     { href: "/admin/clients", label: "Property List" },
     { href: "/admin/jobs", label: "Jobs" },
     { href: "/admin/logs", label: "Logs & Proofs" },
+    { href: "/admin/photos", label: "Photos" },
   ];
 
   return {
