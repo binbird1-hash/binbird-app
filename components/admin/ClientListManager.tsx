@@ -117,6 +117,7 @@ export default function ClientListManager() {
   const [formState, setFormState] = useState<ClientFormState>(emptyFormState);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [creatingJobs, setCreatingJobs] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
@@ -500,6 +501,50 @@ export default function ClientListManager() {
     }
   };
 
+  const handleCreateJobs = async () => {
+    if (!selectedRowId) return;
+    setCreatingJobs(true);
+    setStatus(null);
+    try {
+      const response = await fetch("/api/admin/jobs/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId: selectedRowId }),
+      });
+
+      const payloadText = await response.text().catch(() => "");
+      const payload = payloadText
+        ? ((JSON.parse(payloadText) as { status?: string; message?: string }) ?? null)
+        : null;
+
+      if (!response.ok) {
+        setStatus({
+          type: "error",
+          message:
+            payload?.message ??
+            (payloadText ? `Unable to create jobs for this property: ${payloadText}` : "Unable to create jobs for this property."),
+        });
+        return;
+      }
+
+      setStatus({
+        type: payload?.status === "error" ? "error" : "success",
+        message: payload?.message ?? "Jobs created for this property.",
+      });
+    } catch (createError) {
+      console.error("Failed to create jobs", createError);
+      setStatus({
+        type: "error",
+        message:
+          createError instanceof Error
+            ? createError.message
+            : "Unable to create jobs for this property. Please try again.",
+      });
+    } finally {
+      setCreatingJobs(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-8">
@@ -636,14 +681,24 @@ export default function ClientListManager() {
               <p className="text-xs text-gray-600">Update any column and save to sync with Supabase.</p>
             </div>
             {selectedRow && (
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={deleting}
-                className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {deleting ? "Deleting…" : "Delete"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCreateJobs}
+                  disabled={creatingJobs}
+                  className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creatingJobs ? "Creating…" : "Create Jobs"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                  className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              </div>
             )}
           </div>
 
