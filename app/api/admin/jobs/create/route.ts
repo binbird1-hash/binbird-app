@@ -34,6 +34,7 @@ type NewJobRow = {
 
 export async function POST(request: Request) {
   try {
+    console.info("[admin/jobs/create] request received");
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({
       cookies: () => cookieStore,
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
+      console.warn("[admin/jobs/create] unauthorized request", { userError });
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
 
@@ -55,18 +57,24 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (profileError || profile?.role !== "admin") {
+      console.warn("[admin/jobs/create] forbidden request", {
+        profileError,
+        role: profile?.role ?? null,
+      });
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }
 
     let payload: CreateJobsPayload;
     try {
       payload = (await request.json()) as CreateJobsPayload;
-    } catch {
+    } catch (error) {
+      console.warn("[admin/jobs/create] invalid request payload", { error });
       return NextResponse.json({ message: "Invalid request payload." }, { status: 400 });
     }
 
     const propertyId = payload.propertyId?.trim();
     if (!propertyId) {
+      console.warn("[admin/jobs/create] missing property id");
       return NextResponse.json({ message: "Property ID is required." }, { status: 400 });
     }
 
@@ -79,11 +87,12 @@ export async function POST(request: Request) {
       .maybeSingle<JobSourceClientRow>();
 
     if (clientError) {
-      console.error("Failed to load client for job creation", clientError);
+      console.error("[admin/jobs/create] failed to load client", { clientError, propertyId });
       return NextResponse.json({ message: "Unable to load property details." }, { status: 500 });
     }
 
     if (!client) {
+      console.warn("[admin/jobs/create] property not found", { propertyId });
       return NextResponse.json({ message: "Property not found." }, { status: 404 });
     }
 
@@ -133,6 +142,11 @@ export async function POST(request: Request) {
     }
 
     if (!jobs.length) {
+      console.info("[admin/jobs/create] no jobs scheduled", {
+        propertyId,
+        dayName,
+        dayIndex,
+      });
       return NextResponse.json({
         status: "success",
         message: `No jobs scheduled for ${dayName} for this property.`,
@@ -147,23 +161,37 @@ export async function POST(request: Request) {
       .is("last_completed_on", null);
 
     if (deleteError) {
-      console.error("Failed to clear existing jobs for property", deleteError);
+      console.error("[admin/jobs/create] failed to clear existing jobs", {
+        deleteError,
+        propertyId,
+        dayName,
+      });
       return NextResponse.json({ message: "Failed to clear existing jobs." }, { status: 500 });
     }
 
     const { error: insertError } = await supabase.from("jobs").insert(jobs);
 
     if (insertError) {
-      console.error("Failed to create jobs for property", insertError);
+      console.error("[admin/jobs/create] failed to create jobs", {
+        insertError,
+        propertyId,
+        dayName,
+        jobCount: jobs.length,
+      });
       return NextResponse.json({ message: "Failed to create jobs." }, { status: 500 });
     }
 
+    console.info("[admin/jobs/create] jobs created", {
+      propertyId,
+      dayName,
+      jobCount: jobs.length,
+    });
     return NextResponse.json({
       status: "success",
       message: `Created ${jobs.length} job${jobs.length === 1 ? "" : "s"} for ${dayName}.`,
     });
   } catch (error) {
-    console.error("Unexpected error creating jobs for property", error);
+    console.error("[admin/jobs/create] unexpected error", { error });
     return NextResponse.json({ message: "Unable to create jobs for this property." }, { status: 500 });
   }
 }
