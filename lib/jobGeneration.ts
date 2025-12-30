@@ -1,3 +1,4 @@
+import { getBinSchedule } from "@/lib/binSchedule";
 import { getOperationalDayIndex, getOperationalDayName } from "@/lib/date";
 
 export const DAY_NAMES = [
@@ -94,15 +95,6 @@ export const parseLatLng = (value: string | null): { lat: number | null; lng: nu
   };
 };
 
-const describeBinFrequency = (label: string, frequency: string | null, flip: string | null) => {
-  if (!frequency) return null;
-  const base = `${label} (${frequency.toLowerCase()})`;
-  if (frequency === "Fortnightly" && flip === "Yes") {
-    return `${base}, alternate weeks`;
-  }
-  return base;
-};
-
 export const deriveAccountId = (row: JobSourceClientRow): string | null => {
   const explicit = row.account_id?.trim();
   return explicit && explicit.length > 0 ? explicit : null;
@@ -112,14 +104,17 @@ export const deriveClientName = (row: JobSourceClientRow): string =>
   row.client_name?.trim() || row.company?.trim() || "Client";
 
 export const buildBinsSummary = (row: JobSourceClientRow): string | null => {
-  const bins = [
-    describeBinFrequency("Garbage", row.red_freq, row.red_flip),
-    describeBinFrequency("Recycling", row.yellow_freq, row.yellow_flip),
-    describeBinFrequency("Organic", row.green_freq, row.green_flip),
-  ].filter(Boolean) as string[];
+  const schedule = getBinSchedule({
+    red_freq: row.red_freq,
+    red_flip: row.red_flip,
+    yellow_freq: row.yellow_freq,
+    yellow_flip: row.yellow_flip,
+    green_freq: row.green_freq,
+    green_flip: row.green_flip,
+  });
 
-  if (!bins.length) return null;
-  return bins.join(", ");
+  if (!schedule.activeColors.length) return null;
+  return schedule.activeColors.join(", ");
 };
 
 export const getJobGenerationDayInfo = () => {
