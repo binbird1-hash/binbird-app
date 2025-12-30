@@ -11,12 +11,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
   const next = url.searchParams.get('next') ?? '/staff/today'
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   if (code) {
     try {
       const supabase = createRouteHandlerClient({
-        cookies: () => cookieStore,
+        cookies: () => cookieStore as unknown as ReturnType<typeof cookies>,
       })
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
@@ -46,7 +46,7 @@ type SupabaseAuthWebhookPayload = {
 
 export async function POST(req: Request) {
   let payload: SupabaseAuthWebhookPayload
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   try {
     payload = (await req.json()) as SupabaseAuthWebhookPayload
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
   try {
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: () => cookieStore as unknown as ReturnType<typeof cookies>,
     })
 
     if (event === 'SIGNED_OUT') {

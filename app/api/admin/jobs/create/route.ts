@@ -35,9 +35,9 @@ type NewJobRow = {
 export async function POST(request: Request) {
   try {
     console.info("[admin/jobs/create] request received");
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: () => cookieStore as unknown as ReturnType<typeof cookies>,
     });
 
     const {
